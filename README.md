@@ -1,25 +1,23 @@
 # Tihulu Survival Kit
 
-**Status:** planning and per-stage user confirmation; no integrated software has yet been built or tested.  
-**Last context update:** 2026-11-04.  
-**Source of truth for planning:** [`plan/00_START_HERE.md`](plan/00_START_HERE.md).
+**Status:** early planning. No integrated installer, runtime or Raspberry Pi deployment has been released yet.
 
-An offline-first, battery-powered, browser-accessible knowledge, navigation, radio, file-management and local-AI server built around a Raspberry Pi 5 (8 GB RAM) and a 1 TB NVMe SSD. Preserve **all** existing HAS Prepper Disk features and selectively integrate Project NOMAD-inspired functionality.
+An open-source, offline-first, portable knowledge and AI platform for Raspberry Pi 5. Planned public features include local knowledge libraries, offline navigation, education, multi-language assistance, accessible file tools, and USB-SDR radio reception.
 
-## Start a new ChatGPT conversation
+## Intended project direction
 
-Give ChatGPT this repository URL and ask it to read **every Markdown file under `plan/`**, starting with `plan/00_START_HERE.md`, `plan/01_APPROVAL_LEDGER.md`, and `plan/13_NEW_CHAT_HANDOFF.md`. Do not assume unapproved proposals are decisions. Continue stage-by-stage approval, **without producing a final report until the user approves all stages**.
+- Preserve compatibility with [HAS Prepper Disk](https://github.com/schematrix/HAS_Prepper_Disk) and its [Internet-in-a-Box](https://github.com/iiab/iiab) ecosystem.
+- Integrate appropriate open-source features inspired by [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad), with attribution and license compliance.
+- Use an ARM64-friendly modular approach, avoiding unnecessary duplicated services.
+- Remain useful without an internet connection; allow optional network services when connected.
+- Provide a browser-first interface for phones, tablets and computers.
 
-## Sources
+## Repository hygiene
 
-- [HAS Prepper Disk](https://github.com/schematrix/HAS_Prepper_Disk)
-- [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad)
-- [Project NOMAD website](https://www.projectnomad.us/)
-- [NooElec NESDR SMArt v5](https://www.nooelec.com/)
+This is the **public application repository**. Source code, distributable documentation, tests, deployment files and sanitized release artifacts belong here. Personal conversation history, private design notes and private planning records do **not** belong here.
 
-## Rules
+No hardware compatibility, battery endurance, live subtitle performance or AM/FM/SW/LW reception claims should be treated as tested until explicitly verified on hardware.
 
-- `plan/` holds specifications, proposal states, evidence boundaries, trade-offs and handoff instructions, **not installed software**.
-- Hardware features and network naming are not proof of successful real-world operation.
-- This is a **public repository**; do not commit credentials, private user files, exact personal locations or sensitive data.
-- Upstream licenses and authorship remain intact.
+## Development status
+
+Implementation has not begun. Public documentation will be added with the first independently reviewed implementation milestones.
