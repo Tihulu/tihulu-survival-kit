@@ -85,11 +85,23 @@ There is **no functional installer, image, or verified download checksum** curre
 | **TV Center** | Country/region channel lists, owner-added channels, DVB auto/manual scanning, recorded/live subtitles, EPG and Teletext |
 | **Radio / Text Data** | Optional SDR radio, FM RDS/RadioText, DAB+ DLS/Journaline, and documented APRS candidate reception |
 | **Message Networks** | Optional local offline Wi-Fi BBS/forum and separate, lawful Meshtastic or packet-radio interfaces with compatible hardware |
-| **News & Politics** | User-selected mainstream, independent, public, opposition and party-published sources in Germany/Turkey, plus worldwide verified public political accounts |
+| **News & Politics** | User-selectable Internet news/political feeds **plus optional TV-antenna Teletext/EPG and separate radio-antenna RDS/DAB text sources**; each input can be enabled/disabled, individual sources selected, and an explicit **Scan selected sources** requested. Real RF decoding and live feed ingestion are not deployed. |
 | **Daily Discovery** | Sourced daily article/fact, survival tip, dictionary word, profanity/slang definition and offline Wikipedia A-to-B link challenge |
 | **Service & Update Center** | Install/refresh options, per-app Hard/Background/Startup policies, memory-conscious scheduling and safe stop controls |
 
 **These are planned capabilities, not a list of installed applications.** The architecture may incorporate selected capabilities from [HAS Prepper Disk](https://github.com/schematrix/HAS_Prepper_Disk), [Internet-in-a-Box](https://github.com/iiab/iiab), [Kiwix](https://www.kiwix.org/), [Kolibri](https://learningequality.org/kolibri/), [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) and [OpenStreetMap](https://www.openstreetmap.org/). Their actual packaging, ARM64 support, attribution and licenses must be checked separately.
+
+## News inputs and manual source scanning
+
+The News & Politics Center should not be limited to the Internet. Its planned **Sources & Scan** settings provide independent checkboxes:
+
+- **[x] Internet** — verified news RSS/Atom, official broadcaster feeds and permitted public political-account APIs; default selected transport, but **no source is fetched until it is verified and explicitly selected**.
+- **[ ] TV Antenna** — Teletext news pages and broadcaster programme metadata from a **real locked DVB-T/T2/C multiplex**, if the tuned transmission carries them. Uses the reported-purchased Hauppauge TV tuner, subject to delivery, compatible drivers, signal and decoder.
+- **[ ] Radio Antenna** — FM RadioText/RDS, DAB DLS/Journaline and other permitted public radio text/bulletins **only with a separate compatible SDR/radio receiver**. The purchased DVB TV tuner is insufficient.
+
+Each input also has a **per-source checklist** and a manual **Scan selected sources** action. Missing antennas/decoders, unavailable networks and candidates without verified endpoints must be reported as **unavailable/unverified**, not silently treated as working news sources. Scans must never retune an active DVB recording; background/news AI processing remains disabled by default. Teletext and radio metadata must retain source attribution and must not be presented as independently verified political journalism.
+
+An [experimental source-selection router, unit tests and English UI preview](https://github.com/Tihulu/tihulu-survival-kit/pull/1) are on the draft development branch. **There is no working Pi news collector or completed RF decoder yet.**
 
 ## Background tasks, memory and app management
 

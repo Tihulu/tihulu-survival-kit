@@ -24,6 +24,14 @@ Automated tests exercise local policy and job registry behavior, not OS/systemd 
 
 The project owner reports **purchasing a European Hauppauge WinTV-soloHD 01589** USB DVB-T/T2/C receiver, Amazon.de ASIN `B0152XLPFS`, along with TV antenna equipment. **Physical arrival, exact accessories and Linux/Pi5 firmware, signal and HEVC playback compatibility have not been verified.** The receiver is a receive-only digital terrestrial/cable TV tuner and is not an FM/DAB general-purpose SDR or LoRa/packet transmitter. A separate suitable SDR or radio transceiver is needed for other RF data services; no generic SDR purchase is assumed.
 
+## News input selection and scan experiment (November 5, 2026)
+
+The experimental [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) includes a selectable **Internet / TV Antenna / Radio Antenna** source router, explicit manual scan gates, tests, and a **local-only UI prototype** in `prototype/news_inputs.html`. Sources can be individually selected, and the prototype distinguishes unverified source candidates from actual hardware availability.
+
+**Important:** The code does **not** perform physical DVB tuning, decode Teletext pages, read RDS/DAB data, fetch live RSS or social API results, or check real antenna reception. Those require actual connected hardware, validated broadcaster sources, secure backends and per-user authorization. The TV receiver cannot be treated as a general radio SDR, and an active television recording must not be interrupted by a scan.
+
+See the [project license](../LICENSE): original Tihulu work is **GNU AGPL version 3.0 only**; third-party content and software retain their own licenses.
+
 ## Upcoming user-requested functional scopes
 
 ### 1. Region & Broadcast Manager
