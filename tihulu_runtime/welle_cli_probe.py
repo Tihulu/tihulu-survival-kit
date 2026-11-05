@@ -33,7 +33,8 @@ MAX_LABEL_LENGTH = 96
 # cannot trigger unintended ALSA playback when listing real services.
 UNPLAYABLE_SERVICE_NAME = "TIHULU_SCAN_DO_NOT_PLAY_ANY_RADIO_SERVICE_0123456789"
 SERVICE_LINE = re.compile(
-    r"^\s*\[0x([0-9a-fA-F]{1,8})\]\s+(.+?)(?:\s+\[component\b|$)")
+    r"^\s*\[0x([0-9a-fA-F]{1,8})\]\s+(.+?)\s+\[component\b[^\]]*"
+    r"\bASCTy:\s*(DAB\+|DAB)(?=\s|\])")
 DAB_SERVICE_ID = re.compile(r"^0x[0-9a-fA-F]{1,8}$")
 
 
