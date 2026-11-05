@@ -1,6 +1,7 @@
 """No network calls: verify remote endpoint policy and Ollama/OpenAI adapters."""
 import unittest
-from tihulu_runtime.ai_remote import RemoteAIClient, RemoteAIError, RemoteEndpoint
+from unittest.mock import patch
+from tihulu_runtime.ai_remote import RemoteAIClient, RemoteAIError, RemoteEndpoint, _private_host
 
 
 class Fake(RemoteAIClient):
@@ -40,6 +41,23 @@ class RemoteTests(unittest.TestCase):
             })
             self.assertEqual(client.list_models(), ('model-a',))
             self.assertEqual(client.generate(model='model-a', prompt='Question'), 'Answer')
+
+    @patch('tihulu_runtime.ai_remote.socket.getaddrinfo')
+    def test_public_remote_address_refused(self, lookup):
+        lookup.return_value = [(2, 1, 6, '', ('8.8.8.8', 0))]
+        with self.assertRaises(RemoteAIError):
+            _private_host('gpu.example.com')
+        lookup.return_value = [(2, 1, 6, '', ('100.100.100.100', 0))]
+        _private_host('gpu.tailnet.example')
+
+    def test_hailo_installable_models_separate_from_downloaded(self):
+        client = Fake(RemoteEndpoint('http://127.0.0.1:8000',
+                                     'hailo_ollama'), {
+            '/hailo/v1/list': {'models': ['qwen2:1.5b']},
+            '/api/tags': {'models': []},
+        })
+        self.assertEqual(client.list_installable_hailo_models(), ('qwen2:1.5b',))
+        self.assertEqual(client.list_models(), ())
 
     def test_secret_redaction_and_error_not_success(self):
         endpoint = RemoteEndpoint('https://gpu.local', 'ollama',
