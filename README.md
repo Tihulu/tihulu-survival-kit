@@ -1,175 +1,150 @@
 # Tihulu Survival Kit
 
-**Türkçe:** Raspberry Pi 5 için tasarlanan taşınabilir, **internet olmadan da kullanılabilen** bilgi, eğitim, harita, afet hazırlığı, yerel yapay zekâ ve radyo platformu.
-
-**English:** A planned portable, offline-first knowledge, learning, mapping, emergency-information, local AI and receive-only radio hub for Raspberry Pi 5 — accessible from phones, tablets and computers through a local browser.
+**Languages:** **English** · [Turkish](README.tr.md) · German *(planned)*
 
 > [!IMPORTANT]
-> **ÖNCE OKUYUN — Proje şu anda planlama/geliştirme hazırlığı aşamasında (5 Kasım 2026).** Henüz yayımlanmış, çalışan bir **Tihulu Core imajı, kurulum sihirbazı, web portalı veya doğrulanmış donanım kurulumu yoktur.** Bu README ve rehberler hedeflenen ürünü ve kurulumu açıklar; var olmayan kurulum komutları veya “çalışıyor” iddiaları içermez.
->
-> İlk açılış, Wi-Fi SSID, şifre, adresler ve sorun giderme için önce **[Başlangıç: Önce Bunları Bilin](docs/START_HERE_TR.md)** ve ardından **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** sayfalarını okuyun.
+> **Work in progress — November 5, 2026.** Tihulu is a planned offline-first Raspberry Pi 5 project. **There is no released Tihulu Core image, installer, working portal, or fully validated Raspberry Pi hardware setup.** A [draft development PR](https://github.com/Tihulu/tihulu-survival-kit/pull/1) contains experimental software, not a ready-to-install product.
 
-## Engineering development status (November 5, 2026)
+Tihulu Survival Kit aims to provide a **portable, modular, offline-first knowledge and survival-information hub** with education, navigation, on-device AI, radio, television, and local communication. Phones, tablets, and computers will access the installed services through a local browser, even when the internet is unavailable, subject to the content actually installed.
 
-**Main branch:** Planning documentation, user guides and [development/language guidelines](AGENTS.md). No installable Tihulu Core image, production portal, or validated Raspberry Pi appliance is available yet.
+## Development status
 
-**Experimental code:** [Draft PR #1 — On-Demand Window & Task Manager](https://github.com/Tihulu/tihulu-survival-kit/pull/1) contains a Python service/job policy prototype, an English standalone browser demo, unit tests and a candidate TV/radio text-network directory. Those are **not installed services**; automated unit-test success is not Pi hardware validation. See [Development Status](docs/DEVELOPMENT_STATUS.md) for pending modules, tuner and news-feed requirements.
-
-**Language:** GitHub engineering communication is English by preference; Turkish, German and English localized application or documentation content is welcome. Full multilingual README editions are planned separately.
-
-## İlk bilinmesi gerekenler / First-boot essentials
-
-| Konu | Planlanan değer / açıklama |
+| Component | Current status |
 |---|---|
-| **Tihulu'nun kendi Wi-Fi adı (SSID)** | **`Tihulu Kit`** |
-| **Wi-Fi şifresi** | **Cihaza özgü, kullanıcı tarafından oluşturulur**. Bu GitHub deposunda veya dağıtılan genel imajda *asla gerçek parola yayımlanmaz*. |
-| **Yönetici hesabı** | İlk güvenli kayıt sırasında oluşturulur; Wi-Fi şifresinden **farklı** tutulur. |
-| **Hotspot web adresi** | **`tihulu.lan`** (Pi kendi AP/DNS hizmeti kurulduğunda) |
-| **Hotspot yedek IP adresi** | **`10.10.10.10`** (yalnızca Pi hotspot'u için) |
-| **Modeme Ethernet veya ikinci USB Wi-Fi ile bağlı Pi** | **`tihulu.local`** (mDNS destekleniyorsa) veya router'ın Pi'ye verdiği **gerçek LAN IP** |
-| **Ev modeminde `tihulu.lan`** | Ancak modem/router'ın kendi DNS'inde alias/host kaydı varsa; **otomatik garanti edilmez** |
-| **Bilgisayara doğrudan Ethernet** | Pi'nin gerçek doğrudan Ethernet IP'si veya desteklenen `tihulu.local`; modem gerekmez |
-| **Tarayıcı kamera/GPS** | Gerçek kullanıcı izni **ve güvenilir HTTPS** gerekebilir; HTTP ile portal açılması bu özellikleri garanti etmez |
+| Public architecture and first-use guides | Documentation available on \`main\` |
+| Optional service manager, shared leases and task lifecycle | Experimental Python code and tests in [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) |
+| Running Applications / Window Manager | Standalone interactive demo; not a real device controller |
+| Germany/Turkey regions and political/news sources | Candidate data only; no live feed integrations |
+| Secure Pi image, first-run wizard, Wi-Fi hotspot and web portal | **Not yet released** |
+| AI inference, actual DVB TV/Teletext reception, radio decoding, official emergency alerts | **Not deployed or hardware-verified** |
 
-**`Tihulu Kit` ağını görmüyorsanız:** Raspberry Pi OS Lite'ı tek başına kurmak Tihulu hotspot'unu veya `tihulu.lan`'ı oluşturmaz. Önce gerçek Tihulu Core imajı/installer'ın yayımlanmış olması gerekir. Şu anda böyle bir yayımlanmış sürüm yok.
+See [Engineering Development Status](docs/DEVELOPMENT_STATUS.md). Automated prototype unit-test success does **not** establish physical Pi or RF compatibility.
 
-**Network note (EN):** `tihulu.lan` is intended for the Pi-managed hotspot DNS; `tihulu.local` relies on mDNS/Avahi support. On a home router LAN or a direct computer Ethernet link, use the Pi's actual interface IP if name discovery fails. Never assume the hotspot IP is the router-assigned LAN IP.
+## First-use essentials (planned)
 
-## Nedir? / What is Tihulu?
-
-Tihulu Survival Kit; Raspberry Pi 5 + NVMe depolama üzerinde, yerel **Home** arayüzünü bir telefondan, tabletten veya bilgisayardan **tarayıcıyla** açmayı hedefler. Kullanıcı, internet bağlantısının olup olmamasına bağlı kalmadan *önceden yüklenmiş* arşivleri ve servisleri kullanabilmeli; internet varsa açık izinle seçili veri paketlerini yenileyebilmelidir.
-
-Proje şu kaynaklardan esinlenen/uyumluluk hedefleyen **modüler** bir yaklaşıma sahiptir:
-
-- [HAS Prepper Disk](https://github.com/schematrix/HAS_Prepper_Disk) ve [Internet-in-a-Box](https://github.com/iiab/iiab): survival kaynakları, çevrimdışı bilgi ve eğitim içeriğini koruma.
-- [Kiwix](https://www.kiwix.org/): tek paylaşılan Kiwix, **orijinal tam İngilizce ve Türkçe Wikipedia ZIM** arşivleri ve diğer seçilmiş içerikler.
-- [Kolibri](https://learningequality.org/kolibri/): tek paylaşılan Kolibri ve yerel eğitim kursları.
-- [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad): seçili yararlı araçları Pi ARM64 koşullarına uyarlama; x86-64 container'larını körlemesine kopyalamama.
-- [OpenStreetMap](https://www.openstreetmap.org/): gerçek çevrimdışı rota ağı ve geocoder ile harita.
-- Yerel GGUF modeller, paylaşılan OCR/ASR/Translator, izinli dosya arama, USB receive-only SDR deneyleri.
-
-Bu sistem bir **kamusal acil uyarı servisi, resmî afet uygulaması ya da profesyonel tıbbi cihaz yerine geçmez**. Kaynakların güncelliği ve gerçek çevrimdışı kapsam açıkça gösterilmelidir.
-
-## Donanım hedefi / Hardware target
-
-| Bileşen | Hedef |
+| Item | Planned configuration |
 |---|---|
-| Bilgisayar | Raspberry Pi 5, **8 GB RAM**, ARM64 |
-| Depolama | 1 TB NVMe, Pi 5 uyumlu M.2/PCIe HAT; örnek Acer FA100 |
-| Güç/soğutma | Uygun Pi 5 USB-C güç profili, aktif fan, test edilmiş batarya/powerbank (isteğe bağlı) |
-| Yerel ağ | Dahili Wi-Fi **Tihulu Kit** hotspot + Ethernet |
-| İsteğe bağlı uplink | İkinci USB Wi-Fi adaptörü ile ev router'ına/telefon hotspot'una bağlanma, Ethernet veya PC Internet Sharing |
-| Radyo | İsteğe bağlı alıcı-only USB SDR, anten/uygun frekans/mevzuat testleri |
-| Erişim | iOS/Android telefon, tablet, Windows/macOS/Linux bilgisayar — web tarayıcısı |
+| Local hotspot SSID | **Tihulu Kit** |
+| Wi-Fi passphrase | **Unique and owner-provisioned**, never publicly embedded |
+| Owner account | Created during secure setup, distinct from Wi-Fi credentials |
+| Hotspot hostname | **\`tihulu.lan\`**, when the Pi actually runs its own AP/DNS |
+| Hotspot fallback IP | **\`10.10.10.10\`**, intended for that hotspot only |
+| Pi connected to a home router | **\`tihulu.local\`** where mDNS works, or its actual router-assigned IP |
+| \`tihulu.lan\` on the home router | Requires a separate router DNS alias; **not automatic** |
+| Direct PC Ethernet | Actual link address of the Pi, with optional mDNS |
+| Camera/GPS access | Explicit user consent and a trusted HTTPS browser context where needed |
 
-**8 GB RAM sınırı önemlidir:** Kiwix/Kolibri, browser, OCR, yerel AI, haritalar ve radio aynı anda devreye gireceğinde sıra/bellek yönetimi gerekir. Performans verileri gerçek Pi 5 testlerinden önce doğrulanmış sayılmamalıdır.
+**Installing ordinary Raspberry Pi OS Lite does not create the Tihulu Wi-Fi network or portal.** These settings require a real future installer.
 
-## Kurulum / Installation
+The same authenticated Tihulu interface is intended to work across the Pi's own hotspot, a home router connected via Ethernet or **secondary USB Wi-Fi**, and a properly configured direct Ethernet cable to a PC. Windows ICS, macOS Internet Sharing or Linux NetworkManager can optionally share connectivity from a computer; a cable alone does not enable this. The router LAN will not automatically resolve \`tihulu.lan\`, and the hotspot fallback IP should not be mistaken for a router LAN address.
 
-**Bugün:** Bu depo henüz indirilebilir Tihulu imajı veya çalışan kurulum komutu içermiyor. Raspberry Pi OS Lite kurmak yalnızca işletim sistemini kurar; Tihulu Home'u, Guide'ı, hotspot'u veya uygulamaları getirmez. Güvenilir bir Tihulu sürümü yayımlandığında **[Releases](https://github.com/Tihulu/tihulu-survival-kit/releases)** ve gerçek doğrulanmış checksum'ları esas alınacak.
+Existing detailed guides are presently in Turkish: [First-start information](docs/START_HERE_TR.md), [Network and access](docs/NETWORK_ACCESS_TR.md).
 
-**Yayımlandığında hedeflenen akış:**
+## Hardware and energy targets
 
-1. **Tihulu Minimal Core**, **Full Offline** veya **Custom/Hybrid** imajını seçin; masaüstünde hazırlayanlar için **Complete Setup on PC** seçeneği.
-2. Doğrulanmış imajı [Raspberry Pi Imager](https://www.raspberrypi.com/software/) üzerinden **Use Custom** ile doğru NVMe diskine yazın. Yazma işlemi disk verilerini silebilir.
-3. NVMe'yi Raspberry Pi 5'e takıp açın. Core gerçekten kuruluysa **Tihulu Kit** Wi-Fi'si üzerinden veya Pi'nin modeme/PC'ye bağlı yerel Ethernet/USB Wi-Fi bağlantısından Tihulu'ya erişin.
-4. **Cihaza özgü** güvenli yönetici ve Wi-Fi parolasını kurun. Dil ve ülke/bölgeyi seçin.
-5. **Hızlı Kurulum**, **Adım adım (Next/Next)** ya da **Gelişmiş** modundan birini kullanın. Bir özet ekranında mevcut, indirilecek ve sonradan kurulacak uygulama/veri/model paketlerini görün; büyük indirmelere ayrıca izin verin.
-6. Güvenli Core tamamlandığında Home/Guide'a geçin; eksik olan gerçek Wikipedia, harita/rota ağı, kurs, Translator/OCR ve AI paketleri **Software & Update Center** üzerinden sonradan kurulabilir.
-
-**Ayrıntılı kurulum:** [docs/INSTALLATION_TR.md](docs/INSTALLATION_TR.md)
-
-## Bağlantı seçenekleri / Access paths
-
-```text
-                     TELEFON / TABLET / BİLGİSAYAR
-                                 |
-              +------------------+-------------------+
-              |                  |                   |
-         Tihulu Kit AP      EV MODEM/ROUTER     DOĞRUDAN PC KABLO
-              |                  |                   |
-          Pi dahili         Pi Ethernet veya      Pi Ethernet
-          Wi-Fi AP          2. USB Wi-Fi           arayüzü
-              |                  |                   |
-     tihulu.lan / IP      tihulu.local / IP      Link IP / .local
-              \_________________|___________________/
-                                 |
-                     Tihulu Home / Auth
-                                 |
-                     Aynı uygulama servisleri
-```
-
-Modeme veya ikinci USB Wi-Fi ile bağlanınca aynı ağdaki bilgisayar/telefonların **Tihulu Kit hotspot'una katılması gerekmez**. Pi'yi doğrudan PC Ethernet'e bağlamak da modem olmadan yerel portal erişimini hedefler. Windows ICS/macOS Internet Sharing/Linux NetworkManager ile PC'den Pi'ye internet paylaşımı **ayrı, kullanıcı kontrolündeki bir işlemdir**; kablo otomatik internet vermez.
-
-**[Tam ağ ve adres rehberi](docs/NETWORK_ACCESS_TR.md)**
-
-## Özellik kapsamı / Planned features
-
-| Alan | Planlanan özellikler |
+| Component | Planned or known status |
 |---|---|
-| **Offline bilgi** | HAS/IIAB işlevlerini koruma, tam orijinal EN+TR Wikipedia ZIM, Kiwix, survival/onarım/sağlık vb. koleksiyonlar |
-| **Eğitim** | Kolibri kursları, offline videolar/dersler, öğrenim ilerlemesi |
-| **Haritalar** | Bölge bazlı OSM; tiles yanında gerçek rota grafiği, geocoder/POI; izinli telefon GPS ile A→B yürüyüş/araç/bisiklet |
-| **Emergency** | Resmî kaynaklardan hedeflenen 24 ülke/bölge; yerel/ülke/global önemli filtre; orijinal uyarı ve zaman damgası |
-| **Radio** | İsteğe bağlı USB SDR FM/AM/LW/SW uygun kaynak alımı, gerçek orijinal ses kayıtları ve isteğe bağlı canlı altyazı |
-| **Local AI** | Light/Balanced/deneysel Maximum model sınıfları; Hugging Face GGUF kurulumu, izinli çoklu kaynak RAG, sohbet geçmişi/projeler |
-| **Translator/OCR** | Sayfa/PDF/belge çevirisi; **telefon kamerasıyla canlı OCR**, aralıklı tarama ve açık istekle Translator/AI |
-| **Browser** | Offline wiki/kurs/PDF ve normal tarayıcı işleri; Çince/başka dilde önce çevir, sonra kaynaklı AI özet/soru-cevap |
-| **Files/Office/Media** | NVMe ve USB, izinli Nextcloud/WebDAV, PDF, Office belgeleri, müzik/video/SRT-VTT altyazı |
-| **Sistem araçları** | FlatNotes, CyberChef adayları; Service/Startup/Energy, RAM/swap/Storage Manager; ortak Update Center |
-| **Kurulum/Guide** | Hızlı/Next/Advanced, yerel dil/region seçimleri, telefon üzerinden kullanım, şifre/ağ rehberi, imaj oluşturma |
+| Main computer | **Raspberry Pi 5, 8 GB RAM, ARM64** |
+| Storage | Approximately **1 TB NVMe** using a Pi 5-compatible PCIe/M.2 HAT |
+| Power/cooling | Appropriate Pi 5 supply capability (**5 V / 5 A** target), active cooling and a tested powerbank |
+| Network interfaces | Built-in Wi-Fi as a local AP, Ethernet, optional second USB Wi-Fi client |
+| SDR radio receiver | Separate receive-only USB SDR candidate; **not confirmed purchased** |
+| DVB television | **Hauppauge WinTV-soloHD 01589 European model**, USB **DVB-T/T2/C**, **reported purchased** (Amazon ASIN \`B0152XLPFS\`) |
+| TV antenna | User reports it purchased/ordered; arrival and specific included accessories not verified |
+| Clients | iOS, Android, Windows, Linux and macOS browsers |
 
-Bunlar **uygulandı** listesi değil, **hedeflenen özelliklerdir**. Daha kapsamlı tablo, bağımlılıklar ve veri güvenliği: **[Özellikler ve Sistem Mimarisi](docs/FEATURES_AND_ARCHITECTURE_TR.md)**.
+A DVB-T2 TV tuner **is not** a general-purpose FM/DAB SDR, LoRa or packet-radio transmitter, or DVB-S/S2 satellite receiver. Pi5 ARM64 kernel/firmware support, actual signal lock, and H.265/HEVC playback still require real tests.
 
-## Telefon kamerasıyla canlı OCR / Live camera OCR
+The Pi's **8 GB RAM** and shared power budget limit simultaneous large AI models, speech tasks, tuner operation, NVMe, networking and video processing. Battery life and thermal limits cannot be inferred from advertised product figures.
 
-Yeni planlanan **Canlı OCR** akışı:
+## Installation — not available yet
 
-**Kamera izni iste → Ön/arka kamera ve metin alanı seç → Canlı görüntüden kontrollü aralıklarla OCR → Düzenle/kopyala → İstersen Çevir/AI'a Sor → Kaydet veya durdur.**
+When Tihulu Core is implemented, the intended installation experience is:
 
-- Telefon/masaüstü kamerasını **Tihulu sunucusu otomatik açamaz**. İzin her istemci cihazda ve tarayıcıda gerekir.
-- Kamera akışı ve kareler **varsayılan olarak kalıcı kayıt değildir**. İşlem/aktarılacak kare/dosya/retention açıkça gösterilir; kayıt ayrıca istenir.
-- Çince gibi kurulu OCR/Translator paketi yoksa hata dürüstçe gösterilir, uydurma çeviri/özet yapılmaz.
-- **Güvenilir HTTPS** gereklidir; yerel HTTP veya tarayıcının güvenmediği bir sertifika kamera/konum API'larını engelleyebilir.
-- **Mobil:** `Dosya Seç`, galeriden seçim, fotoğraf çek veya canlı kamera; **masaüstü:** drag-and-drop ve dosya seçici; ayrıca desteklenen izinli webcam.
-- OCR, Translator ve LLM **Hard ON ve kuruluysa** kullanıcı eylemiyle açılıp iş bitince RAM'i bırakır; **Hard OFF** için “Yalnızca bu işlem / Kalıcı aç / Açma” uyarısı.
+1. Select a vetted **Minimal Core**, **Full Offline**, or **Custom/Hybrid** image, with an optional PC preparation workflow.
+2. Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to write the verified image to the correct NVMe device. **Imaging can erase the selected disk.**
+3. Boot the Pi, connect to the configured hotspot or an allowed local network, and create secure owner credentials.
+4. Choose preferred interface language **independently** from country/region.
+5. Use **Quick Setup**, a conventional Next/Back flow, or **Advanced Settings** with real download sizes and permission prompts.
+6. Install missing Wikipedia ZIM archives, courses, maps, AI/translation models or optional modules later through the planned Update Center.
 
-**[Canlı OCR ve tüm cihaz izinleri rehberi](docs/LIVE_OCR_AND_PERMISSIONS_TR.md)**
+There is **no functional installer, image, or verified download checksum** currently offered here. Future releases must be published under [GitHub Releases](https://github.com/Tihulu/tihulu-survival-kit/releases). Detailed preliminary [Installation Guide (Turkish)](docs/INSTALLATION_TR.md).
 
-## Offline, güvenlik ve veri koruma / Security & privacy
+## Planned applications
 
-- Yerel sistem ve yayınların **çalışması için dış internete sürekli bağlantı zorunlu olmayacak**; eksik paketlerin sonradan indirilmeleri gerekir.
-- Yerel Wi-Fi şifresi, yönetici parolası, sertifika anahtarları, cihaz konumu, özel dosyalar ve üçüncü taraf API tokenları **bu açık GitHub deposuna yazılmaz**. Public README kişisel şifre göstermez.
-- Kullanıcı **kamera, mikrofon, geolocation, Dosya Seç, NVMe/USB indeksleme, WAN/cellular data, üçüncü taraf AI/API, dosya yükleme ve original audio recording** için ayrı izin/veri kullanımı görür.
-- Başka bilgisayarın veya telefonun tüm diskini tarayıcıdan sessizce tarama mümkün/izinli değildir; yalnızca seçilen/sürüklenen dosyalar işlenir.
-- Ev LAN erişimi **internet üzerinden kamusal erişim** değildir. Yönetici girişi her linkte gerekir, otomatik port-forward/UPnP yok.
-- Emergency Master kapatılırsa yeni uyarı alınmayabilir; var olan orijinal resmî metin/kayıtları koruma ve STALE ibaresi gerekir.
-- İlk kurulumda **unique credentials, trustable HTTPS ve installer checksums** uygulanmadan güvenli dağıtım ilan edilmeyecek.
-
-## Durum, yol haritası ve testler / Project status
-
-**Current public implementation status:** planning and documentation. **No deployable Tihulu image, installer, Home/Guide app, live OCR, LLM, radio stack or passing Raspberry Pi integration tests have been published.**
-
-Geliştirme hedefleri: önce boot/NVMe/core/first-owner/AP/HTTPS, sonra ortak uygulama/servis kataloğu ve basit web arayüzü, gerçek offline HAS/Kiwix/Kolibri, bölgesel maps/routing, resmi kaynak Emergency, sonra yerel LLM/RAG, OCR/Translator/ASR, dosyalar/Office/media/radio ve full uçtan uca test. Her modül yayımlandığında uygulandı/test edildi/deneysel/planlandı olarak işaretlenmeli.
-
-Test koşulları: **Pi 5 8GB RAM/ısı/batarya**, Ethernet modem ve doğrudan PC, ikinci USB Wi-Fi, Android/iPhone Safari/Chrome ve PC tarayıcıları, HTTPS secure origin ve yerel DNS/mDNS, gerçek ZIM/rota paketi, kamera canlı OCR hız/izin/dil, güvenli model bellek tahsisi, SDR gerçek alım/ses kaydı ve kullanıcı verisinin korunması.
-
-## Rehberler / Documentation
-
-| Belge | İçerik |
+| Module | Intended functionality |
 |---|---|
-| **[Önce Bunları Bilin](docs/START_HERE_TR.md)** | İlk açılış; `Tihulu Kit`, şifre, `tihulu.lan`, `tihulu.local`, acil sorun giderme |
-| **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** | Donanım, NVMe imaj, Raspberry Pi Imager, Hızlı/Standart/Gelişmiş, internet/eksik paketler |
-| **[Ağ ve Erişim](docs/NETWORK_ACCESS_TR.md)** | Hotspot, Ethernet modem, ikinci USB Wi-Fi, doğrudan PC, ICS, mDNS, SSL, IP |
-| **[Canlı Kamera OCR ve İzinler](docs/LIVE_OCR_AND_PERMISSIONS_TR.md)** | Kamera canlı OCR, dosya seçme, drag-drop, saklama/izin, Translator/AI, HTTPS |
-| **[Özellikler ve Mimari](docs/FEATURES_AND_ARCHITECTURE_TR.md)** | Tüm planlanan modüller, teknik kısıtlar, kaynaklar, güvenlik ve geliştirme testi |
+| **Offline Knowledge** | Original English/Turkish Wikipedia ZIM archives, Kiwix and existing HAS/IIAB reference and preparedness materials |
+| **Learning** | Kolibri courses and educational media |
+| **Offline Maps** | Regional OSM map tiles, actual routing graphs/geocoder, optional user-authorized phone GPS |
+| **Emergency Center** | Time-stamped official-source alerts by region, explicit monitoring controls and preserved original recordings |
+| **Local AI** | On-device GGUF model profiles, consent-based file/RAG search, chats and cancellable jobs |
+| **Translator, OCR, ASR/TTS** | Shared on-demand language workers, optional live phone-camera OCR and timed subtitles |
+| **Browser** | Ordinary browsing/PDF support plus offline wiki/courses; translate non-supported languages before optional grounded AI analysis |
+| **Files / Office / Media** | NVMe and USB, permissioned Nextcloud/WebDAV, Office/PDF and media playback |
+| **TV Center** | Country/region channel lists, owner-added channels, DVB auto/manual scanning, recorded/live subtitles, EPG and Teletext |
+| **Radio / Text Data** | Optional SDR radio, FM RDS/RadioText, DAB+ DLS/Journaline, and documented APRS candidate reception |
+| **Message Networks** | Optional local offline Wi-Fi BBS/forum and separate, lawful Meshtastic or packet-radio interfaces with compatible hardware |
+| **News & Politics** | User-selected mainstream, independent, public, opposition and party-published sources in Germany/Turkey, plus worldwide verified public political accounts |
+| **Daily Discovery** | Sourced daily article/fact, survival tip, dictionary word, profanity/slang definition and offline Wikipedia A-to-B link challenge |
+| **Service & Update Center** | Install/refresh options, per-app Hard/Background/Startup policies, memory-conscious scheduling and safe stop controls |
 
-## Katkı ve kaynak hakları / Contributions & licensing
+**These are planned capabilities, not a list of installed applications.** The architecture may incorporate selected capabilities from [HAS Prepper Disk](https://github.com/schematrix/HAS_Prepper_Disk), [Internet-in-a-Box](https://github.com/iiab/iiab), [Kiwix](https://www.kiwix.org/), [Kolibri](https://learningequality.org/kolibri/), [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) and [OpenStreetMap](https://www.openstreetmap.org/). Their actual packaging, ARM64 support, attribution and licenses must be checked separately.
 
-Proje açık kaynaklı ekosistemlerden yararlanmayı hedefler; ancak bu depoda **şu anda yayımlanmış bir Tihulu uygulama lisansı veya lisanslanmış uygulama kodu bulunduğunu varsaymayın**. Her üçüncü taraf bileşenin kendi lisansı, kaynak/attribution ve redistribüsyon koşulları ayrıca doğrulanmalıdır. Kaynak isimleri burada teknik bağlam ve atıf içindir, bütün projelerin bu depoya kopyalandığı anlamına gelmez.
+## Background tasks, memory and app management
 
-Katkı yapmak isteyenler, önce bu README'deki “planned vs implemented” ayrımını ve rehberleri okuyup [Issues](https://github.com/Tihulu/tihulu-survival-kit/issues) üzerinden uygulanabilir öneri/hata raporu paylaşabilir; **gerçek Wi-Fi şifresi, erişim tokeni, özel konum ve kişisel dosyalar paylaşılmamalıdır**.
+**Running Applications / Task Center** is planned as a browser-based manager, not a replacement for the Linux desktop window manager. Users should be able to multi-select optional apps, open or close views, change **Hard Enabled / Background Enabled / Start at Boot**, and see real CPU/RAM use once instrumentation exists.
+
+Closing a browser tab **must not cancel an authorized server-owned TV/radio recording, file transfer, or long AI task**. A real stop action must request cancellation, wait for safe backend finalization, and only then display **Stopped**. Core network/authentication/storage services and consented Emergency monitoring receive additional protection.
+
+Common Translator/ASR/AI workers should share one backend instance with task leases, using RAM only when needed. **News background fetching is OFF by default**. A user may enable bounded scheduled updates; the intended local article/social cache expires **24 hours after publication** with a **30 MB target limit**, never deleting original media recordings, forum posts or personal files. Those cache and scheduler features are **not implemented** by the current data files.
+
+An experimental [task/service management prototype](https://github.com/Tihulu/tihulu-survival-kit/pull/1) and its tests exist in a draft branch.
+
+## Regional television, Teletext and radio messaging
+
+The proposed **Region Manager** starts with all **16 German federal states** and **81 Turkish provinces**. Country, region, language, frequency and saved channel profiles are independent. A channel's official website or directory presence does **not** prove terrestrial DVB reception or an authorized embeddable live stream.
+
+The purchased TV receiver may carry ARD Text, ZDFtext, TRT TELEGUN, EPG and DVB subtitles **only where the tuned real broadcast includes these services**. Teletext is **one-way**, so users cannot reply over the same TV receiver.
+
+A separate radio/SDR receiver and suitable antenna are necessary for FM RDS/DAB text or APRS reception. **Two-way** CB/ham packet BBS, Meshtastic or Winlink require suitable transmitting hardware, network coverage and relevant authorization. A future **Tihulu Local BBS** would support authenticated LAN-only messages without RF transmit hardware.
+
+News catalog candidates include public broadcasters, critical/opposition and independent journalism, mainstream organizations, and political party self-publications across the spectrum. Public statements by politicians are not the same as verified journalism. Real account handles, APIs and streaming availability must be checked before enabling feeds.
+
+## Browser camera OCR, safety and privacy
+
+The intended OCR workflow is **request permission → choose a camera or text area → read selected frames → inspect/copy → optionally translate/ask AI → save or stop**. A Tihulu server cannot silently access a user's phone/desktop camera or full local disk. Camera/geolocation may require trusted HTTPS; video frames are not stored permanently by default. Unsupported OCR/translation languages must show accurate missing-package states.
+
+No real Wi-Fi password, TLS key, API token, private source file, personal location or account secret should be committed. Local home-network reachability is not public internet access; owner authentication, device permissions and scoped file access are still needed. Emergency content must have official source/time provenance and may go stale when monitoring is disabled.
+
+**Tihulu is not an official emergency-warning service, medical device, or substitute for emergency responders.**
+
+## Acceptance tests and release requirements
+
+An actual Tihulu release must first validate Raspberry Pi 5 boot from NVMe, hardware power/thermals, local HTTPS, hotspot and home-router networking, phone/PC browsers, real offline Wikipedia/course/map packages, camera permissions, concurrency, AI memory and cancellation, DVB/SDR reception, original audio/video preservation, user authorization, honest emergency timestamps and safe updates.
+
+See the [Development Status](docs/DEVELOPMENT_STATUS.md) for open work. Passing tests of prototype policy classes alone is **not** sufficient.
+
+## Documentation
+
+| Document | Language |
+|---|---|
+| [Engineering Development Status](docs/DEVELOPMENT_STATUS.md) | English |
+| [First-start essentials](docs/START_HERE_TR.md) | Turkish |
+| [Installation guide](docs/INSTALLATION_TR.md) | Turkish |
+| [Network access guide](docs/NETWORK_ACCESS_TR.md) | Turkish |
+| [Live OCR and device permissions](docs/LIVE_OCR_AND_PERMISSIONS_TR.md) | Turkish |
+| [Features and system architecture](docs/FEATURES_AND_ARCHITECTURE_TR.md) | Turkish |
+| [Development collaboration policy](AGENTS.md) | English by default for GitHub engineering, localized files welcome |
+
+The **English README is now the primary landing page**. The full earlier Turkish README is preserved as [README.tr.md](README.tr.md). A future German translation will be linked only once prepared.
+
+## Contributions and licensing
+
+Please use [GitHub Issues](https://github.com/Tihulu/tihulu-survival-kit/issues) for suggestions or technical reports; do not post private credentials, tokens, locations or files. GitHub engineering communication should generally be in **English**. Turkish and German documentation, translations and user-interface text are explicitly welcome.
+
+Third-party software and offline content have their own attribution and licensing requirements; the project does not claim that a complete redistributable Tihulu application or licensed appliance image has already been published.
 
 ---
 
-**Status summary / İngilizce:** Tihulu Survival Kit is **not yet released**. Target defaults: SSID **`Tihulu Kit`** (unique password, never published); AP URL **`tihulu.lan`** / **`10.10.10.10`**, home LAN **`tihulu.local`** when mDNS works or the Pi's actual IP. Planned interfaces include Ethernet to router **or directly to a computer**, second USB Wi-Fi to router, optional host internet sharing, and user-authorized phone **live camera OCR**. All are **design goals requiring implementation and tests**. See the linked installation and security guides.
+**Release status: NOT RELEASED.** Documentation and an experimental draft branch exist; Pi hardware integration and production deployment remain outstanding.
