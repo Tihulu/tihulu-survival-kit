@@ -175,6 +175,20 @@ class TestManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             ServiceManager([Module("core_hotspot", installed=True)], Fake())
 
+    def test_emergency_not_bypassable_via_general_policy(self):
+        with self.assertRaises(Blocked):
+            self.s.set_policy("emergency_monitor", hard=True, owner_verified=True)
+        with self.assertRaises(Blocked):
+            self.s.acquire("emergency_monitor", task_id="e", owner_id="alice")
+
+    def test_startup_enabled_app_may_start_disabled_startup_dependency(self):
+        self.s.set_policy("captions", startup=True, owner_verified=True)
+        self.s.acquire("captions", task_id="startup-captions",
+                       owner_id="system", mode="startup")
+        self.assertIn("asr", self.fake.running)
+        self.assertFalse(self.s.policies["asr"].startup)
+        self.s.release("startup-captions", owner_id="system")
+
     def test_only_allowlisted_units(self):
         with self.assertRaises(ValueError):
             UserSystemdAdapter({"bad": "NetworkManager.service"})
