@@ -93,7 +93,7 @@ def evaluate_smoke_admission(observation: HostObservation, *,
                               if type(protected) is int and protected >= 0 else 0,
                               other_ai_jobs=other_ai
                               if type(other_ai) is int and other_ai >= 0 else 0)
-    if not owner_confirmed:
+    if owner_confirmed is not True:
         return verdict("owner_consent_required")
     if not isinstance(stage4_service, dict) or not stage4_service.get("installed"):
         return verdict("optional_ai_not_installed")
@@ -110,7 +110,7 @@ def evaluate_smoke_admission(observation: HostObservation, *,
         return verdict("another_ai_task_running")
     if not measured_memory or not measured_temperature:
         return verdict("resource_metrics_unavailable")
-    if not power_source_verified:
+    if power_source_verified is not True:
         return verdict("power_source_unverified")
     if (type(model_expected_peak_bytes) is not int or model_expected_peak_bytes <= 0 or
             type(reserve_bytes) is not int or reserve_bytes < MIN_RESERVE_BYTES):
