@@ -78,8 +78,11 @@ class FlightRadarWSGI:
                 if self.tar1090.installed():
                     return self._redirect(start_response, "/flight-radar/map",
                                           environ.get("QUERY_STRING", ""))
-                return self._send_static(start_response, "flight_radar.html",
-                                         "text/html; charset=utf-8")
+                return self._redirect(start_response, "/flight-radar/light-map",
+                                      "full_map_unavailable=1")
+            if method == "GET" and path == "/flight-radar/tar1090":
+                return self._redirect(start_response, PREFIX,
+                                      environ.get("QUERY_STRING", ""))
             if method == "GET" and path == "/flight-radar/map":
                 if self.tar1090.installed():
                     query = environ.get("QUERY_STRING", "")
