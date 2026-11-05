@@ -286,6 +286,40 @@ class LocalHttpGatewayTests(unittest.TestCase):
         self.assertEqual(status,200)
         self.assertEqual(json.loads(contents)["profiles"],[])
 
+    def test_independent_http_clients_pair_relay_and_ack_without_media(self):
+        # Each fetch uses its own HTTP client connection; display and remote
+        # exchange data only through the server, never BroadcastChannel.
+        status,body,_=self.fetch("/api/display/register",method="POST",
+                    body={"medium":"tv"},token=OWNER)
+        self.assertEqual(status,201)
+        screen=json.loads(body)
+        status,body,_=self.fetch("/api/remote/pair",method="POST",
+                                 body={"code":screen["pairing_code"]})
+        self.assertEqual(status,201)
+        phone=json.loads(body)
+        status,body,_=self.fetch("/api/remote/send",method="POST",
+                    token=phone["remote_token"],body={"action":"mute"})
+        self.assertEqual(status,202)
+        pending=json.loads(body)
+        self.assertEqual(pending["state"],"pending")
+        status,body,_=self.fetch("/api/display/poll",token=screen["display_token"])
+        self.assertEqual(status,200)
+        delivered=json.loads(body)["commands"]
+        self.assertEqual(len(delivered),1)
+        self.assertEqual(delivered[0]["action"],"mute")
+        status,body,_=self.fetch("/api/display/ack",method="POST",
+              token=screen["display_token"],body={
+                "command_id":pending["command_id"],"accepted":True})
+        self.assertEqual(status,200)
+        self.assertEqual(json.loads(body)["state"],"display_received")
+        status,body,_=self.fetch("/api/remote/status?command_id="+
+              pending["command_id"],token=phone["remote_token"])
+        self.assertEqual(status,200)
+        self.assertEqual(json.loads(body)["state"],"display_received")
+        self.assertNotIn("media_player",json.loads(body))
+        status,_,_=self.fetch("/api/display/poll",token=phone["remote_token"])
+        self.assertEqual(status,403)
+
     def test_request_size_and_browser_origin_checks(self):
         status,_,_=self.fetch("/api/profiles",method="POST",body={"label":"x"},
              token=OWNER,headers={"Origin":"http://evil.example"})
