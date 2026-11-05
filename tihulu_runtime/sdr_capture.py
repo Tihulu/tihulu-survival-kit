@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock
+from typing import Callable
 import fcntl
 import hashlib
 import os
@@ -233,7 +234,9 @@ class ManagedSdrScan:
     def scan(self, receiver: Receiver, points: tuple[TunePoint, ...], *,
              owner_id: str, job_id: str, backend: ReceiverBackend | None,
              user_triggered: bool = False,
-             grant_token: str | None = None) -> tuple[ScanRecord, ...]:
+             grant_token: str | None = None,
+             on_progress: Callable[[ScanRecord, int, int], None] | None = None,
+             should_cancel: Callable[[], bool] | None = None) -> tuple[ScanRecord, ...]:
         if not user_triggered:
             raise PermissionError("No implicit RF scan or background sweep")
         if not owner_id or not job_id:
@@ -255,8 +258,22 @@ class ManagedSdrScan:
         lock = SdrCooperativeLock(receiver.receiver_id, root=self.lock_root)
         try:
             lock.acquire()
-            return self.explorer.scan(receiver, points, user_triggered=True,
-                                      backend=backend)
+            if on_progress is None and should_cancel is None:
+                return self.explorer.scan(receiver, points, user_triggered=True,
+                                          backend=backend)
+            # All probes share ONE lease and ONE physical-frequency lock.
+            # Check cancellation between decoder probes; the backend must
+            # independently enforce a bounded per-frequency timeout.
+            results: list[ScanRecord] = []
+            for point in points:
+                if should_cancel is not None and should_cancel():
+                    break
+                reading = self.explorer.scan(receiver, (point,),
+                                             user_triggered=True, backend=backend)[0]
+                results.append(reading)
+                if on_progress is not None:
+                    on_progress(reading, len(results), len(points))
+            return tuple(results)
         finally:
             # A batch holds one physical lock, not one unlock/retune per point.
             lock.release()
