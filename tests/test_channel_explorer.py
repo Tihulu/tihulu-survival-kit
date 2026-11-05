@@ -44,6 +44,17 @@ class ChannelExplorerTests(unittest.TestCase):
         self.assertTrue(wdr.source.startswith("https://"))
         self.assertEqual(self.library.presets["tr_izmir_radyo1"].frequency_hz,94700000)
 
+    def test_full_dab_raster_uses_nonuniform_channel_spacing(self):
+        points=self.library.channel_group_points("dab_band_iii")
+        self.assertEqual(len(points),32)
+        self.assertEqual(points[0].frequency_hz,174928000)
+        self.assertEqual(points[2].frequency_hz,178352000)
+        self.assertEqual(points[16].frequency_hz,202928000)
+        self.assertEqual(points[27].frequency_hz,222064000)
+        self.assertEqual(points[-1].frequency_hz,229072000)
+        self.assertNotEqual(points[4].frequency_hz-points[3].frequency_hz,
+                            points[3].frequency_hz-points[2].frequency_hz)
+
     def test_no_implicit_scan_and_missing_receiver(self):
         with self.assertRaises(PermissionError):
             self.exp.scan(self.dvb,(TunePoint("dvb_t2",514000000),),backend=self.backend)
