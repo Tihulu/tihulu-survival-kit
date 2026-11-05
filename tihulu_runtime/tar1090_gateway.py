@@ -106,6 +106,52 @@ class Tar1090Gateway:
                 raise
             raise Tar1090Unavailable("tar1090 asset is unavailable.") from exc
 
+    def initial_aircraft_focus(self) -> str | None:
+        """Select a FRESH actual local ADS-B ICAO, never a fabricated marker.
+
+        Only uses trusted readsb snapshots. Browser GPS may take precedence in
+        tar1090 itself if permitted; it is not readable by this server.
+        When receiver.json lacks real coordinates, Germany is a *selection
+        heuristic only*, never a claimed receiver position.
+        """
+        if self.paths.data is None:
+            return None
+        from .flight_radar_sources import read_local_readsb, SourceUnavailable
+        from .flight_radar_model import real
+        import json
+        import math
+        import time
+
+        try:
+            aircraft = read_local_readsb(self.paths.data / "aircraft.json")
+        except (SourceUnavailable, OSError):
+            return None
+        now = time.time()
+        positioned = [a for a in aircraft if a.icao and a.located(now)]
+        if not positioned:
+            return None
+        reference = (51.1657, 10.4515)
+        try:
+            raw = self._safe(self.paths.data, "receiver.json",
+                             max_bytes=128 * 1024)
+            receiver = json.loads(raw)
+            lat = real(receiver.get("lat"), -90, 90)
+            lon = real(receiver.get("lon"), -180, 180)
+            if lat is not None and lon is not None:
+                reference = (lat, lon)
+        except (Tar1090Unavailable, ValueError, AttributeError, TypeError):
+            pass
+
+        def distance(a):
+            lat1, lon1 = (math.radians(x) for x in reference)
+            lat2, lon2 = math.radians(a.latitude), math.radians(a.longitude)
+            h = (math.sin((lat2 - lat1) / 2) ** 2
+                 + math.cos(lat1) * math.cos(lat2)
+                 * math.sin((lon2 - lon1) / 2) ** 2)
+            return 2 * math.asin(min(1.0, math.sqrt(max(0.0, h))))
+
+        return min(positioned, key=distance).icao
+
     def asset(self, path: str) -> TarAsset:
         """Return an installed tar1090 resource with upstream relative URLs.
 
