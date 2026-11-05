@@ -48,6 +48,8 @@ jobs:
           assert '<html lang="en">' in p
           assert "Flight Radar Center" in p
           assert "Start session" in p
-          assert "No location is assumed" in p
+          assert "Germany fallback viewport" in p
+          assert "Full tar1090 map" in p
+          assert "Lightweight map" in p
           print("Flight Radar page contract passed")
           PY
