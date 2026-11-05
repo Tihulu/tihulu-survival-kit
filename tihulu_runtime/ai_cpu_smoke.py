@@ -12,9 +12,12 @@ from pathlib import Path
 import os
 import re
 import shutil
+import signal
+import selectors
 import stat
 import subprocess
 import time
+from threading import Event
 
 MARKER = "TIHULU_CPU_OK"
 PROMPT = f"Reply with exactly {MARKER} and nothing else."
@@ -62,6 +65,89 @@ def _runner_binary(binary: str | Path | None) -> str | None:
     return str(path)
 
 
+
+def _stop_process_group(process: subprocess.Popen) -> bool:
+    """Terminate the entire Linux session and wait for the direct child."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=1.5)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=1.5)
+        except subprocess.TimeoutExpired:
+            return False
+    return process.poll() is not None
+
+
+def _execute_cancellable(
+    argv: list[str], env: dict[str, str], timeout_seconds: int, cancel_event: Event
+) -> tuple[str, bool]:
+    """Linux process-group cancellation; fixed-size stdout and no saved raw text."""
+    if cancel_event.is_set():
+        return "cancelled", False
+    try:
+        process = subprocess.Popen(
+            argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            start_new_session=True, shell=False)
+    except OSError:
+        return "runner_failed_to_start", False
+    output = bytearray()
+    deadline = time.monotonic() + timeout_seconds
+    status = "runner_failed"
+    try:
+        with selectors.DefaultSelector() as selected:
+            assert process.stdout is not None
+            selected.register(process.stdout, selectors.EVENT_READ)
+            stdout_closed = False
+            while True:
+                if cancel_event.is_set():
+                    status = "cancelled" if _stop_process_group(process) else "termination_unconfirmed"
+                    break
+                if time.monotonic() >= deadline:
+                    status = "timed_out" if _stop_process_group(process) else "termination_unconfirmed"
+                    break
+                overflow = False
+                for key, _ in selected.select(timeout=0.1):
+                    chunk = os.read(key.fd, 4096)
+                    if not chunk:
+                        selected.unregister(key.fileobj)
+                        stdout_closed = True
+                    else:
+                        if len(output) + len(chunk) > 8192:
+                            status = ("output_limit_exceeded" if _stop_process_group(process)
+                                      else "termination_unconfirmed")
+                            overflow = True
+                            break
+                        output.extend(chunk)
+                if overflow:
+                    break
+                if process.poll() is not None and stdout_closed:
+                    if process.returncode != 0:
+                        status = "runner_failed"
+                    elif MARKER.encode("ascii") in output:
+                        status = "marker_observed"
+                    else:
+                        status = "generation_unverified"
+                    break
+    except OSError:
+        status = "runner_failed"
+    finally:
+        if process.poll() is None:
+            if not _stop_process_group(process):
+                status = "termination_unconfirmed"
+        if process.stdout is not None:
+            process.stdout.close()
+        output.clear()
+    return status, status == "marker_observed"
+
+
 def cpu_smoke_test(registry: object, model_id: str, *,
                    explicit_owner_consent: bool = False,
                    service_allowed: bool = False,
@@ -69,7 +155,8 @@ def cpu_smoke_test(registry: object, model_id: str, *,
                    runner: str | Path | None = None,
                    timeout_seconds: int = 90,
                    threads: int = 2,
-                   predict_tokens: int = 16) -> CpuSmokeResult:
+                   predict_tokens: int = 16,
+                   cancel_event: Event | None = None) -> CpuSmokeResult:
     """Run llama-cli with a fixed local GGUF path and CPU-only options.
 
     Registry must be *trusted and owner-scoped*. Its verified_path(model_id)
@@ -142,6 +229,11 @@ def cpu_smoke_test(registry: object, model_id: str, *,
             "--single-turn", "--no-display-prompt",
             "--no-show-timings", "--color", "off"]
     start = time.monotonic()
+    if cancel_event is not None:
+        status, marker = _execute_cancellable(argv, env, timeout_seconds, cancel_event)
+        return result(status, sha=sha, version=version,
+                      elapsed=round(time.monotonic() - start, 3), marker=marker)
+    # Legacy manual CLI: timeout-bounded, but does not advertise live cancellation.
     try:
         completed = subprocess.run(argv, env=env, capture_output=True,
                                    text=True, errors="replace",
@@ -156,8 +248,6 @@ def cpu_smoke_test(registry: object, model_id: str, *,
     if completed.returncode != 0:
         return result("runner_failed", sha=sha, version=version,
                       elapsed=elapsed)
-    # The --no-display-prompt option must be supported by the installed runner.
-    # This marker is a basic output observation, not a full semantic model test.
     marker = MARKER in completed.stdout
     return result("marker_observed" if marker else "generation_unverified",
                   sha=sha, version=version, elapsed=elapsed, marker=marker)
