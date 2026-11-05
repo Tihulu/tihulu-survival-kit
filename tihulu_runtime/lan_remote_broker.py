@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import hashlib
 import hmac
+import re
 import secrets
 from threading import RLock
 import time
@@ -21,6 +23,8 @@ MAX_PENDING = 64
 PAIR_TTL = 120
 SESSION_TTL = 3600
 DELIVERY_TTL = 180
+RETRY_AFTER_SECONDS = 5
+MAX_DELIVERY_ATTEMPTS = 3
 
 
 @dataclass
@@ -161,7 +165,8 @@ class LanRemoteBroker:
             return match
 
     def send(self, token: str, *, action: str, profile_id: str = "",
-             item_id: str = "") -> dict:
+             item_id: str = "", request_id: str = "") -> dict:
+        """Queue once per remote request ID, even when an HTTP response is lost."""
         with self._lock:
             remote = self.remote(token)
             if action not in COMMANDS:
@@ -170,35 +175,81 @@ class LanRemoteBroker:
                 raise ValueError("Select channel needs profile and item")
             if action in ("next_channel", "previous_channel") and not profile_id:
                 raise ValueError("Channel navigation needs profile")
+            if not isinstance(profile_id, str) or not isinstance(item_id, str):
+                raise ValueError("Identifiers must be strings")
             if len(profile_id) > 100 or len(item_id) > 100:
                 raise ValueError("Identifier exceeds length limit")
+            if not isinstance(request_id, str) or (
+                    request_id and re.fullmatch(r"[A-Za-z0-9_-]{12,80}", request_id) is None):
+                raise ValueError("Invalid idempotency request ID")
+            request_key = (hashlib.sha256(
+                (token + "\x00" + request_id).encode("utf-8")).hexdigest()
+                if request_id else "")
+            if request_key:
+                # Duplicate POST with the same remote token and request ID must
+                # never create a second volume/channel command.
+                for previous in self._commands.values():
+                    if previous.get("request_key") != request_key:
+                        continue
+                    if (previous["action"], previous["profile_id"],
+                            previous["item_id"]) != (action, profile_id, item_id):
+                        raise ValueError("Request ID reused with different command")
+                    return {"command_id": previous["command_id"],
+                            "state": previous["state"],
+                            "detail": "Existing browser command; not requeued"}
             queue = self._queues[remote.target_id]
-            if sum(self._commands.get(k, {}).get("state") == "pending" for k in queue) >= MAX_PENDING:
+            active_count = sum(
+                item["target_id"] == remote.target_id and item["state"] in (
+                    "pending", "delivered_unacknowledged")
+                for item in self._commands.values())
+            if active_count >= MAX_PENDING:
                 raise ValueError("Remote command queue full")
             identifier = secrets.token_urlsafe(18)
             item = {"command_id": identifier, "target_id": remote.target_id,
                     "owner": remote.owner, "action": action,
                     "profile_id": profile_id, "item_id": item_id,
-                    "state": "pending", "created_at": self.clock()}
+                    "state": "pending", "created_at": self.clock(),
+                    "last_delivery_at": None, "attempts": 0,
+                    "request_key": request_key}
             self._commands[identifier] = item
             queue.append(identifier)
             return {"command_id": identifier, "state": "pending",
                     "detail": "Queued for browser display, not tuned"}
 
     def poll(self, display_token: str) -> list[dict]:
+        """Retry unacknowledged commands with stable IDs; not at-most-once RF."""
         with self._lock:
             target = self.display(display_token)
-            pending = []
+            now = self.clock()
+            received: list[dict] = []
+            def deliver(item):
+                item["state"] = "delivered_unacknowledged"
+                item["last_delivery_at"] = now
+                item["attempts"] += 1
+                received.append({key:item[key] for key in (
+                    "command_id", "action", "profile_id", "item_id")})
+            unconfirmed = sorted((
+                item for item in self._commands.values()
+                if item["target_id"] == target.target_id and
+                item["state"] == "delivered_unacknowledged" and
+                item["last_delivery_at"] is not None and
+                now - item["last_delivery_at"] >= RETRY_AFTER_SECONDS),
+                key=lambda item: (item["last_delivery_at"], item["created_at"]))
+            for item in unconfirmed:
+                if item["attempts"] >= MAX_DELIVERY_ATTEMPTS:
+                    # Delivery outcome is unknown. Never claim media success,
+                    # and never keep retrying a potentially non-idempotent action.
+                    item["state"] = "delivery_uncertain"
+                elif len(received) < 32:
+                    deliver(item)
             queue = self._queues[target.target_id]
-            while queue and len(pending) < 32:
+            while queue and len(received) < 32:
                 identifier = queue.popleft()
                 item = self._commands.get(identifier)
                 if item is None or item["state"] != "pending":
                     continue
-                item["state"] = "delivered_unacknowledged"
-                pending.append({key:item[key] for key in
-                                ("command_id", "action", "profile_id", "item_id")})
-            return pending
+                deliver(item)
+            return received
 
     def acknowledge(self, display_token: str, command_id: str,
                     *, accepted: bool) -> dict:
@@ -207,12 +258,23 @@ class LanRemoteBroker:
             item = self._commands.get(command_id)
             if item is None or item["target_id"] != target.target_id:
                 raise KeyError("Command not present on this display")
-            if item["state"] != "delivered_unacknowledged":
-                raise ValueError("Command not pending display acknowledgement")
-            item["state"] = "display_received" if accepted else "display_rejected"
-            return {"command_id": command_id, "state": item["state"],
+            desired = "display_received" if accepted else "display_rejected"
+            if item["state"] == desired:
+                # HTTP response to a previous ACK may have been lost.
+                return {"command_id": command_id, "state": desired,
+                        "detail": "Browser acknowledgement already stored; no media playback"}
+            if item["state"] not in ("delivered_unacknowledged", "delivery_uncertain"):
+                raise ValueError("Command not awaiting display acknowledgement")
+            item["state"] = desired
+            return {"command_id": command_id, "state": desired,
                     "detail": "Browser acknowledgement only; no media playback"}
- 
+
+    def disconnect_remote(self, remote_token: str) -> None:
+        """Explicit paired-phone sign out, independent of display revocation."""
+        with self._lock:
+            self.remote(remote_token)
+            self._remotes.pop(remote_token, None)
+
     def status(self, remote_token: str, command_id: str) -> dict:
         with self._lock:
             remote = self.remote(remote_token)
