@@ -167,6 +167,8 @@ class ServiceManager:
         with self._lock:
             if module_id not in self.modules:
                 raise KeyError(module_id)
+            if module_id == "emergency_monitor":
+                raise Blocked("Use configure_emergency for explicit monitoring consent")
             old = self.policies[module_id]
             if hard is False and self._counts[module_id]:
                 raise Busy("Active tasks still hold this service")
@@ -238,7 +240,7 @@ class ServiceManager:
                 if mode == "background" and (
                         policy.background is not True or self.background_paused):
                     raise Blocked(name + ": background disabled")
-                if mode == "startup" and policy.startup is not True:
+                if mode == "startup" and name == module_id and policy.startup is not True:
                     raise Blocked(name + ": startup disabled")
             started: list[str] = []
             try:
@@ -313,7 +315,7 @@ class ServiceManager:
             return {name: {
                 "installed": module.installed,
                 "policy": asdict(self.policies[name]),
-                "runtime": "running" if name in self._running else "stopped",
+                "controller_state": "start_requested" if name in self._running else "stopped",
                 "active_tasks": self._counts[name],
                 "idle_stop_pending": name in self._deadlines,
             } for name, module in self.modules.items()}
