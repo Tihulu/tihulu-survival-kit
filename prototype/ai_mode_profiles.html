@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — AI Çalışma Modları (Prototip)</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0a0b0d;color:#eeeef0}
+*{box-sizing:border-box}body{margin:0;padding:24px 12px}main{max-width:610px;margin:auto}
+.panel{border:1px solid #36373d;border-radius:15px;background:#0d0e10;padding:18px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:1.12rem;margin:0}h2{font-size:1rem;margin:16px 0 8px}
+small,.muted{color:#b7b8be}small{font-size:.78rem}.muted{font-size:.89rem}
+.card{display:flex;gap:12px;align-items:flex-start;border:1px solid #313237;border-radius:11px;padding:13px;margin-top:9px;cursor:pointer}
+.card:has(input:checked){border-color:#a6adb9;background:#1c1d21}
+.card input{margin:4px 0;flex:none;width:19px;height:19px;accent-color:#ebebee}
+.card strong{display:block;margin-bottom:3px}.card small{display:block;line-height:1.5}
+hr{border:0;border-top:1px solid #2b2c32;margin:17px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0}
+.row input{width:19px;height:19px;accent-color:#eee}
+.status{border:1px solid #383940;background:#17181b;border-radius:10px;padding:13px;margin-top:12px;line-height:1.75}
+button{width:100%;margin-top:14px;border:0;border-radius:99px;min-height:43px;font:inherit;background:#eee;color:#18181c;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid #82b3ea;outline-offset:3px}
+.warning{font-size:.85rem;color:#dbb77c;margin:12px 0 0}
+@media(max-width:450px){.panel{padding:14px}.head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body><main>
+<section class="panel" aria-label="AI çalışma modu seçimi">
+<div class="head"><h1>AI Çalışma Modu</h1><small>Yerel kurulum — tasarım demosu</small></div>
+<p class="muted">Donanımına göre üç profil. Base modeli, HAT çıkarıldığında çevrimdışı kullanılabilir kalacak şekilde ayrıca saklanmalı.</p>
+<div role="radiogroup" aria-label="AI modları">
+<label class="card"><input type="radio" name="mode" value="Base"><span><strong>Base</strong><small>Pi CPU · küçük GGUF modeli · minimum servis yükü</small></span></label>
+<label class="card"><input type="radio" name="mode" value="Balanced"><span><strong>Balanced</strong><small>Uygun CPU modeli veya izin verilmiş HAT hızlandırması · dengeli kaynak kullanımı</small></span></label>
+<label class="card"><input type="radio" name="mode" value="Advanced"><span><strong>Advanced</strong><small>Doğrulanmış AI HAT+ 2 ve uyumlu Hailo modeli · daha kapsamlı işler</small></span></label>
+<label class="card"><input type="radio" name="mode" value="Auto" checked><span><strong>Auto</strong><small>İzin verilen en uygun profili seç · daha güçlü modele otomatik geçiş ayrı onay ister</small></span></label>
+</div>
+<hr>
+<h2>Örnek donanım durumu</h2>
+<p class="muted">Aşağıdaki kontroller yalnızca demodaki davranışı gösterir, bağlı bir Raspberry Pi'yi taramaz.</p>
+<label class="row"><span>AI HAT+ 2 mevcut ve doğrulanmış (simülasyon)</span><input id="hat" type="checkbox"></label>
+<label class="row"><span>Uyumlu Hailo modeli yüklü (simülasyon)</span><input id="hailo-model" type="checkbox"></label>
+<label class="row"><span>CPU Base modeli kullanılabilir (simülasyon)</span><input id="base" type="checkbox" checked></label>
+<label class="row"><span>Auto için Advanced geçişine önceden izin verildi</span><input id="auto" type="checkbox"></label>
+<div class="status" id="result" role="status" aria-live="polite"></div>
+<button type="button" id="apply">Simüle edilen profili göster</button>
+<p class="warning">Fiziksel AI HAT+ 2 çıkarmak için önce Raspberry Pi tamamen kapatılmalı ve güç kesilmelidir. PCIe NVMe sistem diski varsa ikinci açılış düzeni ayrıca test edilmelidir.</p>
+<p class="muted">Bu sayfa model indirmez, HAT'ı açıp kapatmaz, SSD taşımaz ve gerçek enerji tüketimini ölçmez. Gerçek uygulama önce model formatını, runtime'ı, PSU'yu ve disk erişimini doğrulayacaktır.</p>
+</section>
+</main>
+<script>
+"use strict";
+const el=id=>document.getElementById(id);
+function refresh(){
+  const preferred=document.querySelector('input[name="mode"]:checked').value;
+  const hat=el("hat").checked,ready=hat&&el("hailo-model").checked;
+  const base=el("base").checked,allowAuto=el("auto").checked;
+  let effective,reason;
+  if(preferred==="Base"||preferred==="Auto"&&!allowAuto){
+    effective=base?"Base (CPU)":"Yerel AI kullanılamıyor";
+    reason="HAT'tan bağımsız küçük CPU profili.";
+  }else if(preferred==="Auto"){
+    effective=ready?"Advanced (Hailo)":base?"Base (CPU)":"Yerel AI kullanılamıyor";
+    reason=ready?"Önceden onaylı Advanced otomatik seçildi.":"HAT veya model doğrulanmadı, CPU'ya geri dönüldü.";
+  }else if(preferred==="Balanced"){
+    effective=base?"Base / CPU Balanced adayı":"Yerel AI kullanılamıyor";
+    reason="Gerçek Balanced CPU/Hailo modeli ve enerji ölçümü burada doğrulanmadı.";
+  }else{
+    effective=ready?"Advanced (Hailo)":base?"Base (CPU)":"Yerel AI kullanılamıyor";
+    reason=ready?"Uyumlu Hailo modeli var kabul edildi.":"Advanced tercihi korunur; HAT/uyumlu model yoksa Base fallback.";
+  }
+  el("result").textContent="Tercih edilen: "+preferred+"\nEtkin (yalnızca demo): "+effective+"\n"+reason+
+   "\nEnerji: ölçülmedi · Gerçek kurulum: yapılmadı";
+  el("result").style.whiteSpace="pre-line";
+}
+document.querySelectorAll("input").forEach(x=>x.addEventListener("change",refresh));
+el("apply").addEventListener("click",refresh);refresh();
+</script>
+</body></html>
