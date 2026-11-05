@@ -70,10 +70,11 @@ class Tar1090Gateway:
     def installed(self) -> bool:
         """Assets installed does not mean a working decoder or RF messages."""
         root = self.paths.html
+        essential = ("index.html", "early.js", "defaults.js",
+                     "config.js", "script.js", "style.css",
+                     "libs/jquery-3.6.1.min.js")
         return (root.is_dir() and not root.is_symlink()
-                and (root / "index.html").is_file()
-                and (root / "defaults.js").is_file()
-                and (root / "script.js").is_file())
+                and all((root / item).is_file() for item in essential))
 
     @staticmethod
     def _safe(root: Path, relative: str, *, max_bytes: int) -> bytes:
