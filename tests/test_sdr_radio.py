@@ -215,6 +215,44 @@ class FmBackendTests(unittest.TestCase):
         self.assertEqual(broker.snapshot("sdr-1")["state"], "idle")
         stream.stop()
 
+    def test_protected_recording_does_not_terminate_worker_before_ack(self):
+        broker = SdrTunerBroker()
+        process = FakeProcess()
+        stream = RtlFmStream(broker, which=lambda _: "/usr/bin/rtl_fm",
+                             popen=lambda *a, **k: process)
+        stream.start(sdr(), frequency_hz=98_600_000,
+                     owner_id="alice", job_id="recording")
+        broker.mark_recording("sdr-1", owner_id="alice",
+                              job_id="recording", active=True)
+        with self.assertRaises(SdrBusy):
+            stream.stop()
+        self.assertFalse(process.terminated)
+        self.assertEqual(broker.snapshot("sdr-1")["state"],
+                         "reserved_not_signal_verified")
+        # In production the recorder must durably flush and ACK BEFORE this
+        # owner-authorized override. Here a synthetic ACK is exercised only.
+        stream.stop(recording_stop_confirmed=True)
+        self.assertTrue(process.terminated)
+        self.assertEqual(broker.snapshot("sdr-1")["state"], "idle")
+
+    def test_active_listener_prevents_worker_shutdown(self):
+        broker = SdrTunerBroker()
+        process = FakeProcess()
+        stream = RtlFmStream(broker, which=lambda _: "/usr/bin/rtl_fm",
+                             popen=lambda *a, **k: process)
+        stream.start(sdr(), frequency_hz=98_600_000,
+                     owner_id="alice", job_id="radio")
+        broker.mark_shared_stream_ready("sdr-1", owner_id="alice",
+                                        job_id="radio", ready=True)
+        broker.join("sdr-1", TunePoint("fm", 98_600_000),
+                    listener_id="phone", owner_id="bob")
+        with self.assertRaises(SdrBusy):
+            stream.stop()
+        self.assertFalse(process.terminated)
+        broker.leave("sdr-1", listener_id="phone", owner_id="bob")
+        stream.stop()
+        self.assertTrue(process.terminated)
+
     def test_exited_worker_is_not_reported_as_received_station(self):
         process = FakeProcess(b"")
         process.exited = True
