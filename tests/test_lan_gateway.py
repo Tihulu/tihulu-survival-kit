@@ -47,9 +47,13 @@ class PairingBrokerTests(unittest.TestCase):
                                     accepted=True)
         self.assertEqual(ack["state"],"display_received")
         self.assertIn("no media playback",ack["detail"])
+        # Repeated ACK is intentionally idempotent after a lost response.
+        retried=self.broker.acknowledge(display["display_token"],sent["command_id"],
+                                        accepted=True)
+        self.assertEqual(retried["state"],"display_received")
         with self.assertRaises(ValueError):
             self.broker.acknowledge(display["display_token"],sent["command_id"],
-                                    accepted=True)
+                                    accepted=False)
 
     def test_simultaneous_displays_never_share_an_active_pairing_code(self):
         with patch("tihulu_runtime.lan_remote_broker.secrets.randbelow",
