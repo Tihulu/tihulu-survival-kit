@@ -85,7 +85,7 @@ There is **no functional installer, image, or verified download checksum** curre
 | **TV Center** | Country/region channel lists, owner-added channels, DVB auto/manual scanning, recorded/live subtitles, EPG and Teletext |
 | **Radio / Text Data** | Optional SDR radio, FM RDS/RadioText, DAB+ DLS/Journaline, and documented APRS candidate reception |
 | **Message Networks** | Optional local offline Wi-Fi BBS/forum and separate, lawful Meshtastic or packet-radio interfaces with compatible hardware |
-| **News & Politics** | User-selectable Internet news/political feeds **plus optional TV-antenna Teletext/EPG and separate radio-antenna RDS/DAB text sources**; each input can be enabled/disabled, individual sources selected, and an explicit **Scan selected sources** requested. Real RF decoding and live feed ingestion are not deployed. |
+| **News & Politics** | **Multi-select** Internet, TV Teletext/EPG and separate radio RDS/DAB/APRS sources simultaneously; choose multiple individual sources and manually scan. **On-demand shared local Translator and AI** for multiple language translations, source-grounded summaries, questions and cross-source comparisons. **No live ingest, DVB/SDR decoding or installed model backend yet.** |
 | **Daily Discovery** | Sourced daily article/fact, survival tip, dictionary word, profanity/slang definition and offline Wikipedia A-to-B link challenge |
 | **Service & Update Center** | Install/refresh options, per-app Hard/Background/Startup policies, memory-conscious scheduling and safe stop controls |
 
@@ -101,7 +101,11 @@ The News & Politics Center should not be limited to the Internet. Its planned **
 
 Each input also has a **per-source checklist** and a manual **Scan selected sources** action. Missing antennas/decoders, unavailable networks and candidates without verified endpoints must be reported as **unavailable/unverified**, not silently treated as working news sources. Scans must never retune an active DVB recording; background/news AI processing remains disabled by default. Teletext and radio metadata must retain source attribution and must not be presented as independently verified political journalism.
 
-An [experimental source-selection router, unit tests and English UI preview](https://github.com/Tihulu/tihulu-survival-kit/pull/1) are on the draft development branch. **There is no working Pi news collector or completed RF decoder yet.**
+**All three input checkboxes are independent and may be enabled together.** Multiple feed/source items can be selected across inputs for a single user-initiated action. Optional **Translate** supports several output languages when their local language pairs are installed; **Local AI** supports independent **Summarize**, **Ask a question**, and **Compare different sources** actions (including simultaneous selections). When a text's source language is unsupported by the chosen LLM, the local Translator must run **first**. Originals and broadcaster/page/site attribution remain visible. This is not automatic fact-checking, and one political source is not ranked above another.
+
+Use the **same shared Translator and Local AI workers** as the rest of Tihulu, with Stage 4 foreground leases and an idle unload. Neither loading News Center nor enabling an antenna launches a heavyweight model. Hard OFF, unavailable models, unknown language pairs, low-RAM constraints, data permissions and existing TV recordings remain respected.
+
+An [experimental multi-source scanning + Translator/AI coordinator, unit tests and English UI demonstration](https://github.com/Tihulu/tihulu-survival-kit/pull/1) exist on the draft branch. **No real model inference, news fetch, DVB text reception, radio text decoding, or working device UI is deployed yet.**
 
 ## Background tasks, memory and app management
 

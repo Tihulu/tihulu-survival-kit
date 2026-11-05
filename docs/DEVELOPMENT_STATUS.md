@@ -32,6 +32,12 @@ The experimental [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pul
 
 See the [project license](../LICENSE): original Tihulu work is **GNU AGPL version 3.0 only**; third-party content and software retain their own licenses.
 
+## Multi-source News translation and AI experiment (November 5, 2026)
+
+Draft PR #1 includes `tihulu_runtime/news_assist.py`: a dependency-injected, **experimental** local assistant coordinator that accepts multiple source-attributed text items from selected Internet/DVB/Radio inputs, supports multiple requested output translation languages, and optionally invokes **Summarize**, **Ask a question**, and **Compare different sources** in one authorized foreground task. It acquires the same Stage 4 `translator` and `local_ai` worker leases used elsewhere, validates missing installed language pairs and models, and releases worker leases after success or failure. Unit tests use mock engines; **there is currently no deployed Translator/LLM model or real ingest/decoder connected**.
+
+The English `prototype/news_inputs.html` displays a multi-select UI for independent transports, individual source candidates, output languages and AI actions. Its task preview never claims to perform actual translation or analysis. The original text and source attribution, cache rules, owner permissions and the protected recording state remain essential future production requirements.
+
 ## Upcoming user-requested functional scopes
 
 ### 1. Region & Broadcast Manager
