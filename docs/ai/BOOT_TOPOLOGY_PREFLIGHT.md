@@ -61,3 +61,7 @@ python3 -m unittest discover -s tests -v
 ```
 
 The new **13** topology-fixture tests were executed and passed in an isolated development container; the **2** newly added CLI-integration test cases have not been observed running yet. Real Pi testing, public CI status and Pi startup service integration remain future gates. Keep this draft-only until validated.
+
+## Checkpoint 068 — Complementary Base model readiness (not a physical boot proof)
+
+The root drive diagnostic is now complemented by an **optional read-only Base model registry check** using `ai_setup --base-readiness`. It separately reports model configuration, accessible registered bytes/SSD, optional owner-initiated SHA-256+GGUF-header check, CPU runtime presence and actual inference smoke **not tested**. The Base inspector does **not** perform inference and cannot prove another physical boot. Read [BASE_READINESS_PREFLIGHT.md](BASE_READINESS_PREFLIGHT.md) for flags and result interpretation. In isolated local tests, the 16 additional Base policy tests and the prior 13 boot fixture tests passed together; no physical device or entire-repository CI pass is implied.
