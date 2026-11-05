@@ -12,6 +12,7 @@ import shutil
 import subprocess
 
 from .ai_hardware import inspect_hardware, proposal
+from .ai_boot_topology import inspect_boot_topology, hat_change_advisory
 from .ai_model_storage import ModelStorageRegistry
 
 
@@ -33,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read-only Tihulu AI upgrade survey")
     parser.add_argument("--pcie-nvme-boot", action="store_true",
                         help="Warn about existing PCIe NVMe HAT boot topology")
+    parser.add_argument("--boot-topology", action="store_true",
+                        help="Read-only root disk/PCIe HAT boot-layout diagnostic")
     parser.add_argument("--probe-npu", action="store_true",
                         help="Run read-only hailortcli firmware identification")
     parser.add_argument("--model-registry", help="Existing model registry JSON, if configured")
@@ -40,9 +43,14 @@ def main(argv: list[str] | None = None) -> int:
     snapshot = inspect_hardware()
     if options.probe_npu:
         snapshot = replace(snapshot, hailo_initialized=verify_hailo10h())
+    boot = inspect_boot_topology() if options.boot_topology else None
+    nvme_root = bool(boot and boot.root_class == "pcie_nvme")
     result = {"inventory": snapshot.as_dict(),
               "wizard_proposal": proposal(snapshot,
-                                          pcie_nvme_boot=options.pcie_nvme_boot)}
+                                          pcie_nvme_boot=options.pcie_nvme_boot or nvme_root)}
+    if boot is not None:
+        result["boot_topology"] = boot.as_dict()
+        result["hat_change_advisory"] = hat_change_advisory(boot)
     if options.model_registry:
         registry = ModelStorageRegistry(options.model_registry)
         result["registered_models"] = {
