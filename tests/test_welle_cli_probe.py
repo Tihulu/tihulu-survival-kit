@@ -10,11 +10,14 @@ import textwrap
 import unittest
 
 from tihulu_runtime.channel_explorer import (
-    ChannelExplorer, FrequencyLibrary, Receiver, TunePoint,
+    ChannelExplorer, ChannelStore, FrequencyLibrary, Receiver, TunePoint,
 )
+from tihulu_runtime import Module, ServiceManager
+from tihulu_runtime.sdr_capture import ManagedSdrScan
+from tihulu_runtime.dab_auto_scan import DabAutoScanner
 from tihulu_runtime.welle_cli_probe import (
     MAX_CAPTURE_BYTES, WelleCliDabProbe, WelleCliProbeError,
-    dab_channel_map, interpret_welle_cli_log,
+    dab_channel_map, interpret_welle_cli_log, UniqueRtlReceiverGate,
 )
 
 
@@ -198,6 +201,90 @@ sys.stdout.flush()
             self.radio, (self.point,), backend=cli, user_triggered=True)[0]
         self.assertEqual(record.state, "scan_failed")
         self.assertFalse(record.services)
+
+    def fake_sysfs_device(self, name: str = "1-2"):
+        root = self.root / "sysfs"
+        device = root / name
+        device.mkdir(parents=True)
+        (device / "idVendor").write_text("0bda\n")
+        (device / "idProduct").write_text("2838\n")
+        return root
+
+    def test_unique_device_gate_checks_native_count_and_usb_path(self):
+        sysfs = self.fake_sysfs_device()
+        gate = UniqueRtlReceiverGate(sysfs_root=sysfs, count=lambda: 1)
+        self.assertTrue(gate("usb-sdr:1-2"))
+        self.assertFalse(gate("usb-sdr:1-3"))
+        self.assertFalse(UniqueRtlReceiverGate(
+            sysfs_root=sysfs, count=lambda: 2)("usb-sdr:1-2"))
+        self.assertFalse(UniqueRtlReceiverGate(
+            sysfs_root=sysfs, count=lambda: 0)("usb-sdr:1-2"))
+        self.fake_sysfs_device("1-3")
+        self.assertFalse(gate("usb-sdr:1-2"))
+
+    def test_unique_device_gate_refuses_missing_native_library(self):
+        sysfs = self.fake_sysfs_device()
+        def failed_count():
+            raise WelleCliProbeError("no native library")
+        gate = UniqueRtlReceiverGate(sysfs_root=sysfs, count=failed_count)
+        self.assertFalse(gate("usb-sdr:1-2"))
+
+    def test_end_to_end_foreground_lease_lock_decoder_and_selected_store(self):
+        sysfs = self.fake_sysfs_device()
+        src = r'''
+import sys
+channel = sys.argv[sys.argv.index("-c") + 1]
+assert "-w" not in sys.argv and "-D" not in sys.argv
+assert sys.stdin.readline().strip() == "."
+if channel == "11D":
+    print("New Service: 0xD011", flush=True)
+    print("Service list", file=sys.stderr, flush=True)
+    print("  [0xd011] Mock Audio [component 0 ASCTy: DAB+ ] [subch 5 bitrate:96]", file=sys.stderr, flush=True)
+else:
+    print("Wait for sync", flush=True)
+'''
+        binary = self.fake_binary(src)
+        decoder = WelleCliDabProbe(
+            self.library, executable=binary,
+            verified_single_device=UniqueRtlReceiverGate(
+                sysfs_root=sysfs, count=lambda: 1),
+            dwell_seconds=4)
+        class Adapter:
+            def __init__(self):
+                self.starts = []
+                self.stops = []
+            def start(self, module_id):
+                self.starts.append(module_id)
+            def stop(self, module_id):
+                self.stops.append(module_id)
+        adapter = Adapter()
+        services = ServiceManager([Module("radio", installed=True)], adapter)
+        scanner = DabAutoScanner(self.library, ManagedSdrScan(
+            services, ChannelExplorer(), lock_root=self.root / "locks"))
+        progress = []
+        plan = scanner.plan(country="DE", region="Nordrhein-Westfalen",
+                            scope="quick")
+        result = scanner.run(
+            plan, self.radio, owner_id="alice", job_id="dab:scan",
+            backend=decoder, user_triggered=True, on_progress=progress.append)
+        self.assertEqual(len(result.records), 3)
+        self.assertEqual([record.state for record in result.records],
+                         ["no_signal", "no_signal", "service_decoded"])
+        self.assertEqual(len(result.decoded_services), 1)
+        self.assertEqual(result.decoded_services[0][1].label, "Mock Audio")
+        self.assertEqual([p.channel for p in progress], ["5C", "9A", "11D"])
+        self.assertEqual(services.snapshot()["radio"]["active_tasks"], 0)
+        self.assertEqual(adapter.starts, ["radio"])
+        self.assertEqual(adapter.stops, ["radio"])
+        store = ChannelStore(":memory:")
+        self.addCleanup(store.close)
+        selected = ((222_064_000, "0xD011"),)
+        ids = scanner.save_selected(
+            result, store, owner_id="alice", selected=selected,
+            mark_favorites=True)
+        self.assertEqual(len(ids), 1)
+        self.assertEqual(store.list(owner_id="alice")[0]["label"], "Mock Audio")
+        self.assertTrue(store.list(owner_id="alice")[0]["favorite"])
 
     def test_timeout_value_restricted(self):
         for value in (-1, 0, 3, 41, "10", True):
