@@ -6,10 +6,11 @@
 (() => {
 const $ = id => document.getElementById(id);
 const canvas = $("sky"), ctx = canvas.getContext("2d");
+const GERMANY={lat:51.1657,lon:10.4515,zoom:6};
 const state = {
-  planes: [], selected: null, camera: null, receiver: null,
+  planes: [], selected: null, camera: {...GERMANY}, receiver: null,
   userMoved: false, follow: false, session: null, csrf: null,
-  timer: null, busy: false, lastFocus: null
+  timer: null, busy: false, lastFocus: null, initialAutoFocus: false
 };
 const toRad = Math.PI / 180;
 function point(a) {
@@ -37,21 +38,33 @@ function chooseFocus(planes, ref) {
     for(const a of points.slice(1)) {const n=km(ref,point(a));if(n<d){best=a;d=n;}}
     return {aircraft:best,method:"nearest",distance:d};
   }
-  const sample=points.slice(0,96);
-  let best=sample[0],score=Infinity;
-  for(const a of sample){let s=0;for(const b of sample)s+=km(point(a),point(b));
-    if(s<score){score=s;best=a;}}
-  return {aircraft:best,method:"received cluster",distance:null};
+  // Germany is a *selection heuristic* without a real receiver/GPS position.
+  // It is not a claimed user location; never generate an aircraft marker here.
+  const sample=points.slice(0,600);
+  let best=sample[0],d=km(GERMANY,point(best));
+  for(const a of sample.slice(1)){
+    const n=km(GERMANY,point(a));if(n<d){best=a;d=n;}
+  }
+  return {aircraft:best,method:"default-region heuristic",distance:d};
 }
 function focusNearest(force=false) {
   if(state.userMoved&&!force)return;
   const selected=chooseFocus(state.planes,state.receiver);
-  if(!selected){$("mapHint").textContent="Waiting for fresh positions. No location is assumed.";return;}
+  if(!selected){
+    const center=state.receiver||GERMANY;
+    state.camera={lat:center.lat,lon:center.lon,zoom:state.camera?.zoom||6};
+    $("mapHint").textContent=state.receiver?
+      "Receiver/device location; no fresh aircraft position.":
+      "Germany fallback viewport; no aircraft or receiver location assumed.";
+    if(force)state.userMoved=false;
+    paint();return;
+  }
   state.camera={lat:selected.aircraft.latitude,lon:selected.aircraft.longitude,
                 zoom:state.camera?.zoom||7};
   if(force)state.userMoved=false;
   state.lastFocus=selected;
-  $("mapHint").textContent=(selected.method==="nearest"?"Nearest reported aircraft":"Received aircraft cluster")+
+  $("mapHint").textContent=(selected.method==="nearest"?"Nearest reported aircraft":
+    "Reported aircraft chosen relative to Germany map default")+
     ": "+(selected.aircraft.callsign||selected.aircraft.icao||"Unknown");
   paint();
 }
@@ -222,7 +235,12 @@ $("mapLayer").addEventListener("change",()=>{
   }
   paint();
 });
-$("focusNearest").onclick=()=>focusNearest(true);
+$("focusNearest").onclick=()=>{focusNearest(true);state.initialAutoFocus=true;};
+$("showGermany").onclick=()=>{
+ state.camera={...GERMANY};state.userMoved=true;state.follow=false;
+ syncFollow();$("mapHint").textContent=
+   "Germany map viewport (not a receiver or user location).";paint();
+};
 $("focusReceiver").onclick=()=>{
  if(!state.receiver){$("mapHint").textContent="Set receiver coordinates or grant location first.";return;}
  state.camera={...state.receiver,zoom:state.camera?.zoom||9};
@@ -254,6 +272,7 @@ try{
  const saved=JSON.parse(localStorage.getItem("tihulu-flight-receiver-location")||"null");
  if(saved)rememberReceiver(saved);
 }catch(_){}
+if(state.receiver)focusNearest(true);
 $("receiverLocation").onclick=()=>{
  const lat=prompt("Receiver latitude (-90 to 90):",state.receiver?.lat??"");
  if(lat===null)return;
@@ -282,7 +301,12 @@ function detailLabel(name,value){
  return cell;
 }
 function selectPlane(key){
- state.selected=key;renderList();renderDetails();
+ state.selected=key;
+ const plane=state.planes.find(a=>a.key===key);
+ $("fullMapLink").href=(plane&&fresh(plane)&&/^[0-9a-f]{6}$/i.test(plane.icao||""))?
+   "/flight-radar/map?icao="+plane.icao+"&noIsolation":
+   "/flight-radar/map";
+ renderList();renderDetails();
  if(state.follow)followSelected();else paint();
 }
 function renderDetails(){
@@ -373,7 +397,9 @@ async function stop(){
  try{await api("/api/flight-radar/session/"+encodeURIComponent(sid),{
    method:"DELETE",headers:{"X-CSRF-Token":state.csrf}});}
  catch(e){$("notice").textContent="Session release was not confirmed: "+e.message;return;}
- state.session=null;state.planes=[];state.selected=null;state.camera=null;state.userMoved=false;
+ state.session=null;state.planes=[];state.selected=null;
+ state.camera=state.receiver?{...state.receiver,zoom:7}:{...GERMANY};
+ state.userMoved=false;state.initialAutoFocus=false;
  $("connect").disabled=false;$("stop").disabled=true;setStatus("Stopped");
  $("count").textContent="—";$("positioned").textContent="—";
  $("notice").textContent="No background aircraft polling. Session released.";
@@ -418,8 +444,9 @@ async function poll(){
    setStatus(online?"Live":data.data_available?"Active":"Source unavailable");
    if(!data.data_available)$("notice").textContent=
      "No active source is available. Internet disconnection is not an empty sky.";
-   if(!state.camera){focusNearest();}
-   else if(state.follow&&state.selected)followSelected();
+   if(!state.userMoved&&!state.initialAutoFocus&&state.planes.some(fresh)){
+     focusNearest();state.initialAutoFocus=true;
+   } else if(state.follow&&state.selected)followSelected();
    else paint();
    renderList();renderDetails();
  }catch(e){setStatus("Degraded");$("notice").textContent=e.message;}
@@ -436,7 +463,10 @@ if(typeof ResizeObserver!=="undefined")new ResizeObserver(resize).observe(canvas
 resize();
 api("/api/flight-radar/bootstrap").then(x=>{
  state.csrf=x.csrf_token;
- $("notice").textContent="Choose a source mode. No receiver is started automatically.";
+ $("notice").textContent=new URLSearchParams(location.search)
+   .has("full_map_unavailable")?
+   "Full tar1090 map assets are not installed. Lightweight offline map is in use.":
+   "Choose a source mode. No receiver is started automatically.";
 }).catch(()=>{$("notice").textContent=
  "Preview only until an authenticated Survival Kit gateway supplies CSRF and service permissions.";});
 })();
