@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tihulu — Local AI Bilgi Kaynakları (Prototip)</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#090a0c;color:#f1f1f3}
+*{box-sizing:border-box}body{margin:0;padding:22px 12px;line-height:1.5}
+.shell{max-width:710px;margin:auto}
+.panel{border:1px solid #34363a;background:#0b0c0e;border-radius:16px;padding:18px;margin-bottom:14px}
+.header{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h1{font-size:1.13rem;margin:0;font-weight:600}h2{font-size:1rem;margin:0 0 12px}
+.muted,small{color:#b4b7bf}small{font-size:.79rem}.minor{margin:6px 0 15px}
+.row{display:flex;align-items:center;gap:13px;padding:9px 1px;min-height:45px;cursor:pointer}
+.row input{height:20px;width:20px;accent-color:#f1f1f3;flex:none}
+.row span{flex:1}.separator{border:0;border-top:1px solid #303137;margin:14px 0}
+.field{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:11px 0}
+.field label{min-width:112px}select{font:inherit;background:#14161a;color:#f2f2f5;border:1px solid #44474f;border-radius:9px;padding:9px;width:min(100%,340px)}
+.preview{background:#141518;border-radius:9px;padding:12px;overflow-wrap:anywhere;font-size:.9rem}
+button{font:inherit;min-height:44px;cursor:pointer;border:0;border-radius:999px;padding:10px 18px}
+.primary{width:100%;background:#eeeef0;color:#111115;margin-top:14px}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #75a6e5;outline-offset:3px}
+.status{border-left:3px solid #9199a5;padding:10px 13px;background:#17181c;margin-top:14px;white-space:pre-wrap}
+.subnote{font-size:.85rem;margin-top:12px}
+[data-kind=warning]{border-left-color:#ddad5b}
+[data-kind=success]{border-left-color:#79c59c}
+@media(max-width:460px){.panel{padding:14px}.field{display:block}.field select{display:block;width:100%;margin-top:5px}}
+</style>
+</head>
+<body>
+<main class="shell">
+<section class="panel">
+<div class="header"><h1>Local AI — Bilgi Kaynakları</h1><small id="count" aria-live="polite">3 seçili</small></div>
+<p class="minor muted">Etkileşimli arayüz demosu. Kişisel dosyalar veya gerçek Wikipedia arşivleri bağlanmış değildir.</p>
+<div id="sources" role="group" aria-label="Bilgi kaynakları">
+<label class="row"><input type="checkbox" value="files" checked><span>Seçili dosyalar</span></label>
+<label class="row"><input type="checkbox" value="folders"><span>Seçili klasörler</span></label>
+<label class="row"><input type="checkbox" value="books" checked><span>Kitap Arşivim</span></label>
+<label class="row"><input type="checkbox" value="other"><span>İzin verilen diğer dosyalar</span></label>
+<hr class="separator">
+<label class="row"><input type="checkbox" value="wiki" checked><span>Wikipedia (Kiwix) — bağımsız kaynak</span></label>
+</div>
+<hr class="separator">
+<strong>AI'ın kullanacağı kaynaklar</strong>
+<div class="preview" id="selection" aria-live="polite"></div>
+<button class="primary" id="continue" type="button">Bu kaynaklarla devam et</button>
+<div class="status" id="selection-status" role="status">Bu demo gerçek dosya izni vermez veya AI sohbeti başlatmaz.</div>
+</section>
+<section class="panel">
+<h2>İndeksleme ve RAG — isteğe bağlı</h2>
+<p class="muted subnote">Dosyaları seçmek, içeriklerini otomatik olarak indekslemek değildir. Bu seçeneklerin hepsi varsayılan kapalıdır. Wikipedia, normal Kiwix aramasıyla ayrıca çalışabilir.</p>
+<label class="row"><input id="keyword" type="checkbox"><span>Kalıcı anahtar kelime / tam metin indeksi</span></label>
+<label class="row"><input id="semantic" type="checkbox"><span>Semantik RAG (vektör indeks)</span></label>
+<label class="row"><input id="background" type="checkbox" disabled><span>Arka planda indeks oluştur / güncelle</span></label>
+<label class="row"><input id="watch" type="checkbox" disabled><span>Seçili klasör değişikliklerini izle</span></label>
+<label class="row"><input id="startup" type="checkbox" disabled><span>Yeniden başlatıldığında devam et</span></label>
+<div class="field"><label for="storage">İndeks konumu</label>
+<select id="storage"><option value="internal">Dahili NVMe (örnek)</option><option value="external">Harici SSD (örnek; bağlı disk algılanmadı)</option></select></div>
+<div class="preview" id="index-state" aria-live="polite"></div>
+<button class="primary" id="index-preview" type="button">İndeksleme ön kontrolünü göster</button>
+<div class="status" id="index-status" role="status">İndeks oluşturulmadı. Hiçbir dosya okunmadı veya diske yazılmadı.</div>
+</section>
+<p class="muted subnote">Bu sayfa sunucuya bağlı değildir; izin, disk, model, boyut ve RAM bilgileri gerçek cihazdan ölçülmedi. Üretim sürümünde her kaynak ayrı izin ve SSD/indeks politikası gerektirir.</p>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const labels={files:"Seçili dosyalar",folders:"Seçili klasörler",books:"Kitap Arşivim",other:"İzin verilen diğer dosyalar",wiki:"Wikipedia (Kiwix)"};
+const boxes=[...document.querySelectorAll("#sources input")];
+const indexIds=["keyword","semantic","background","watch","startup"];
+function chosen(){return boxes.filter(b=>b.checked).map(b=>b.value);}
+function setStatus(id,message,kind="neutral"){const node=$(id);node.textContent=message;node.dataset.kind=kind;}
+function update(){
+ const ids=chosen();
+ $("count").textContent=ids.length+" seçili";
+ $("selection").textContent=ids.length?ids.map(id=>labels[id]).join(" + "):"Hiçbir kaynak seçilmedi";
+ $("continue").disabled=!ids.length;
+ const enabled=$("keyword").checked||$("semantic").checked;
+ $("background").disabled=!enabled;
+ if(!enabled)$("background").checked=false;
+ $("watch").disabled=!enabled||!$("background").checked||!ids.some(x=>x==="folders"||x==="books"||x==="other");
+ if($("watch").disabled)$("watch").checked=false;
+ $("startup").disabled=!enabled||!$("background").checked;
+ if($("startup").disabled)$("startup").checked=false;
+ const mode=enabled?($("semantic").checked?"Semantik RAG seçili":"Anahtar kelime indeksi seçili"):"Kalıcı indeksleme kapalı";
+ $("index-state").textContent=mode+" · Arka plan: "+($("background").checked?"açık":"kapalı")+
+   " · Hedef: "+($("storage").value==="external"?"harici SSD (simülasyon)":"dahili NVMe (simülasyon)");
+}
+boxes.forEach(box=>box.addEventListener("change",()=>{update();setStatus("selection-status","Kaynak listesi güncellendi. Henüz izin verilmedi veya arama çalıştırılmadı.");}));
+[...indexIds,"storage"].forEach(id=>$(id).addEventListener("change",()=>{update();setStatus("index-status","Tercih güncellendi. Bu seçenekler yalnızca arayüz demosunda gösteriliyor.");}));
+$("continue").addEventListener("click",()=>{
+ const ids=chosen();
+ const priv=ids.filter(id=>id!=="wiki");
+ const msg=priv.length?"Kişisel kaynaklar seçildi: "+priv.map(id=>labels[id]).join(", ")+". Gerçek uygulama ayrıca kaynak başına dosya izni isteyecektir.":"Yalnızca Wikipedia seçildi. Normal Kiwix araması için kişisel dosya izni gerekmez.";
+ setStatus("selection-status",msg+" Bu demo AI sohbeti veya veri taraması başlatmaz.","warning");
+});
+$("index-preview").addEventListener("click",()=>{
+ if(!$("keyword").checked&&!$("semantic").checked){
+   setStatus("index-status","İndeksleme kapalı: seçilen kaynaklar için otomatik kalıcı indeks üretilmeyecek.","success");return;
+ }
+ if(!chosen().length){setStatus("index-status","Önce en az bir kaynak seçin.","warning");return;}
+ const ext=$("storage").value==="external";
+ setStatus("index-status",(ext?"Harici SSD seçildi: bağlı disk ve UUID doğrulaması gerekli. ":"Dahili NVMe hedefi seçildi. ")+
+ "Önce kullanıcı izni, gerçek boş alan, geçici alan, kota, model paketi ve RAM/enerji durumu kontrol edilmelidir. "+
+ "Arka plan izni: "+($("background").checked?"istenmiş, sistem politikası henüz kontrol edilmedi.":"kapalı.")+
+ " Bu demo hiçbir indeks yazmaz.","warning");
+});
+update();
+</script>
+</body>
+</html>
