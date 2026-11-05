@@ -141,7 +141,8 @@ def main(argv: list[str] | None = None) -> int:
         result["base_readiness"] = assess_base_readiness(boot, evidence).as_dict()
         result["base_readiness"]["actual_inference_test_executed"] = bool(
             smoke and smoke.runner_version and smoke.status not in {
-                "cpu_runner_unavailable", "runner_version_unavailable"
+                "cpu_runner_unavailable", "runner_version_unavailable",
+                "runner_failed_to_start"
             })
     print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False))
     return 0
