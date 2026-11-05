@@ -137,7 +137,8 @@ def cpu_smoke_test(registry: object, model_id: str, *,
     argv = [binary, "--model", str(model_file), "--prompt", PROMPT,
             "--n-predict", str(predict_tokens), "--ctx-size", "512",
             "--threads", str(threads), "--n-gpu-layers", "0",
-            "--no-kv-offload", "--no-op-offload", "--no-conversation",
+            "--device", "none", "--no-kv-offload", "--no-op-offload",
+            "--offline", "--no-conversation",
             "--single-turn", "--no-display-prompt",
             "--no-show-timings", "--color", "off"]
     start = time.monotonic()
