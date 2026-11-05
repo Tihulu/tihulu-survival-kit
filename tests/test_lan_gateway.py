@@ -98,6 +98,12 @@ class PairingBrokerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.broker.send(phone["remote_token"],action="mute")
         self.assertEqual(len(self.broker.poll(display["display_token"])),32)
+        # Expired undelivered commands must not accumulate for days if a
+        # phone is paired but its display browser stopped polling.
+        self.clock.forward(181)
+        self.broker.send(phone["remote_token"],action="mute")
+        self.assertEqual(len(self.broker._queues[display["target_id"]]),1)
+        self.assertEqual(len(self.broker._commands),1)
 
 
 class GatewayPolicyTests(unittest.TestCase):
