@@ -9,6 +9,15 @@
 >
 > İlk açılış, Wi-Fi SSID, şifre, adresler ve sorun giderme için önce **[Başlangıç: Önce Bunları Bilin](docs/START_HERE_TR.md)** ve ardından **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** sayfalarını okuyun.
 
+## Aşama 5 — donanım yükseltmesi / Hardware-aware AI (development)
+
+Yapay zekâ mimarisi üç isteğe bağlı hedefi ayırır: Pi CPU (offline fallback), **AI HAT+ 2 Hailo-10H** (yalnızca doğrulanmış Hailo modelleri) ve kullanıcı onaylı güvenli LAN üzerindeki bir **uzak Linux/Windows/macOS AI sunucusu**. CPU Light/Balanced/Maximum profilleri korunur. Modeller desteklenen harici SSD üzerinde saklanabilir; disk alanı RAM/VRAM yerine geçmez. Pi 5 PCIe NVMe HAT ile AI HAT+ 2 birlikte varsayılmaz.
+
+Bu özellikler **henüz kurulmuş bir Pi üzerinde çalışan kullanıcı arayüzü değildir**. Kod tarafında salt-okunur donanım denetimi, model uyumluluk/fallback çekirdeği, SSD UUID ve SHA-256 kayıt/taşıma kütüphaneleri, güvenli özel ağ API istemcisi ve donanıma bağlı benchmark kanıt defteri bulunmaktadır. Gerçek kurulum sihirbazı, Model Manager web arayüzü, sürücü kurucusu, gerçek Hailo/uzak GPU ve bütünleşik Update Center hâlâ geliştirme aşamasındadır.
+
+İlgili belgeler: [Donanım uyumlu Aşama 5](docs/ai/HARDWARE_AWARE_STAGE5.md) · [Uzak AI sunucusu kurulum rehberi](docs/ai/REMOTE_AI_SERVER_SETUP.md).
+
+
 ## İlk bilinmesi gerekenler / First-boot essentials
 
 | Konu | Planlanan değer / açıklama |
