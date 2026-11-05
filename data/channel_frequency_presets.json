@@ -278,5 +278,145 @@
     "hardware_probed_before_scan": true,
     "recording_never_retuned_implicitly": true,
     "local_browser_web_only_for_external_forums": true
-  }
+  },
+  "channel_groups": [
+    {
+      "id": "dab_band_iii",
+      "name": "DAB+ Band III 5A–12D (published channel raster)",
+      "country": "DE",
+      "kind": "dab",
+      "source": "https://tvhelfer.de/dab/kanalraster",
+      "disclaimer": "Full standardized channel centers, NOT locally active radio stations; needs real DAB-capable receiver and decoder.",
+      "points": [
+        {
+          "channel": "5A",
+          "frequency_hz": 174928000
+        },
+        {
+          "channel": "5B",
+          "frequency_hz": 176640000
+        },
+        {
+          "channel": "5C",
+          "frequency_hz": 178352000
+        },
+        {
+          "channel": "5D",
+          "frequency_hz": 180064000
+        },
+        {
+          "channel": "6A",
+          "frequency_hz": 181936000
+        },
+        {
+          "channel": "6B",
+          "frequency_hz": 183648000
+        },
+        {
+          "channel": "6C",
+          "frequency_hz": 185360000
+        },
+        {
+          "channel": "6D",
+          "frequency_hz": 187072000
+        },
+        {
+          "channel": "7A",
+          "frequency_hz": 188928000
+        },
+        {
+          "channel": "7B",
+          "frequency_hz": 190640000
+        },
+        {
+          "channel": "7C",
+          "frequency_hz": 192352000
+        },
+        {
+          "channel": "7D",
+          "frequency_hz": 194064000
+        },
+        {
+          "channel": "8A",
+          "frequency_hz": 195936000
+        },
+        {
+          "channel": "8B",
+          "frequency_hz": 197648000
+        },
+        {
+          "channel": "8C",
+          "frequency_hz": 199360000
+        },
+        {
+          "channel": "8D",
+          "frequency_hz": 201072000
+        },
+        {
+          "channel": "9A",
+          "frequency_hz": 202928000
+        },
+        {
+          "channel": "9B",
+          "frequency_hz": 204640000
+        },
+        {
+          "channel": "9C",
+          "frequency_hz": 206352000
+        },
+        {
+          "channel": "9D",
+          "frequency_hz": 208064000
+        },
+        {
+          "channel": "10A",
+          "frequency_hz": 209936000
+        },
+        {
+          "channel": "10B",
+          "frequency_hz": 211648000
+        },
+        {
+          "channel": "10C",
+          "frequency_hz": 213360000
+        },
+        {
+          "channel": "10D",
+          "frequency_hz": 215072000
+        },
+        {
+          "channel": "11A",
+          "frequency_hz": 216928000
+        },
+        {
+          "channel": "11B",
+          "frequency_hz": 218640000
+        },
+        {
+          "channel": "11C",
+          "frequency_hz": 220352000
+        },
+        {
+          "channel": "11D",
+          "frequency_hz": 222064000
+        },
+        {
+          "channel": "12A",
+          "frequency_hz": 223936000
+        },
+        {
+          "channel": "12B",
+          "frequency_hz": 225648000
+        },
+        {
+          "channel": "12C",
+          "frequency_hz": 227360000
+        },
+        {
+          "channel": "12D",
+          "frequency_hz": 229072000
+        }
+      ]
+    }
+  ]
 }
