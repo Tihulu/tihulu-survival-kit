@@ -247,6 +247,11 @@ class GatewayHandler(BaseHTTPRequestHandler):
     server_version = "TihuluPrototype/0.1"
     protocol_version = "HTTP/1.1"
 
+    def setup(self):
+        super().setup()
+        # Idle/incomplete browser requests cannot hold worker threads forever.
+        self.connection.settimeout(10)
+
     def log_message(self, fmt, *args):
         # Never log tokens, pairing codes, raw paths or request bodies.
         pass
