@@ -66,6 +66,21 @@ class LanRemoteBroker:
         self._commands = {k:v for k,v in self._commands.items()
                           if v["created_at"] + DELIVERY_TTL > now
                           and v["target_id"] in self._targets}
+        # Evict stale queue references even when a paired screen never polls.
+        # This matters on memory-limited devices that remain powered for days.
+        for target_id in list(self._queues):
+            self._queues[target_id] = deque(
+                ident for ident in self._queues[target_id]
+                if ident in self._commands
+                and self._commands[ident]["state"] == "pending")
+        # Completed status history must stay bounded under high-volume paired
+        # remote activity. Pending commands are protected by per-target limits.
+        if len(self._commands) > 2_048:
+            completed = sorted(
+                (v for v in self._commands.values() if v["state"] != "pending"),
+                key=lambda v: v["created_at"])
+            for item in completed[:len(self._commands) - 2_048]:
+                self._commands.pop(item["command_id"], None)
         for peer in list(self._failed):
             attempts = [t for t in self._failed[peer] if now - t < 120]
             if attempts:
