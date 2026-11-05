@@ -65,6 +65,7 @@ a{color:#0f6076}a:focus-visible,button:focus-visible,input:focus-visible,select:
 <h3>Band sweep — step-by-step, receive only</h3>
 <div class="controls"><select id="band">
 <option value="dvb">DVB-T2 UHF 21–48 / 8 MHz centers</option>
+<option value="dab_full">DAB+ Band III 5A–12D / all 32 centers</option>
 <option value="fm_de">Germany FM 87.5–108 MHz / 100 kHz</option>
 <option value="fm_tr">Turkey FM 87.5–108 MHz / 100 kHz</option>
 <option value="vhf">Germany amateur 144–146 MHz / 12.5 kHz</option>
@@ -123,6 +124,7 @@ const presets=[
 {country:"TR",mode:"fm",mhz:99.1,label:"TRT Radyo Haber",location:"İzmir Merkez"}
 ];
 const bandplans={
+dab_full:{start:174.928,stop:229.072,step:0,device:"separate DAB receiver",count:32},
 dvb:{start:474,stop:690,step:8,device:"DVB-T2 tuner"},
 fm_de:{start:87.5,stop:108,step:.1,device:"separate FM SDR"},
 fm_tr:{start:87.5,stop:108,step:.1,device:"separate FM SDR"},
@@ -207,9 +209,9 @@ document.getElementById("save-manual").addEventListener("click",()=>{
 });
 document.getElementById("sweep").addEventListener("click",()=>{
  const b=bandplans[document.getElementById("band").value];
- const n=Math.floor((b.stop-b.start)/b.step+1e-6)+1;
+ const n=b.count||Math.floor((b.stop-b.start)/b.step+1e-6)+1;
  status.textContent="Planned band sweep: "+b.start+"–"+b.stop+" MHz, "+b.step+" MHz steps, "+
- n+" probe points, chunked into groups of up to 128. Requires "+b.device+
+ n+" "+(b.count?"discrete DAB centers":"probe points")+", chunked into groups of up to 128. Requires "+b.device+
  ". No scan, spectrum measurement or transmission was executed.";
 });
 document.getElementById("open-page").addEventListener("click",()=>{
