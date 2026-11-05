@@ -1,0 +1,872 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-05",
+  "status": "unverified_candidate_catalog_only",
+  "editorial_principle": "Diverse source coverage without political endorsement or ranking; distinguish party self-publication, politician claims and independent journalism. Do not infer user affiliation.",
+  "verified_live_feeds": 0,
+  "background_enabled_by_default": false,
+  "startup_enabled_by_default": false,
+  "refresh_on_open_default": true,
+  "max_cache_bytes_design_target": 31457280,
+  "published_content_ttl_seconds": 86400,
+  "clear_saved_user_posts": false,
+  "preserve_original_recordings": true,
+  "media_download_default": false,
+  "notes": "Do not invent X/YouTube/etc account handles, direct stream URLs, APIs, ownership status, working RSS feeds or claimed availability. Validate via official pages and platform terms before any production adapter is enabled.",
+  "supported_platform_candidates": [
+    "rss_atom",
+    "official_broadcaster",
+    "bluesky",
+    "mastodon",
+    "youtube",
+    "x",
+    "instagram",
+    "facebook",
+    "threads",
+    "tiktok",
+    "telegram",
+    "truth_social"
+  ],
+  "sources": [
+    {
+      "id": "tr_1",
+      "name": "Sözcü TV",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_2",
+      "name": "KRT TV",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_3",
+      "name": "İlke TV",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_4",
+      "name": "BirGün",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_5",
+      "name": "Evrensel",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_6",
+      "name": "Cumhuriyet",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_7",
+      "name": "Sözcü",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_8",
+      "name": "T24",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_9",
+      "name": "Medyascope",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_10",
+      "name": "bianet",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_11",
+      "name": "Diken",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_12",
+      "name": "Artı Gerçek",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_13",
+      "name": "soL Haber",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_14",
+      "name": "dokuz8HABER",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_15",
+      "name": "Yetkin Report",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_16",
+      "name": "Kısa Dalga",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_17",
+      "name": "Gazete Pencere",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_18",
+      "name": "TRT Haber",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_19",
+      "name": "NTV Türkiye",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_20",
+      "name": "CNN Türk",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_21",
+      "name": "Haber Global",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_22",
+      "name": "Anadolu Ajansı",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_23",
+      "name": "A Haber",
+      "country": "TR",
+      "kind": "newsroom_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_24",
+      "name": "HKP — Halkın Kurtuluş Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_25",
+      "name": "Halkın Kurtuluş Yolu",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_26",
+      "name": "TKP — Türkiye Komünist Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_27",
+      "name": "TİP — Türkiye İşçi Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_28",
+      "name": "DEM Parti",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_29",
+      "name": "Zafer Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_30",
+      "name": "Vatan Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_31",
+      "name": "MHP",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_32",
+      "name": "CHP",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_33",
+      "name": "AK Parti",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_34",
+      "name": "İYİ Parti",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_35",
+      "name": "Yeniden Refah Partisi",
+      "country": "TR",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_36",
+      "name": "Nurullah Efe Ankut",
+      "country": "TR",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_37",
+      "name": "Ümit Özdağ",
+      "country": "TR",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_38",
+      "name": "Erkan Baş",
+      "country": "TR",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_39",
+      "name": "Kemal Okuyan",
+      "country": "TR",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "tr_40",
+      "name": "Doğu Perinçek",
+      "country": "TR",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_41",
+      "name": "ARD / tagesschau24",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_42",
+      "name": "ZDF / phoenix",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_43",
+      "name": "Deutsche Welle",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_44",
+      "name": "Deutschlandfunk",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_45",
+      "name": "ARTE Journal",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_46",
+      "name": "taz",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_47",
+      "name": "der Freitag",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_48",
+      "name": "nd",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_49",
+      "name": "junge Welt",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_50",
+      "name": "Jacobin Deutschland",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_51",
+      "name": "CORRECTIV",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_52",
+      "name": "netzpolitik.org",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_53",
+      "name": "Übermedien",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_54",
+      "name": "Jung & Naiv",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_55",
+      "name": "WDR MONITOR",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_56",
+      "name": "NDR Panorama",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_57",
+      "name": "ZDF frontal",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_58",
+      "name": "FragDenStaat",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_59",
+      "name": "Volksverpetzer",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_60",
+      "name": "n-tv",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_61",
+      "name": "WELT",
+      "country": "DE",
+      "kind": "newsroom_or_research_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_62",
+      "name": "DKP — Deutsche Kommunistische Partei",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_63",
+      "name": "Unsere Zeit",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_64",
+      "name": "MLPD",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_65",
+      "name": "Rote Fahne News",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_66",
+      "name": "Die Linke",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_67",
+      "name": "BSW",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_68",
+      "name": "AfD",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_69",
+      "name": "CDU",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_70",
+      "name": "CSU",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_71",
+      "name": "SPD",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_72",
+      "name": "Bündnis 90/Die Grünen",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_73",
+      "name": "FDP",
+      "country": "DE",
+      "kind": "party_self_publication_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_74",
+      "name": "Gabi Fechtner",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_75",
+      "name": "Patrik Köbele",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_76",
+      "name": "Alice Weidel",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_77",
+      "name": "Tino Chrupalla",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_78",
+      "name": "Björn Höcke",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "de_79",
+      "name": "Sahra Wagenknecht",
+      "country": "DE",
+      "kind": "political_figure_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "world_80",
+      "name": "European Commission",
+      "country": "WORLD",
+      "kind": "institution_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "world_81",
+      "name": "European Parliament",
+      "country": "WORLD",
+      "kind": "institution_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "world_82",
+      "name": "German Bundestag",
+      "country": "WORLD",
+      "kind": "institution_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "world_83",
+      "name": "Turkish Grand National Assembly",
+      "country": "WORLD",
+      "kind": "institution_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    },
+    {
+      "id": "world_84",
+      "name": "United Nations",
+      "country": "WORLD",
+      "kind": "institution_candidate",
+      "feed_status": "candidate_not_verified",
+      "official_account_uri": null,
+      "live_stream_uri": null,
+      "editorial_or_claim_metadata_review_pending": true
+    }
+  ]
+}
