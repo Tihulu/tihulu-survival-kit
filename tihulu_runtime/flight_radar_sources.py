@@ -6,7 +6,7 @@ SSRF endpoint. Real provider terms, consent and attribution must be shown by
 the future authenticated Setup and Source Manager UI.
 """
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
 from urllib.error import HTTPError, URLError
@@ -90,7 +90,7 @@ class ProviderConfig:
     radius_nm: int = 80
     enabled: bool = False
     min_interval_seconds: int = 60
-    oauth_bearer: str | None = None  # opensky: injected from trusted secret store
+    oauth_bearer: str | None = field(default=None, repr=False, compare=False)  # trusted secrets only
 
     def __post_init__(self) -> None:
         if self.id not in ("adsb.lol", "opensky"):
