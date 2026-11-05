@@ -82,8 +82,15 @@ class FlightRadarWSGI:
                                          "text/html; charset=utf-8")
             if method == "GET" and path == "/flight-radar/map":
                 if self.tar1090.installed():
-                    return self._redirect(start_response, PREFIX,
-                                          environ.get("QUERY_STRING", ""))
+                    query = environ.get("QUERY_STRING", "")
+                    if not query:
+                        # Only observed, fresh, positioned readsb aircraft.
+                        # Upstream ?icao is documented; noIsolation keeps the
+                        # full table/map instead of hiding other contacts.
+                        icao = self.tar1090.initial_aircraft_focus()
+                        if icao:
+                            query = "icao=" + icao + "&noIsolation"
+                    return self._redirect(start_response, PREFIX, query)
                 return self._redirect(start_response, "/flight-radar/light-map",
                                       "full_map_unavailable=1")
             if method == "GET" and path == "/flight-radar/light-map":
