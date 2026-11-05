@@ -167,20 +167,25 @@ class NewsAssistCoordinator:
                                       else translator.translate(article.original_text,
                                                                 article.language, lang))
                 translated[article.item_id] = versions
-                prepared = (article.original_text if article.language == request.ai_language
-                            else translator.translate(article.original_text, article.language,
-                                                      request.ai_language))
-                # The original source identity, publisher type, original
-                # language, time and locator remain visible to the model.
-                label = (f"{article.source_id} | {article.title} | "
-                         f"{article.source_type} | {article.medium} | "
-                         f"published={article.published_at} | "
-                         f"original-language={article.language} | "
-                         f"origin={article.provenance} | {article.source_locator}")
-                if request.summaries:
-                    summaries[article.item_id] = ai.summarize(
-                        prepared, request.ai_language, label)
-                materials.append((label, prepared))
+                if ai_needed:
+                    # Translation-only requests must not trigger an unrelated
+                    # conversion to the AI analysis language or load an LLM.
+                    prepared = (versions[request.ai_language]
+                                if request.ai_language in versions else
+                                article.original_text if article.language == request.ai_language
+                                else translator.translate(article.original_text,
+                                                          article.language, request.ai_language))
+                    # The original source identity, publisher type, original
+                    # language, time and locator remain visible to the model.
+                    label = (f"{article.source_id} | {article.title} | "
+                             f"{article.source_type} | {article.medium} | "
+                             f"published={article.published_at} | "
+                             f"original-language={article.language} | "
+                             f"origin={article.provenance} | {article.source_locator}")
+                    if request.summaries:
+                        summaries[article.item_id] = ai.summarize(
+                            prepared, request.ai_language, label)
+                    materials.append((label, prepared))
             answer = (ai.answer(request.question, tuple(materials), request.ai_language)
                       if request.question is not None else None)
             comparison = (ai.answer(
