@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "as_of": "2026-11-05",
+  "description": "Documented candidates only. NOT scanned, installed, or known received at user location.",
+  "devices": {
+    "wintv_solohd_01589": {
+      "user_status": "purchased",
+      "delivery_verified": false,
+      "supported_receivers": ["dvb_t", "dvb_t2", "dvb_c"],
+      "receive_only": true,
+      "hardware_note": "One tuner; channel locks and mux sharing required. Does not receive FM/DAB/LoRa/AX25 RF."
+    },
+    "sdr_optional": {
+      "user_status": "not_purchased_for_this_purpose",
+      "receive_only": true,
+      "note": "Receiver and antenna must cover chosen signal/band; HF requires suitable hardware."
+    },
+    "meshtastic_optional": {
+      "user_status": "not_purchased",
+      "receive_only": false,
+      "note": "Separate certified LoRa node; match local channel/preset and permitted regional band."
+    },
+    "packet_radio_optional": {
+      "user_status": "not_purchased",
+      "receive_only": false,
+      "note": "Separate transceiver/TNC and applicable radio authorization required."
+    }
+  },
+  "services": [
+    {
+      "id": "ard_text",
+      "country": "DE",
+      "name": "ARD Text",
+      "data_type": "dvb_teletext",
+      "hardware": "wintv_solohd_01589",
+      "mode": "receive",
+      "medium": "DVB-T2 where the tuned broadcaster carries it",
+      "reference_page": 100,
+      "subtitle_page": 150,
+      "status": "source_offers_service; local RF unverified",
+      "source_url": "https://hilfe.ard.de/artikel/untertitel-am-fernseher-aktivieren/"
+    },
+    {
+      "id": "zdftext",
+      "country": "DE",
+      "name": "ZDFtext",
+      "data_type": "dvb_teletext",
+      "hardware": "wintv_solohd_01589",
+      "mode": "receive",
+      "reference_page": 100,
+      "subtitle_page": 777,
+      "status": "source_offers_service; local RF unverified",
+      "source_url": "https://www.zdf.de/unternehmen/verantwortung/barrierefreiheit-faq-100.html"
+    },
+    {
+      "id": "trt_telegun",
+      "country": "TR",
+      "name": "TRT TELEGÜN",
+      "data_type": "dvb_teletext",
+      "hardware": "wintv_solohd_01589",
+      "mode": "receive",
+      "reference_page": 100,
+      "status": "TRT describes teletext; actual local terrestrial multiplex carriage unverified",
+      "source_url": "https://www.trt.net.tr/corporate/teletext"
+    },
+    {
+      "id": "dvb_epg",
+      "country": "ALL",
+      "name": "DVB EPG and signal information",
+      "data_type": "dvb_si_epg",
+      "hardware": "wintv_solohd_01589",
+      "mode": "receive",
+      "status": "dependent on broadcast stream"
+    },
+    {
+      "id": "hbbtv",
+      "country": "ALL",
+      "name": "HbbTV application signalling",
+      "data_type": "hybrid_broadcast_broadband",
+      "hardware": "wintv_solohd_01589",
+      "mode": "conditional",
+      "status": "signalling possibly receivable; full interactive runtime not implemented; internet often needed",
+      "source_url": "https://developer.hbbtv.org/guide/introduction/overview-about-hbbtv-architecture"
+    },
+    {
+      "id": "dab_plus_text",
+      "country": "DE",
+      "name": "DAB+ DLS / Journaline / EPG / Slideshow",
+      "data_type": "dab_data",
+      "hardware": "sdr_optional",
+      "mode": "receive",
+      "status": "needs separate suitable SDR/DAB receiver and decoder",
+      "source_url": "https://www.dabplus.de/faq/"
+    },
+    {
+      "id": "fm_rds",
+      "country": "ALL",
+      "name": "FM RDS RadioText / RT+",
+      "data_type": "fm_rds",
+      "hardware": "sdr_optional",
+      "mode": "receive",
+      "status": "needs separate FM-capable SDR/receiver"
+    },
+    {
+      "id": "aprs",
+      "country": "ALL",
+      "name": "APRS packets / weather / messages",
+      "data_type": "amateur_ax25_aprs",
+      "hardware": "sdr_optional",
+      "mode": "receive",
+      "status": "RF receive only with SDR; RF transmit needs separate transceiver and proper authorization",
+      "source_url": "https://aprs.fi/doc/guide/guide.html"
+    },
+    {
+      "id": "dk0pi_bbs",
+      "country": "DE",
+      "name": "DK0PI Packet-Radio BBS DB0APK-9",
+      "data_type": "packet_bbs",
+      "hardware": "packet_radio_optional",
+      "mode": "two_way_conditional",
+      "band_note": "Documentation lists 438.150 MHz; range/local access and amateur authorization apply",
+      "status": "public documented node; no guaranteed accessibility",
+      "source_url": "https://www.dk0pi.de/2025-05-06-packet-radio-mailbox.html"
+    },
+    {
+      "id": "lk0nod",
+      "country": "DE",
+      "name": "LK0NOD LK0BOX BBS / LKCHAT (CB packet radio)",
+      "data_type": "packet_bbs_chat",
+      "hardware": "packet_radio_optional",
+      "mode": "two_way_conditional",
+      "band_note": "Published 27.235 MHz (channel 24) and 26.925 MHz (channel 77); legal CB operation and equipment checks",
+      "status": "documented service, no guaranteed availability",
+      "source_url": "https://www.lk0nod.de/lk0nod-hilfe-online.html"
+    },
+    {
+      "id": "mesh_rheinland",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "name": "Mesh Rheinland",
+      "data_type": "meshtastic_lora",
+      "hardware": "meshtastic_optional",
+      "mode": "two_way_conditional",
+      "band_note": "EU868 / ShortSlow according to community documentation",
+      "status": "local community with coverage dependent on nodes",
+      "source_url": "https://www.meshrheinland.de/meshtastic/grundeinstellungen"
+    },
+    {
+      "id": "mesh_sh",
+      "country": "DE",
+      "region": "Schleswig-Holstein",
+      "name": "Mesh SH",
+      "data_type": "meshtastic_lora",
+      "hardware": "meshtastic_optional",
+      "mode": "two_way_conditional",
+      "band_note": "EU868 / LongFast per community",
+      "status": "local community with coverage dependent on nodes",
+      "source_url": "https://mesh-sh.de/"
+    },
+    {
+      "id": "winlink",
+      "country": "ALL",
+      "name": "Winlink Global Radio Email",
+      "data_type": "radio_email",
+      "hardware": "packet_radio_optional",
+      "mode": "two_way_conditional",
+      "status": "qualified amateur or approved government users only; network depends on permitted gateway/radio",
+      "source_url": "https://winlink.org/user"
+    },
+    {
+      "id": "teefax",
+      "country": "ALL",
+      "name": "Teefax / online teletext art viewers",
+      "data_type": "web_teletext_community",
+      "hardware": "internet_browser",
+      "mode": "web_only",
+      "status": "online community; NOT a received DVB teletext or radio chat",
+      "source_url": "https://teletextart.co.uk/teletext-links"
+    }
+  ],
+  "defaults": {
+    "radio_scan_background": false,
+    "teletext_capture_background": false,
+    "bbs_connect_background": false,
+    "network_transmission": false,
+    "no_automatic_transmission": true,
+    "retain_original_recordings": true
+  }
+}
