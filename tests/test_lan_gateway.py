@@ -334,5 +334,154 @@ class LocalHttpGatewayTests(unittest.TestCase):
         self.assertEqual(status,404)
 
 
+class ReliableCommandDeliveryTests(unittest.TestCase):
+    """Simulated lost HTTP responses and browser reconnects; no real TV calls."""
+
+    def setUp(self):
+        self.clock = FakeClock()
+        self.broker = LanRemoteBroker(clock=self.clock)
+        self.display = self.broker.register(owner="alice", medium="tv")
+        self.phone = self.broker.pair(self.display["pairing_code"], peer="phone")
+        self.phone_token = self.phone["remote_token"]
+        self.screen_token = self.display["display_token"]
+
+    def test_lost_send_response_reuses_command_id(self):
+        original = self.broker.send(
+            self.phone_token, action="volume_up",
+            request_id="phone-command-000001")
+        duplicate = self.broker.send(
+            self.phone_token, action="volume_up",
+            request_id="phone-command-000001")
+        self.assertEqual(original["command_id"],duplicate["command_id"])
+        self.assertEqual(duplicate["state"],"pending")
+        [first] = self.broker.poll(self.screen_token)
+        self.assertEqual(first["command_id"],original["command_id"])
+        self.assertEqual(self.broker.poll(self.screen_token),[])
+        # After ACK, retry the same POST still returns the original command.
+        ack = self.broker.acknowledge(
+            self.screen_token,first["command_id"],accepted=True)
+        self.assertEqual(ack["state"],"display_received")
+        again = self.broker.send(
+            self.phone_token, action="volume_up",
+            request_id="phone-command-000001")
+        self.assertEqual(again["command_id"],original["command_id"])
+        self.assertEqual(again["state"],"display_received")
+        with self.assertRaises(ValueError):
+            self.broker.send(self.phone_token,action="mute",
+                request_id="phone-command-000001")
+
+    def test_reconnected_visible_display_replays_same_id_not_new_action(self):
+        sent=self.broker.send(self.phone_token,action="mute",
+                              request_id="phone-command-000002")
+        [first]=self.broker.poll(self.screen_token)
+        self.clock.forward(4)
+        self.assertEqual(self.broker.poll(self.screen_token),[])
+        self.clock.forward(1)
+        [again]=self.broker.poll(self.screen_token)
+        self.assertEqual(first["command_id"],again["command_id"])
+        self.assertEqual(first["action"],again["action"])
+        self.broker.acknowledge(self.screen_token,again["command_id"],accepted=True)
+        repeated_ack=self.broker.acknowledge(
+            self.screen_token,again["command_id"],accepted=True)
+        self.assertEqual(repeated_ack["state"],"display_received")
+        with self.assertRaises(ValueError):
+            self.broker.acknowledge(
+                self.screen_token,again["command_id"],accepted=False)
+        self.clock.forward(10)
+        self.assertEqual(self.broker.poll(self.screen_token),[])
+        self.assertEqual(self.broker.status(
+            self.phone_token,sent["command_id"])["state"],"display_received")
+
+    def test_unacknowledged_delivery_becomes_uncertain_not_success(self):
+        sent=self.broker.send(self.phone_token,action="volume_up")
+        self.assertEqual(len(self.broker.poll(self.screen_token)),1)
+        self.clock.forward(5)
+        self.assertEqual(len(self.broker.poll(self.screen_token)),1)
+        self.clock.forward(5)
+        self.assertEqual(len(self.broker.poll(self.screen_token)),1)
+        self.clock.forward(5)
+        self.assertEqual(self.broker.poll(self.screen_token),[])
+        self.assertEqual(self.broker.status(
+            self.phone_token,sent["command_id"])["state"],"delivery_uncertain")
+        # A late display ACK may still establish receipt without claiming
+        # that the real tuner, renderer or media executor changed state.
+        ack=self.broker.acknowledge(
+            self.screen_token,sent["command_id"],accepted=True)
+        self.assertEqual(ack["state"],"display_received")
+
+    def test_inflight_backpressure_counts_delivered_unacked(self):
+        for _ in range(64):
+            self.broker.send(self.phone_token,action="volume_up")
+        self.assertEqual(len(self.broker.poll(self.screen_token)),32)
+        with self.assertRaisesRegex(ValueError,"queue full"):
+            self.broker.send(self.phone_token,action="mute")
+        # Completing one in-flight command frees one bounded slot.
+        pending=[v for v in self.broker._commands.values()
+                 if v["state"]=="delivered_unacknowledged"]
+        self.broker.acknowledge(
+            self.screen_token,pending[0]["command_id"],accepted=True)
+        self.assertEqual(self.broker.send(
+            self.phone_token,action="mute")["state"],"pending")
+
+    def test_request_id_validation_and_explicit_phone_signout(self):
+        for identifier in ("a","bad request id","!unsafe",123):
+            with self.assertRaises(ValueError):
+                self.broker.send(self.phone_token,action="mute",
+                                 request_id=identifier)
+        self.broker.disconnect_remote(self.phone_token)
+        with self.assertRaises(PermissionError):
+            self.broker.send(self.phone_token,action="mute")
+        with self.assertRaises(PermissionError):
+            self.broker.disconnect_remote(self.phone_token)
+        # Remote logout does not terminate the display/other authorized owner.
+        self.assertEqual(self.broker.display(self.screen_token).medium,"tv")
+
+
+class GatewayRetryApiTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory()
+        self.gateway=RegionalLanGateway(
+            Path(self.tmp.name)/"profiles.sqlite",owner_secret=OWNER)
+        self.headers={"Host":"localhost:8443"}
+        self.owner_headers={**self.headers,
+                           "Authorization":"Bearer "+OWNER}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def request(self,method,path,data=None,token=None):
+        headers={**self.headers}
+        if token:headers["Authorization"]="Bearer "+token
+        return self.gateway.dispatch(method,path,headers,data,peer="127.0.0.1")
+
+    def test_repeated_network_post_and_phone_signout(self):
+        _,registered=self.request("POST","/api/display/register",
+                                   {"medium":"radio"},OWNER)
+        _,paired=self.request("POST","/api/remote/pair",
+                              {"code":registered["pairing_code"]})
+        phone=paired["remote_token"]
+        body={"action":"mute","request_id":"retry-test-id-20261105"}
+        status,first=self.request("POST","/api/remote/send",body,phone)
+        self.assertEqual(status,202)
+        status,second=self.request("POST","/api/remote/send",body,phone)
+        self.assertEqual(status,202)
+        self.assertEqual(first["command_id"],second["command_id"])
+        _,display=self.request("GET","/api/display/poll",token=registered["display_token"])
+        self.assertEqual(len(display["commands"]),1)
+        _,ack=self.request("POST","/api/display/ack",{
+            "command_id":first["command_id"],"accepted":True
+        },registered["display_token"])
+        _,repeat_ack=self.request("POST","/api/display/ack",{
+            "command_id":first["command_id"],"accepted":True
+        },registered["display_token"])
+        self.assertEqual(ack["state"],repeat_ack["state"])
+        status,out=self.request("POST","/api/remote/disconnect",{},phone)
+        self.assertEqual(status,200)
+        self.assertEqual(out["state"],"remote_disconnected")
+        with self.assertRaises(GatewayError) as exc:
+            self.request("POST","/api/remote/send",body,phone)
+        self.assertEqual(exc.exception.status,403)
+
+
 if __name__ == "__main__":
     unittest.main()
