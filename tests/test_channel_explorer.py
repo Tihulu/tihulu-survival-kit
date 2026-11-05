@@ -103,14 +103,39 @@ class ChannelExplorerTests(unittest.TestCase):
         self.assertEqual(r.state,"recording_protected")
         self.assertFalse(self.backend.probed)
 
-    def test_same_mux_can_share_only_when_confirmed_and_without_retune(self):
+    def test_same_mux_requires_separate_non_retuning_backend(self):
         locked=Receiver("tuner0","dvb_tuner",frozenset({"dvb_t2"}),
                         470000000,690000000,True,
                         locked_frequency_hz=514000000,recording_active=True,
                         share_locked_mux=True)
-        r=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=514000000,
-                               user_triggered=True,backend=self.backend)
-        self.assertEqual(r.state,"service_decoded")
+        # A scanner with only probe() must not run even at the same frequency.
+        blocked=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=514000000,
+                                     user_triggered=True,backend=self.backend)
+        self.assertEqual(blocked.state,"recording_protected")
+        self.assertFalse(self.backend.probed)
+
+        class SharedMuxReader(FakeReceiver):
+            def __init__(self):
+                super().__init__()
+                self.reads=[]
+            def probe_shared_mux(self, receiver, point):
+                self.reads.append((receiver.receiver_id, point.tuned_hz))
+                return ProbeReading("service_decoded", 84,
+                    (DetectedService("wdr-hd","WDR HD Köln","tv"),))
+        reader=SharedMuxReader()
+        out=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=514000000,
+                                 user_triggered=True,backend=reader)
+        self.assertEqual(out.state,"service_decoded")
+        self.assertEqual(reader.reads,[("tuner0",514000000)])
+        self.assertFalse(reader.probed)  # A regular retuning probe never runs.
+
+        shifted=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=513975000,
+                   fine_offset_hz=25000,user_triggered=True,backend=reader)
+        self.assertEqual(shifted.state,"recording_protected")
+        other=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=522000000,
+                                   user_triggered=True,backend=reader)
+        self.assertEqual(other.state,"recording_protected")
+        self.assertEqual(len(reader.reads),1)
 
     def test_fine_tune_requires_receiver_capability_and_bounded_offset(self):
         a=self.exp.manual_tune(self.sdr,mode="fm",frequency_hz=98600000,
