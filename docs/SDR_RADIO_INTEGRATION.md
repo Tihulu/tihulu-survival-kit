@@ -410,3 +410,9 @@ decoder dwell and UTF-8 service labels, power/thermal/USB coexistence,
 actual Task Center owner job status and trusted cancellable gateway.
 Do not enable UI's "Start RF Scan" until these conditions and real
 authenticated application wiring are satisfied.
+
+## Main-project Stage8 integration and actionable work package
+
+This Radio integration is **not standalone**: it belongs to the existing Tihulu Survival Kit Stage8 implementation roadmap and is tracked in [public epic #3](https://github.com/Tihulu/tihulu-survival-kit/issues/3) with 12 tickets `SDR-DAB-01…12`. Read the [main-project DAB auto-scan roadmap](radio/DAB_AUTO_SCAN_STAGE8_ROADMAP.md) for per-feature acceptance, dependencies, Basic/Expert UI, region Quick / Full 32 / extended 38, Task Center ownership and real Pi release gates. The private canonical Stage8 Plan92/Plan93 and existing MW-29/26/43/07/44/09/10/48 (plus independent TV MW-27) are cross-referenced without exposing private planning history in public.
+
+**Current engineering truth:** browser preview and synthetic Python backend exist; no authenticated Pi API, no real web streaming, no working Pi DAB/HE-AAC service receiver, no live scan button, no original-audio durable recorder, no multi-dongle USB identity guarantee or whole-suite green CI. Published frequency seeds remain NOT received; automatic scans are opt-in and background OFF. This document is technical evidence, not a standalone shipped application.
