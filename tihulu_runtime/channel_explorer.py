@@ -120,13 +120,15 @@ class ReceiverBackend(Protocol):
 class FrequencyLibrary:
     """Published-frequency seeds are never reclassified as received channels."""
 
-    def __init__(self, presets: list[FrequencyPreset], bands: list[ScanBand]):
+    def __init__(self, presets: list[FrequencyPreset], bands: list[ScanBand],
+                 channel_groups: dict[str, tuple[TunePoint, ...]] | None = None):
         if len({p.id for p in presets}) != len(presets):
             raise ValueError("Duplicate preset ID")
         if len({b.id for b in bands}) != len(bands):
             raise ValueError("Duplicate band ID")
         self.presets = {p.id: p for p in presets}
         self.bands = {b.id: b for b in bands}
+        self.channel_groups = channel_groups or {}
 
     @classmethod
     def from_json(cls, file: str | Path) -> "FrequencyLibrary":
@@ -150,7 +152,23 @@ class FrequencyLibrary:
                     100_000 <= band.start_hz <= band.stop_hz <= 2_000_000_000
                     and band.step_hz > 0):
                 raise ValueError("Invalid scan band")
-        return cls(presets, bands)
+        groups: dict[str, tuple[TunePoint,...]] = {}
+        for group in obj.get('channel_groups', []):
+            if group['id'] in groups or group['kind'] not in MODES:
+                raise ValueError('Duplicate/invalid channel group')
+            if not group['source'].startswith('https://'):
+                raise ValueError('Channel group needs a published source')
+            points = tuple(TunePoint(group['kind'], p['frequency_hz'])
+                           for p in group['points'])
+            if not points or len(points) > 256 or any(
+                    not 100_000 <= p.frequency_hz <= 2_000_000_000 for p in points):
+                raise ValueError('Invalid discrete frequency group')
+            groups[group['id']] = points
+        return cls(presets, bands, groups)
+
+    def channel_group_points(self, group_id: str) -> tuple[TunePoint, ...]:
+        """Use discrete DAB channel centers; DAB spacing is not uniform."""
+        return self.channel_groups[group_id]
 
     def list_presets(self, country: str | None = None, kind: str | None = None
                      ) -> list[FrequencyPreset]:
