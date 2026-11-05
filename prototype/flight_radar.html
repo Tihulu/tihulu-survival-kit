@@ -83,6 +83,8 @@ nav.mobile{display:none}button.primary{background:#236854;border-color:#337e67}
     <div class="controls">
      <label>Data source<select id="mode"><option value="antenna">Antenna only</option><option value="internet">Internet only</option><option value="hybrid">Hybrid</option><option value="automatic">Automatic</option></select></label>
      <label>Online access<select id="online"><option value="off">Off (default)</option><option value="on">Allow verified providers</option></select></label>
+     <label>Map layer<select id="mapLayer"><option value="grid">Offline coordinate grid</option><option value="osm">Online OpenStreetMap (opt-in)</option></select></label>
+     <div class="muted" style="align-self:center">Online map tiles disclose viewed area to the tile provider. No offline tile prefetch.</div>
      <button id="receiverLocation" type="button">Set receiver coordinates</button>
      <button id="deviceLocation" type="button">Use device location</button>
      <button id="receiverControl" type="button" disabled>Hardware controls unavailable</button>
