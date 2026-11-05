@@ -1,6 +1,7 @@
 """Mock/fixture-only smoke admission and Stage4 task lifecycle tests."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import Event, Thread
 from unittest import TestCase, main
 from unittest.mock import Mock
 
@@ -248,6 +249,39 @@ class CoordinatorTests(TestCase):
             self.smoke.assert_not_called()
         finally:
             self.manager._lock.release()
+
+
+    def test_owner_cancel_ack_after_worker_termination(self):
+        entered = Event()
+        def fake_cancelled(*args, cancel_event, **kwargs):
+            entered.set()
+            self.assertTrue(cancel_event.wait(timeout=2))
+            return CpuSmokeResult("base", "b"*64, "v1", "cancelled")
+        self.manager.smoke_executor = fake_cancelled
+        results = []
+        thread = Thread(target=lambda: results.append(self.run_case()))
+        thread.start()
+        try:
+            self.assertTrue(entered.wait(timeout=2))
+            job = self.apps.list_jobs(owner_id="alice")[0]
+            with self.assertRaises(PermissionError):
+                self.manager.request_cancel(job.id, owner_id="bob")
+            self.manager.request_cancel(job.id, owner_id="alice")
+        finally:
+            thread.join(timeout=3)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(results[0].job_final_state, "cancelled")
+        self.assertTrue(results[0].cancel_safe_during_execution)
+        self.assertEqual(self.services.snapshot()["local_ai"]["active_tasks"], 0)
+
+    def test_unconfirmed_process_termination_keeps_service_lease(self):
+        self.smoke.return_value = CpuSmokeResult(
+            "base", "b"*64, "v1", "termination_unconfirmed")
+        out = self.run_case()
+        self.assertEqual(out.state, "termination_unconfirmed")
+        self.assertIsNone(out.job_final_state)
+        self.assertEqual(self.services.snapshot()["local_ai"]["active_tasks"], 1)
+        self.assertEqual(self.apps.list_jobs(owner_id="alice")[0].state, "running")
 
 
 if __name__ == "__main__":
