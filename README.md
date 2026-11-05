@@ -11,7 +11,7 @@ Tihulu Survival Kit aims to provide a **portable, modular, offline-first knowled
 
 | Component | Current status |
 |---|---|
-| Public architecture and first-use guides | Documentation available on \`main\` |
+| Public architecture and first-use guides | Documentation available on `main` |
 | Optional service manager, shared leases and task lifecycle | Experimental Python code and tests in [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) |
 | Running Applications / Window Manager | Standalone interactive demo; not a real device controller |
 | Germany/Turkey regions and political/news sources | Candidate data only; no live feed integrations |
@@ -27,16 +27,16 @@ See [Engineering Development Status](docs/DEVELOPMENT_STATUS.md). Automated prot
 | Local hotspot SSID | **Tihulu Kit** |
 | Wi-Fi passphrase | **Unique and owner-provisioned**, never publicly embedded |
 | Owner account | Created during secure setup, distinct from Wi-Fi credentials |
-| Hotspot hostname | **\`tihulu.lan\`**, when the Pi actually runs its own AP/DNS |
-| Hotspot fallback IP | **\`10.10.10.10\`**, intended for that hotspot only |
-| Pi connected to a home router | **\`tihulu.local\`** where mDNS works, or its actual router-assigned IP |
-| \`tihulu.lan\` on the home router | Requires a separate router DNS alias; **not automatic** |
+| Hotspot hostname | **`tihulu.lan`**, when the Pi actually runs its own AP/DNS |
+| Hotspot fallback IP | **`10.10.10.10`**, intended for that hotspot only |
+| Pi connected to a home router | **`tihulu.local`** where mDNS works, or its actual router-assigned IP |
+| `tihulu.lan` on the home router | Requires a separate router DNS alias; **not automatic** |
 | Direct PC Ethernet | Actual link address of the Pi, with optional mDNS |
 | Camera/GPS access | Explicit user consent and a trusted HTTPS browser context where needed |
 
 **Installing ordinary Raspberry Pi OS Lite does not create the Tihulu Wi-Fi network or portal.** These settings require a real future installer.
 
-The same authenticated Tihulu interface is intended to work across the Pi's own hotspot, a home router connected via Ethernet or **secondary USB Wi-Fi**, and a properly configured direct Ethernet cable to a PC. Windows ICS, macOS Internet Sharing or Linux NetworkManager can optionally share connectivity from a computer; a cable alone does not enable this. The router LAN will not automatically resolve \`tihulu.lan\`, and the hotspot fallback IP should not be mistaken for a router LAN address.
+The same authenticated Tihulu interface is intended to work across the Pi's own hotspot, a home router connected via Ethernet or **secondary USB Wi-Fi**, and a properly configured direct Ethernet cable to a PC. Windows ICS, macOS Internet Sharing or Linux NetworkManager can optionally share connectivity from a computer; a cable alone does not enable this. The router LAN will not automatically resolve `tihulu.lan`, and the hotspot fallback IP should not be mistaken for a router LAN address.
 
 Existing detailed guides are presently in Turkish: [First-start information](docs/START_HERE_TR.md), [Network and access](docs/NETWORK_ACCESS_TR.md).
 
@@ -49,7 +49,7 @@ Existing detailed guides are presently in Turkish: [First-start information](doc
 | Power/cooling | Appropriate Pi 5 supply capability (**5 V / 5 A** target), active cooling and a tested powerbank |
 | Network interfaces | Built-in Wi-Fi as a local AP, Ethernet, optional second USB Wi-Fi client |
 | SDR radio receiver | Separate receive-only USB SDR candidate; **not confirmed purchased** |
-| DVB television | **Hauppauge WinTV-soloHD 01589 European model**, USB **DVB-T/T2/C**, **reported purchased** (Amazon ASIN \`B0152XLPFS\`) |
+| DVB television | **Hauppauge WinTV-soloHD 01589 European model**, USB **DVB-T/T2/C**, **reported purchased** (Amazon ASIN `B0152XLPFS`) |
 | TV antenna | User reports it purchased/ordered; arrival and specific included accessories not verified |
 | Clients | iOS, Android, Windows, Linux and macOS browsers |
 
