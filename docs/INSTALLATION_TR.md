@@ -15,6 +15,18 @@
 9. [Servisler ve güncelleme](#9-servisler-ve-güncelleme)
 10. [Doğrulama, sorun giderme, veri güvenliği](#10-doğrulama-sorun-giderme-veri-güvenliği)
 
+## Donanım yükseltme ve AI yapılandırması (Aşama 5 geliştirme)
+
+**Hâlen plan/deneysel backend:** Kullanıcının talebi doğrultusunda CPU-only, AI HAT+ 2 (Hailo-10H) ve güvenli özel LAN üzerinden uzak AI sunucusu tasarlanmaktadır. Donanım sonradan eklendiğinde Tihulu işletim sistemini yeniden kurmak zorunda olmamak hedeflenir. Gerçek kuruluma bağlanan web sihirbazı henüz yayımlanmadı.
+
+Geliştirici denetimi (mevcut repo/uygun Python ortamı gerekir):
+
+    python3 -m tihulu_runtime.ai_setup --probe-npu --pcie-nvme-boot
+
+Bu komut yalnızca donanım ve sürücü durumunu inceleyen bir JSON önerisi üretir; model indirmez, AI HAT sürücüsü kurmaz, disk taşımaz ve Tihulu Core'u yüklemez. Pi 5'in PCIe bağlantısında mevcut NVMe HAT ile AI HAT+ 2 için donanım topolojisini kesinlikle doğrulayın. Eski boot diskini biçimlendirmeyin. Modele ait harici SSD çıkarılırsa model kullanılmaz olarak işaretlenmeli, otomatik yeniden indirme yapılmamalıdır. Uzak sunucu için kimlik doğrulamalı güvenilir HTTPS gerekir; internete açık ham Ollama API'si kullanılmamalıdır.
+
+Ayrıntılı durum ve güvenli yükseltme: [Aşama 5 Donanım Uyumluluğu](ai/HARDWARE_AWARE_STAGE5.md) ve [Uzak AI Server Kurulum Rehberi](ai/REMOTE_AI_SERVER_SETUP.md).
+
 ## 1. Donanım ve gereksinimler
 
 **Hedef sistem, test edilmesi gereken başlangıç profili:**
