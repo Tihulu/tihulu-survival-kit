@@ -132,5 +132,72 @@ class SetupTests(unittest.TestCase):
         self.assertFalse(data["hardware_swap_approved"])
 
 
+    @patch("tihulu_runtime.ai_setup.cpu_smoke_test")
+    @patch("tihulu_runtime.ai_setup.ModelStorageRegistry")
+    @patch("tihulu_runtime.ai_setup.inspect_hardware")
+    @patch("tihulu_runtime.ai_setup.inspect_boot_topology")
+    def test_cpu_smoke_explicit_cli_marker_not_physical_boot_proof(self, boot, hw, registry, smoke):
+        from tihulu_runtime.ai_cpu_smoke import CpuSmokeResult
+        hw.return_value = HardwareSnapshot("aarch64", "Pi 5", 8 << 30, (), False, False, ())
+        boot.return_value = BootTopology(
+            "Pi5", "/dev/mmcblk0p2", "/dev/mmcblk0p2", "/dev/mmcblk0p2",
+            "sd_card", "root_mount_source")
+        registry.return_value.models = {"base": SimpleNamespace(
+            path="/approved/base.gguf", sha256="a"*64, device_uuid=None)}
+        registry.return_value.availability.return_value = "present_not_reverified"
+        smoke.return_value = CpuSmokeResult(
+            "base", "a"*64, "llama.cpp verified runner", "marker_observed",
+            elapsed_seconds=0.32, marker_observed=True)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main([
+                "--base-readiness", "--model-registry", "existing.json",
+                "--base-model-id", "base", "--run-base-cpu-smoke",
+                "--smoke-service-allowed", "--smoke-resource-budget-ok"]), 0)
+        data = json.loads(output.getvalue())
+        self.assertEqual(data["cpu_smoke"]["status"], "marker_observed")
+        self.assertEqual(data["base_readiness"]["state"], "current_boot_candidate")
+        self.assertTrue(data["base_readiness"]["actual_inference_test_executed"])
+        self.assertFalse(data["base_readiness"]["hardware_swap_approved"])
+        self.assertFalse(data["base_readiness"]["two_physical_layouts_verified"])
+        smoke.assert_called_once()
+        self.assertTrue(smoke.call_args.kwargs["explicit_owner_consent"])
+        self.assertTrue(smoke.call_args.kwargs["service_allowed"])
+        self.assertTrue(smoke.call_args.kwargs["resource_budget_allowed"])
+
+    @patch("tihulu_runtime.ai_setup.cpu_smoke_test")
+    @patch("tihulu_runtime.ai_setup.ModelStorageRegistry")
+    @patch("tihulu_runtime.ai_setup.inspect_hardware")
+    @patch("tihulu_runtime.ai_setup.inspect_boot_topology")
+    def test_cpu_smoke_denied_by_policy_keeps_inference_unverified(self, boot, hw, registry, smoke):
+        from tihulu_runtime.ai_cpu_smoke import CpuSmokeResult
+        hw.return_value = HardwareSnapshot("aarch64", "Pi 5", 8 << 30, (), False, False, ())
+        boot.return_value = BootTopology("Pi5", "", "/dev/root", "", "unknown", "root_transport_unverified")
+        registry.return_value.models = {"base": SimpleNamespace(
+            path="/approved/base.gguf", sha256="b"*64, device_uuid=None)}
+        registry.return_value.availability.return_value = "present_not_reverified"
+        smoke.return_value = CpuSmokeResult("base", None, None, "service_disabled")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["--base-readiness", "--model-registry", "existing.json",
+                                   "--base-model-id", "base", "--run-base-cpu-smoke"]), 0)
+        data = json.loads(output.getvalue())
+        self.assertEqual(data["cpu_smoke"]["status"], "service_disabled")
+        self.assertFalse(data["base_readiness"]["actual_inference_test_executed"])
+        self.assertIn("cpu_inference_unverified", data["base_readiness"]["missing_checks"])
+        self.assertFalse(smoke.call_args.kwargs["service_allowed"])
+        self.assertFalse(smoke.call_args.kwargs["resource_budget_allowed"])
+
+    def test_cpu_smoke_requires_all_explicit_scope_flags(self):
+        for args in [
+            ["--run-base-cpu-smoke"],
+            ["--base-readiness", "--run-base-cpu-smoke"],
+            ["--base-readiness", "--smoke-service-allowed"],
+        ]:
+            with self.assertRaises(SystemExit) as err:
+                main(args)
+            self.assertEqual(err.exception.code, 2)
+
+
 if __name__ == '__main__':
     unittest.main()
