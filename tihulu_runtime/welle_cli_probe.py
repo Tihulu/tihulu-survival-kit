@@ -87,7 +87,7 @@ def interpret_welle_cli_log(log: bytes, *, timed_out: bool,
             listed = True
             continue
         if listed:
-            match = SERVICE_LINE.fullmatch(line.strip())
+            match = SERVICE_LINE.match(line.strip())
             if match:
                 service_id = "0x" + match.group(1).upper()
                 label = match.group(2).strip()
