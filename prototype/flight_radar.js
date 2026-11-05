@@ -379,6 +379,30 @@ async function stop(){
  $("notice").textContent="No background aircraft polling. Session released.";
  renderList();renderDetails();paint();
 }
+const PROVIDER_LINKS = Object.freeze({
+ "adsb.lol": "https://www.adsb.lol/docs/open-data/api",
+ "adsb.fi": "https://adsb.fi",
+ "opensky": "https://opensky-network.org/about/terms-of-use"
+});
+function showProviderAttribution(entries){
+ const target=$("providerAttributions");target.replaceChildren();
+ if(!Array.isArray(entries)||!entries.length){
+   target.textContent="No configured internet source in use; antenna observations are local.";
+   return;
+ }
+ target.append(document.createTextNode("Online sources: "));
+ for(const [index, entry] of entries.entries()){
+   if(!entry || typeof entry.provider!=="string")continue;
+   const verifiedUrl=PROVIDER_LINKS[entry.provider];
+   if(!verifiedUrl)continue;
+   if(index)target.append(document.createTextNode(" · "));
+   const link=document.createElement("a");
+   link.href=verifiedUrl;link.target="_blank";link.rel="noopener noreferrer";
+   link.textContent=entry.provider+" ("+String(entry.license||"terms apply")+")";
+   link.style.color="#9ed5fa";
+   target.append(link);
+ }
+}
 async function poll(){
  if(!state.session||state.busy)return;
  state.busy=true;
@@ -386,6 +410,7 @@ async function poll(){
    const data=await api("/api/flight-radar/aircraft?session="+encodeURIComponent(state.session));
    if(!Array.isArray(data.aircraft))throw Error("Invalid aircraft feed.");
    state.planes=data.aircraft;
+   showProviderAttribution(data.provider_attributions);
    $("count").textContent=String(data.count);
    $("positioned").textContent=String(data.positioned);
    const online=Object.values(data.source_status||{}).filter(x=>x==="live").length;

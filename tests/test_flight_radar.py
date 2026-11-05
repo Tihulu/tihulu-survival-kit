@@ -213,10 +213,59 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 2)
 
     def test_reject_unsafe_region_or_provider(self):
-        for args in [("adsb.lol", 99, 0), ("adsb.fi", 52, 7),
+        for args in [("adsb.lol", 99, 0), ("unlisted-provider", 52, 7),
                      ("opensky", True, 7)]:
             with self.assertRaises(ValueError):
                 ProviderConfig(*args, enabled=True)
+
+    def test_opensky_operational_agreement_required_before_network(self):
+        config = ProviderConfig("opensky", 51.0, 7.0, enabled=True,
+                                oauth_bearer="trusted-test-token")
+        m = AircraftSourceManager(self.path, providers=(config,),
+                                  fetcher=self.fetch, clock=lambda:self.now)
+        x = m.snapshot(mode="internet", online_allowed=True)
+        self.assertEqual(x["count"], 0)
+        self.assertEqual(x["source_status"]["opensky"], "unavailable_or_rate_limited")
+        self.assertEqual(self.calls, [])
+
+    def test_adsbfi_personal_noncommercial_gate_before_network(self):
+        config = ProviderConfig("adsb.fi", 51.0, 7.0, enabled=True)
+        m = AircraftSourceManager(self.path, providers=(config,),
+                                  fetcher=self.fetch, clock=lambda:self.now)
+        x = m.snapshot(mode="internet", online_allowed=True)
+        self.assertEqual(x["count"], 0)
+        self.assertEqual(self.calls, [])
+
+    def test_adsbfi_approved_uses_v3_with_explicit_attribution(self):
+        config = ProviderConfig("adsb.fi", 51.0, 7.0, enabled=True,
+                                personal_noncommercial_verified=True)
+        m = AircraftSourceManager(self.path, providers=(config,),
+                                  fetcher=self.fetch, clock=lambda:self.now)
+        x = m.snapshot(mode="internet", online_allowed=True)
+        self.assertEqual(x["count"], 1)
+        self.assertEqual(len(self.calls), 1)
+        self.assertIn("https://opendata.adsb.fi/api/v3/lat/51.000000/lon/7.000000/dist/80",
+                      self.calls[0][0])
+        self.assertIn({"provider":"adsb.fi", "url":"https://adsb.fi",
+                       "license":"personal-non-commercial"}, x["provider_attributions"])
+
+    def test_adsbfi_no_wan_without_explicit_owner_consent(self):
+        config = ProviderConfig("adsb.fi", 51.0, 7.0, enabled=True,
+                                personal_noncommercial_verified=True)
+        m = AircraftSourceManager(self.path, providers=(config,),
+                                  fetcher=self.fetch, clock=lambda:self.now)
+        x = m.snapshot(mode="antenna", online_allowed=False)
+        self.assertEqual(x["source_status"]["local"], "live")
+        self.assertFalse(self.calls)
+
+    def test_opensky_operational_agreement_and_token_are_both_required(self):
+        config = ProviderConfig("opensky", 51.0, 7.0, enabled=True,
+                                operational_agreement_verified=True)
+        m = AircraftSourceManager(self.path, providers=(config,),
+                                  fetcher=self.fetch, clock=lambda:self.now)
+        x = m.snapshot(mode="internet", online_allowed=True)
+        self.assertEqual(x["count"], 0)
+        self.assertEqual(self.calls, [])
 
     def test_opensky_position_source_label(self):
         row = ["abc123", "FLT", "DE", self.now-2, self.now-1,
