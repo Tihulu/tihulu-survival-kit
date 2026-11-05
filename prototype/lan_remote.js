@@ -19,6 +19,7 @@ function setOptions(el,list){el.replaceChildren(...list.map(p=>option(p.label,p.
 const log = message => { $("status").textContent=message };
 let ownerToken="",displayToken="",targetId="",remoteToken="",remoteMedium="tv";
 let countries=[],profiles=[],ownerItems=[],phoneItems=[],activeTab="owner",pollTimer=null;
+const seenDisplayCommands=new Set();
 
 async function api(path,{method="GET",body=null,token=""}={}){
   const headers={};
@@ -45,7 +46,7 @@ function selectTab(name){
   for(const panel of document.querySelectorAll(".panel"))panel.hidden=panel.id!==name;
   for(const tab of document.querySelectorAll("[data-show]"))tab.className=tab.dataset.show===name?"":"alt";
   if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
-  if(name==="display"&&displayToken)pollDisplay();
+  if(name==="display"&&displayToken&&!document.hidden)pollDisplay();
 }
 for(const tab of document.querySelectorAll("[data-show]"))
   tab.onclick=()=>selectTab(tab.dataset.show);
@@ -190,6 +191,7 @@ async function registerDisplay(){
   const x=await own("/api/display/register",{method:"POST",
     body:{medium:$("display-medium").value}});
   displayToken=x.display_token;targetId=x.target_id;
+  seenDisplayCommands.clear();
   $("display-title").textContent=x.medium.toUpperCase()+" · Tarayıcı ekranı kayıtlı";
   $("display-code").textContent="Telefon eşleştirme kodu: "+x.pairing_code+" (120 saniye)";
   $("display-detail").textContent="Yalnızca tarayıcı komutları bekleniyor; canlı yayın oynatıcısı yok.";
@@ -200,23 +202,39 @@ async function revokeDisplay(){
   if(!targetId)return;
   await own("/api/display/revoke",{method:"POST",body:{target_id:targetId}});
   targetId="";displayToken="";
+  seenDisplayCommands.clear();
   if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
   $("display-title").textContent="Ekran bağlantısı kapatıldı";$("display-code").textContent="";
   log("Ekran ve eşleştirilmiş telefon oturumları geçersiz.");
 }
 async function pollDisplay(){
-  if(activeTab!=="display"||!displayToken)return;
+  if(activeTab!=="display"||!displayToken||document.hidden)return;
+  const token=displayToken;
   try{
-    const result=await api("/api/display/poll",{token:displayToken});
+    const result=await api("/api/display/poll",{token});
+    // If the tab was hidden or the owner revoked/replaced the display during
+    // the request, do not act on the stale response. Broker may retry later.
+    if(activeTab!=="display"||document.hidden||token!==displayToken)return;
     for(const cmd of result.commands){
-      $("display-title").textContent="Alınan demo komutu: "+cmd.action;
-      $("display-detail").textContent="Kanal profil kodu: "+(cmd.profile_id||"yok")+
-        " · Fiziksel TV veya yayın oynatımı değiştirilmedi.";
-      await api("/api/display/ack",{method:"POST",token:displayToken,
-         body:{command_id:cmd.command_id,accepted:true}});
+      // Retried delivery has the SAME command_id. Never show/apply twice.
+      if(!seenDisplayCommands.has(cmd.command_id)){
+        seenDisplayCommands.add(cmd.command_id);
+        if(seenDisplayCommands.size>256){
+          seenDisplayCommands.delete(seenDisplayCommands.values().next().value);
+        }
+        $("display-title").textContent="Alınan demo komutu: "+cmd.action;
+        $("display-detail").textContent="Kanal profil kodu: "+(cmd.profile_id||"yok")+
+          " · Fiziksel TV veya yayın oynatımı değiştirilmedi.";
+      }
+      // A lost ACK response may be repeated; server accepts same result.
+      await api("/api/display/ack",{method:"POST",token,
+        body:{command_id:cmd.command_id,accepted:true}});
     }
   }catch(e){log("Display bağlantısı: "+e.message)}
-  if(activeTab==="display"&&displayToken)pollTimer=setTimeout(pollDisplay,2500);
+  finally{
+    if(activeTab==="display"&&displayToken===token&&!document.hidden)
+      pollTimer=setTimeout(pollDisplay,2500);
+  }
 }
 async function pairPhone(){
   const result=await api("/api/remote/pair",{method:"POST",body:{code:$("pair-code").value}});
@@ -248,8 +266,19 @@ async function remoteSend(action){
     if(action==="select_channel")item_id=$("phone-channel").value;
     if(!profile_id||(action==="select_channel"&&!item_id))throw Error("Kanal listesi/kanal seç");
   }
-  const result=await api("/api/remote/send",{method:"POST",token:remoteToken,
-      body:{action,profile_id,item_id}});
+  if(!globalThis.crypto||typeof crypto.randomUUID!=="function"){
+    throw Error("Güvenli rastgele istek kimliği için HTTPS/localhost gerekiyor");
+  }
+  const payload={action,profile_id,item_id,request_id:crypto.randomUUID()};
+  let result;
+  try{
+    result=await api("/api/remote/send",{method:"POST",token:remoteToken,body:payload});
+  }catch(e){
+    // Only retry a transport failure, not a rejected API request. The same
+    // request ID makes a network retry safe against duplicate volume actions.
+    if(!(e instanceof TypeError))throw e;
+    result=await api("/api/remote/send",{method:"POST",token:remoteToken,body:payload});
+  }
   $("phone-status").textContent="Komut sırada: "+action+" — gerçek tuner ayarlanmadı.";
   setTimeout(async()=>{
     if(!remoteToken)return;
@@ -274,7 +303,22 @@ $("add-presets").onclick=()=>safely(addSelected);
 $("add-custom").onclick=()=>safely(addCustom);
 $("register-display").onclick=()=>safely(registerDisplay);
 $("revoke-display").onclick=()=>safely(revokeDisplay);
+async function disconnectPhone(){
+  const token=remoteToken;
+  remoteToken="";
+  $("phone-profile").replaceChildren();
+  $("phone-channel").replaceChildren();
+  $("phone-status").textContent="Telefon eşleşmesi kapatıldı.";
+  if(token){
+    try{
+      await api("/api/remote/disconnect",{method:"POST",token,body:{}});
+      log("Telefon sunucudaki oturumundan çıkış yaptı.");
+    }catch(e){log("Yerel token temizlendi. Sunucu iptalini doğrula: "+e.message)}
+  }
+}
+
 $("pair").onclick=()=>safely(pairPhone);
+$("disconnect-phone").onclick=()=>safely(disconnectPhone);
 $("phone-profile").onchange=()=>safely(loadPhoneItems);
 $("phone-select").onclick=()=>safely(()=>remoteSend("select_channel"));
 for(const b of document.querySelectorAll("[data-action]"))
