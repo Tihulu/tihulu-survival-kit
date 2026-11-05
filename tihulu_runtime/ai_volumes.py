@@ -76,8 +76,9 @@ def volume_containing(path: Path | str,
 
 
 def require_volume(path: Path | str, uuid: str, *,
-                   volumes: tuple[MountedVolume, ...] | None = None) -> MountedVolume:
+                   volumes: tuple[MountedVolume, ...] | None = None,
+                   writable: bool = True) -> MountedVolume:
     volume = volume_containing(path, volumes)
-    if not uuid or volume is None or volume.uuid != uuid or not volume.read_write:
+    if not uuid or volume is None or volume.uuid != uuid or (writable and not volume.read_write):
         raise ValueError('Expected writable UUID-mounted SSD unavailable or changed')
     return volume
