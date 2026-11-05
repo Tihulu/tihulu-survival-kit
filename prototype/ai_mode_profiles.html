@@ -85,7 +85,8 @@ function refresh(){
     usb:"/dev/sd* gözlendi: gerçek USB bağlantısı, güç ve yeniden açılış ayrıca doğrulanmalı."
   }[boot];
   el("result").textContent="Tercih edilen: "+preferred+"\nEtkin (yalnızca demo): "+effective+"\n"+reason+
-   "\nSistem diski: "+bootHint+"\nHer iki HAT düzeninde açılış: doğrulanmadı"+\n   "\nEnerji: ölçülmedi · Gerçek kurulum: yapılmadı";
+   "\nSistem diski: "+bootHint+"\nHer iki HAT düzeninde açılış: doğrulanmadı"+
+   "\nEnerji: ölçülmedi · Gerçek kurulum: yapılmadı";
   el("result").style.whiteSpace="pre-line";
 }
 document.querySelectorAll("input").forEach(x=>x.addEventListener("change",refresh));
