@@ -44,6 +44,8 @@ class AdmissionTests(TestCase):
     def test_no_owner_consent(self):
         self.assertEqual(admit(owner_confirmed=False).state,
                          "owner_consent_required")
+        self.assertEqual(admit(owner_confirmed=1).state,
+                         "owner_consent_required")
 
     def test_optional_ai_not_installed(self):
         self.assertEqual(admit(stage4_service={}).state,
@@ -79,6 +81,8 @@ class AdmissionTests(TestCase):
 
     def test_unsafe_psu_or_battery_unknown_fails(self):
         self.assertEqual(admit(power_source_verified=False).state,
+                         "power_source_unverified")
+        self.assertEqual(admit(power_source_verified=1).state,
                          "power_source_unverified")
 
     def test_unknown_model_memory_peak_fails(self):
