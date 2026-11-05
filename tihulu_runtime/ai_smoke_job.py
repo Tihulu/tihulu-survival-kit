@@ -2,14 +2,15 @@
 """Experimental Stage4 lease wrapper for the optional Base CPU smoke.
 
 Trusted server use only: not a public HTTP endpoint or real Pi supervisor.
-Does NOT promise live process cancellation or atomic preemption of a newly
-started recording. Those remain release blockers until an async executor,
-process-group termination and shared resource scheduler exist.
+A cooperative cancellation Event is passed to a Linux process-group runner,
+but this is not an authenticated HTTP task API, resource cgroup or globally
+atomic priority scheduler. New recordings can still race admission; full Pi
+integration remains a release blocker.
 """
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from threading import Lock
+from threading import Event, Lock
 from typing import Callable
 
 from .ai_cpu_smoke import CpuSmokeResult, cpu_smoke_test
@@ -51,6 +52,23 @@ class CpuSmokeJobCoordinator:
         self.resource_sampler = resource_sampler
         self.smoke_executor = smoke_executor
         self._lock = Lock()
+        self._active_guard = Lock()
+        self._active_job: tuple[str, str, Event] | None = None
+
+    def request_cancel(self, job_id: str, *, owner_id: str) -> None:
+        """Send cancellation signal; do not mark job cancelled before ACK.
+
+        Only the owner of the live job can ask for cancellation. The supervised
+        CPU worker uses a Linux process group and verifies termination.
+        """
+        with self._active_guard:
+            active = self._active_job
+            if active is None or active[0] != job_id:
+                raise KeyError("No active CPU smoke job")
+            if active[1] != owner_id:
+                raise PermissionError("Cannot cancel another owner's CPU job")
+            self.apps.request_cancel(job_id, owner_id=owner_id)
+            active[2].set()
 
     def run_once(self, registry: object, model_id: str, *, owner_id: str,
                  explicit_owner_consent: bool = False,
@@ -92,24 +110,34 @@ class CpuSmokeJobCoordinator:
                     kind="long_ai", mode="foreground")
             except (Busy, Blocked, KeyError):
                 return SmokeJobAttempt("stage4_acquire_denied", admission)
+            event = Event()
+            with self._active_guard:
+                self._active_job = (job.id, owner_id, event)
             try:
                 smoke = self.smoke_executor(
                     registry, model_id, explicit_owner_consent=True,
                     service_allowed=True, resource_budget_allowed=True,
                     runner=runner, timeout_seconds=timeout_seconds,
-                    threads=threads)
-                # Completed means the *diagnostic ran*, not that the LLM passed.
-                # A user cancellation request is not falsely marked cancelled
-                # without a real subprocess termination acknowledgement.
-                final = "completed" if smoke.passed else "failed"
+                    threads=threads, cancel_event=event)
+                if smoke.status == "termination_unconfirmed":
+                    # Do NOT falsely release the Stage4 lease when the runner
+                    # might still be alive. Manual privileged recovery needed.
+                    return SmokeJobAttempt("termination_unconfirmed", admission,
+                                           job.id, smoke, job_final_state=None)
+                final = ("cancelled" if smoke.status == "cancelled"
+                         else "completed" if smoke.passed else "failed")
                 self.apps.executor_ack_finished(
                     job.id, outcome=final, trusted_backend=True)
                 return SmokeJobAttempt("finished", admission, job.id,
-                                       smoke, final)
+                                       smoke, final,
+                                       cancel_safe_during_execution=True)
             except Exception:
                 self.apps.executor_ack_finished(
                     job.id, outcome="failed", trusted_backend=True)
                 return SmokeJobAttempt("executor_error", admission, job.id,
                                        job_final_state="failed")
+            finally:
+                with self._active_guard:
+                    self._active_job = None
         finally:
             self._lock.release()
