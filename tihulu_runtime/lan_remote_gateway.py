@@ -213,6 +213,10 @@ class RegionalLanGateway:
                     raise ValueError("Boolean accepted field required")
                 return 200,self.broker.acknowledge(token,d["command_id"],
                                                     accepted=d["accepted"])
+            if method == "POST" and path == "/api/remote/disconnect":
+                _,token = self._authorization(headers,scope="remote")
+                self.broker.disconnect_remote(token)
+                return 200, {"state":"remote_disconnected"}
             if method == "POST" and path == "/api/remote/send":
                 owner,token = self._authorization(headers,scope="remote")
                 session = self.broker.remote(token)
@@ -228,7 +232,8 @@ class RegionalLanGateway:
                             r["item_id"] for r in rows}:
                         raise GatewayError(403,"Channel not in owner profile")
                 return 202,self.broker.send(token,action=action,
-                        profile_id=profile_id,item_id=item_id)
+                        profile_id=profile_id,item_id=item_id,
+                        request_id=d.get("request_id",""))
             if method == "GET" and path == "/api/remote/status":
                 _,token=self._authorization(headers,scope="remote")
                 return 200,self.broker.status(token,q("command_id"))
