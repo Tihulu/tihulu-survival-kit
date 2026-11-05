@@ -25,7 +25,7 @@ a{color:#16566e}
 <body>
 <main class="shell">
 <h1>News & Politics — Source Selection</h1>
-<div class="notice"><strong>Local prototype only.</strong> The existing news catalog contains candidates, not verified live feeds. This page does not access the Internet, tune an antenna, read Teletext or perform a real scan. No receiver or backend is connected.</div>
+<div class="notice"><strong>Local prototype only.</strong> Choose several input transports, sources and language/AI actions at once. All source cards are candidates or mock examples. This page does not scan, translate, use AI, tune an antenna, or fetch any live feeds. No receiver, model, news API or backend is connected.</div>
 <section class="panel">
 <h2>Choose input transports</h2>
 <div class="three">
@@ -33,7 +33,7 @@ a{color:#16566e}
 <label class="medium"><input id="tv_antenna" type="checkbox"><div><strong>TV Antenna</strong><div><span>DVB Teletext and programme data</span></div></div></label>
 <label class="medium"><input id="radio_antenna" type="checkbox"><div><strong>Radio Antenna</strong><div><span>FM RDS, DAB Journaline and APRS</span></div></div></label>
 </div>
-<p class="muted">Your purchased DVB TV receiver is not an FM/DAB SDR. Missing RF hardware will be labelled unavailable; an active recording must never be interrupted.</p>
+<p class="muted"><strong>Multi-select:</strong> Internet, TV Antenna and Radio Antenna can all be enabled together. Choose any number of visible sources below. Your purchased DVB TV receiver is not an FM/DAB SDR, and recordings must not be interrupted.</p>
 </section>
 <section class="panel">
 <h2>Select individual sources</h2>
@@ -51,6 +51,31 @@ a{color:#16566e}
 <span id="count" class="muted"></span>
 </div>
 <div id="results" class="output" aria-live="polite">Select a transport and source, then request a scan.</div>
+</section>
+<section class="panel">
+<h2>Translator and Local AI (on demand)</h2>
+<p class="muted">Select several currently visible source items for a future local processing task. The original text, timestamp and source attribution must remain available. This preview does not download articles, receive broadcasts, load models or produce real AI output.</p>
+<div class="controls"><button id="choose-articles" type="button">Use selected sources as sample items</button><span id="items-count" class="muted">No items selected</span></div>
+<h3>Translate into (multiple languages allowed)</h3>
+<div class="controls">
+<label><input type="checkbox" class="target" value="en"> English</label>
+<label><input type="checkbox" class="target" value="tr"> Turkish</label>
+<label><input type="checkbox" class="target" value="de"> German</label>
+</div>
+<h3>Local AI actions (select any combination)</h3>
+<div class="controls">
+<label><input type="checkbox" id="summarize"> Summarize selected texts</label>
+<label><input type="checkbox" id="ask"> Answer a question</label>
+<label><input type="checkbox" id="compare"> Compare different sources</label>
+</div>
+<div class="controls" style="margin-top:12px">
+<label for="analysis-language">AI output language</label>
+<select id="analysis-language"><option value="tr">Turkish</option><option value="en">English</option></select>
+</div>
+<label for="question">Your question (only used if selected)</label>
+<textarea id="question" rows="2" style="width:100%;margin:8px 0;padding:10px;font:inherit;border-radius:8px;border:1px solid #c2d2d8" placeholder="What do these sources report about the event?"></textarea>
+<div class="controls"><button type="button" id="preview-ai">Preview selected task</button></div>
+<div id="ai-preview" class="output" aria-live="polite" style="margin-top:10px">No translation or AI task has been requested.</div>
 </section>
 <p class="muted">See <a href="../docs/NEWS_INPUT_SCANNING.md">implementation notes</a>. <a href="https://github.com/Tihulu/tihulu-survival-kit/blob/main/LICENSE">AGPL-3.0-only license</a>. This page is not linked to an actual news service.</p>
 </main>
@@ -112,6 +137,52 @@ document.getElementById("scan").addEventListener("click",()=>{
    list.append(item);
  }
  status.append(list);
+});
+const selectedArticles=new Set();
+const itemCount=document.getElementById("items-count");
+const aiPreview=document.getElementById("ai-preview");
+function updateArticleCount(){
+  itemCount.textContent=selectedArticles.size+" sample source item(s) chosen";
+}
+document.getElementById("choose-articles").addEventListener("click",()=>{
+  selectedArticles.clear();
+  for(const source of visible().filter(s=>selected.has(s.id)).slice(0,12)){
+    selectedArticles.add(source.id);
+  }
+  updateArticleCount();
+  aiPreview.textContent=selectedArticles.size
+    ?"Sample items chosen. No articles were fetched. Choose Translator/AI actions below."
+    :"No source items selected. Check multiple visible sources first.";
+});
+document.getElementById("preview-ai").addEventListener("click",()=>{
+  const langs=Array.from(document.querySelectorAll(".target:checked"),e=>e.value);
+  const summary=document.getElementById("summarize").checked;
+  const ask=document.getElementById("ask").checked;
+  const compare=document.getElementById("compare").checked;
+  const question=document.getElementById("question").value.trim();
+  const aiLanguage=document.getElementById("analysis-language").value;
+  if(!selectedArticles.size){
+    aiPreview.textContent="Select source items first. No task started.";return;
+  }
+  if(!langs.length&&!summary&&!ask&&!compare){
+    aiPreview.textContent="Choose at least one translation language or AI action.";return;
+  }
+  if(compare&&selectedArticles.size<2){
+    aiPreview.textContent="Comparison requires at least two different source items.";return;
+  }
+  if(ask&&!question){
+    aiPreview.textContent="Type a question before choosing Ask.";return;
+  }
+  const preview=[
+    "Demo only — no model processing or translation occurred.",
+    "Selected sample source IDs: "+Array.from(selectedArticles).join(", "),
+    "Translation languages: "+(langs.join(", ")||"none"),
+    "AI output language: "+aiLanguage,
+    "AI actions: "+([summary&&"summaries",ask&&"Q&A",compare&&"source comparison"].filter(Boolean).join(", ")||"none"),
+    "Runtime: actual installed Translator and Local AI workers are required; shared leases must be released after use."
+  ];
+  aiPreview.replaceChildren();
+  for(const item of preview){const p=document.createElement("p");p.textContent=item;aiPreview.append(p);}
 });
 draw();
 </script>
