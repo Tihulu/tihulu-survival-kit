@@ -14,6 +14,8 @@ exact intended USB receiver before the process is started. No gate = OFF.
 from __future__ import annotations
 
 from pathlib import Path
+import ctypes
+import ctypes.util
 from typing import Callable
 import os
 import re
@@ -23,6 +25,7 @@ import signal
 import subprocess
 import time
 
+from .sdr_radio import discover_usb_sdr
 from .channel_explorer import (
     DetectedService, FrequencyLibrary, ProbeReading, Receiver, TunePoint,
 )
@@ -118,6 +121,53 @@ def interpret_welle_cli_log(log: bytes, *, timed_out: bool,
         "no_signal",
         technical_details="No DAB services decoded during bounded single-block attempt")
 
+
+
+
+def librtlsdr_device_count() -> int:
+    """Query the installed librtlsdr enumeration only; no tuner is opened.
+
+    Fails closed when the compatible native library is absent. This is not
+    a reception test and does not guarantee the device is currently idle.
+    """
+    name = ctypes.util.find_library("rtlsdr")
+    if not name:
+        raise WelleCliProbeError("Host librtlsdr is not available")
+    try:
+        lib = ctypes.CDLL(name)
+        method = lib.rtlsdr_get_device_count
+        method.argtypes = []
+        method.restype = ctypes.c_uint32
+        return int(method())
+    except (AttributeError, OSError) as exc:
+        raise WelleCliProbeError("Cannot enumerate librtlsdr receivers") from exc
+
+
+class UniqueRtlReceiverGate:
+    """Fail-closed identity gate for a system with exactly one RTL device.
+
+    Required before passing a device to upstream welle-cli, whose rtl_sdr
+    frontend auto-opens the first working device and has no index flag.
+    This checks both supported sysfs USB VID/PID and native librtlsdr
+    enumeration, but must still be used through ManagedSdrScan's lock.
+    An external unauthorized RTL program can still race; Pi acceptance
+    needs USB exclusivity and a tested stable physical device map.
+    """
+
+    def __init__(self, *, sysfs_root: str | Path = "/sys/bus/usb/devices",
+                 count: Callable[[], int] = librtlsdr_device_count):
+        self.sysfs_root = sysfs_root
+        self.count = count
+
+    def __call__(self, receiver_id: str) -> bool:
+        devices = discover_usb_sdr(self.sysfs_root)
+        if (len(devices) != 1 or
+                receiver_id != "usb-sdr:" + devices[0].usb_path):
+            return False
+        try:
+            return self.count() == 1
+        except (OSError, ValueError, WelleCliProbeError):
+            return False
 
 class WelleCliDabProbe:
     """Trusted ReceiverBackend for one DAB block per managed SDR lock.
