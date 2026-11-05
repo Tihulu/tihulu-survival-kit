@@ -107,7 +107,7 @@ class CpuSmokeJobCoordinator:
                 job = self.apps.start_job(
                     "local_ai", owner_id=owner_id,
                     label="Owner-authorized Base CPU smoke",
-                    kind="long_ai", mode="foreground")
+                    kind="long_ai", mode="foreground", require_quiet=True)
             except (Busy, Blocked, KeyError):
                 return SmokeJobAttempt("stage4_acquire_denied", admission)
             event = Event()
