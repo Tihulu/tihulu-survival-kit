@@ -82,9 +82,61 @@ function resize(){
   canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);paint();
 }
+
+/* Optional public OSM raster tiles are requested only after the user selects
+ * Online OpenStreetMap and only for the current viewport. No prefetch, offline
+ * downloads, background fetch, third-party SDK or persistent service-worker
+ * cache. The offline coordinate grid remains available without Internet.
+ * Public tile policy/attribution: https://operations.osmfoundation.org/policies/tiles/ */
+const osmTiles=new Map();
+let osmActive=0;
+const TILE_LIMIT=64, MAX_IN_FLIGHT=6;
+function drawOptionalOnlineTiles(w,h) {
+  if($("mapLayer").value!=="osm" || !state.camera) return;
+  const z=Math.floor(state.camera.zoom),world=2**z;
+  const originX=xx(state.camera.lon,z)-w/2,originY=yy(state.camera.lat,z)-h/2;
+  const minX=Math.floor(originX/256),maxX=Math.floor((originX+w)/256);
+  const minY=Math.max(0,Math.floor(originY/256));
+  const maxY=Math.min(world-1,Math.floor((originY+h)/256));
+  // Bounds are the *visible* tiles, not a surrounding corridor or a cache
+  // prefetch. Avoid an extreme monitor/zoom generating an unbounded query.
+  let visible=0;
+  for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++) {
+    if(++visible>30) return;
+    const normalizedX=((x%world)+world)%world;
+    const key=z+"/"+normalizedX+"/"+y;
+    const xpos=x*256-originX,ypos=y*256-originY;
+    const entry=osmTiles.get(key);
+    if(entry?.ready) {
+      ctx.drawImage(entry.img,xpos,ypos,256,256);
+      continue;
+    }
+    if(entry || osmActive>=MAX_IN_FLIGHT) continue;
+    const image=new Image();
+    const tile={img:image,ready:false};
+    osmTiles.set(key,tile);osmActive++;
+    // Preserve default browser Referer behavior; do not spoof tile origins,
+    // cache-bust or bypass the provider's network cache directives.
+    image.onload=()=>{
+      tile.ready=true;osmActive--;
+      if($("mapLayer").value==="osm")paint();
+    };
+    image.onerror=()=>{
+      osmActive--;
+      osmTiles.delete(key);
+      $("mapHint").textContent="Online map tiles unavailable; coordinate grid remains usable.";
+      // Do not re-request failed public tiles automatically.
+      osmTiles.set(key,{failed:true});
+    };
+    image.src="https://tile.openstreetmap.org/"+key+".png";
+    while(osmTiles.size>TILE_LIMIT)osmTiles.delete(osmTiles.keys().next().value);
+  }
+}
+
 function paint(){
   const w=canvas.clientWidth,h=canvas.clientHeight;
   ctx.clearRect(0,0,w,h);ctx.fillStyle="#102435";ctx.fillRect(0,0,w,h);
+  if(state.camera)drawOptionalOnlineTiles(w,h);
   ctx.strokeStyle="#355266";ctx.lineWidth=1;ctx.fillStyle="#a5c1d4";
   ctx.font="11px system-ui";
   if(!state.camera) {
@@ -161,6 +213,15 @@ canvas.addEventListener("pointerup",e=>{
 canvas.addEventListener("wheel",e=>{e.preventDefault();changeZoom(e.deltaY<0?1:-1);},{passive:false});
 $("zoomIn").onclick=()=>changeZoom(1);
 $("zoomOut").onclick=()=>changeZoom(-1);
+$("mapLayer").addEventListener("change",()=>{
+  if($("mapLayer").value==="osm") {
+    $("notice").textContent="Online map requested. Visible tiles are fetched from OpenStreetMap with attribution. No offline tile download.";
+  } else {
+    // The grid is always available; no network calls when grid is selected.
+    $("notice").textContent="Offline coordinate grid selected. No map tile requests.";
+  }
+  paint();
+});
 $("focusNearest").onclick=()=>focusNearest(true);
 $("focusReceiver").onclick=()=>{
  if(!state.receiver){$("mapHint").textContent="Set receiver coordinates or grant location first.";return;}
