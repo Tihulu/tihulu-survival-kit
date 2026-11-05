@@ -246,6 +246,30 @@
       "receiver": "radio_sdr",
       "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
       "note": "Band allocation only; scanning must be chunked (max 256 probes per explicit task). No RF transmission."
+    },
+    {
+      "id": "de_amateur_40m",
+      "country": "DE",
+      "name": "Amateur HF 40m receive-only (LSB candidate)",
+      "kind": "lsb",
+      "start_hz": 7000000,
+      "stop_hz": 7200000,
+      "step_hz": 1000,
+      "receiver": "hf_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Germany amateur 40m allocation. A real HF-capable antenna/receiver and applicable privacy/legal checks are required. 1 kHz stepping is an experiment, not a known station map."
+    },
+    {
+      "id": "de_amateur_20m",
+      "country": "DE",
+      "name": "Amateur HF 20m receive-only (USB candidate)",
+      "kind": "usb",
+      "start_hz": 14000000,
+      "stop_hz": 14350000,
+      "step_hz": 1000,
+      "receiver": "hf_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Germany amateur 20m allocation. Need HF receiver, demodulator, actual band plan and privacy/regulatory compliance; no fixed channel claims."
     }
   ],
   "access_rules": {
