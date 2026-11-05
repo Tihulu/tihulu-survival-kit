@@ -174,3 +174,9 @@ Katkı yapmak isteyenler, önce bu README'deki “planned vs implemented” ayr�
 ---
 
 **Status summary / İngilizce:** Tihulu Survival Kit is **not yet released**. Target defaults: SSID **`Tihulu Kit`** (unique password, never published); AP URL **`tihulu.lan`** / **`10.10.10.10`**, home LAN **`tihulu.local`** when mDNS works or the Pi's actual IP. Planned interfaces include Ethernet to router **or directly to a computer**, second USB Wi-Fi to router, optional host internet sharing, and user-authorized phone **live camera OCR**. All are **design goals requiring implementation and tests**. See the linked installation and security guides.
+
+## Experimental Local AI source selection — Draft PR only (2026-11-05)
+
+The development branch adds a **standalone dark [Local AI Knowledge Sources preview](prototype/local_ai_sources.html)** and a **pure Python [source/index admission policy](tihulu_runtime/ai_sources.py)** with [29 mock-only tests](tests/test_ai_sources.py). Multi-select files/folders/book archives and the independently last Wikipedia checkbox are shown. Persistent keyword/vector RAG, background indexing, and internal NVMe/external SSD are **separate opt-in preferences, OFF by default**. The indexing preflight requires owner grants, trusted volume identity and disk-space evidence, but does **not** perform real storage or file operations. More detail: [Source Selection and RAG Experiment](docs/ai/SOURCE_SELECTION_RAG_EXPERIMENT.md).
+
+**This is not a released Local AI, functional file scanner, working Kiwix RAG adapter, SSD indexer or actual LLM chat.** The HTML previews have no backend, the policy is not an authenticated API, and no CI/Pi5 benchmark pass is claimed by this description. Whole Stage 5 design signoff remains pending; `main` is unchanged.
