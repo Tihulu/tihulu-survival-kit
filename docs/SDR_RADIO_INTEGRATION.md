@@ -203,3 +203,24 @@ Survival Kit product, provide an OS-isolated decoder, a trusted service
 lease and an owner-authenticated app gateway; **do not expose welle-cli
 directly to a shared or untrusted LAN**. Pi ARM64 performance, welle-cli
 API-version behaviour and real metrics remain unvalidated.
+
+## Recording-safe worker stop and isolated CI — Phase 1c
+
+A Phase 1c regression revealed a sequencing hazard: stopping the FM process
+before the tuner broker denies release could interrupt protected original
+audio despite the broker's recording flag. `RtlFmStream.stop()` now uses
+`SdrTunerBroker.release_after()`: ownership, protected recording and active
+listener gates are checked under the broker mutex **before** the worker is
+terminated, and remain held throughout worker shutdown. A trusted caller
+may pass `recording_stop_confirmed=True` only after a durable recorder
+flush/ACK; that actual journal/ACK mechanism is **not implemented yet**.
+The feature's safety check is in-process, not a cross-process USB device lock.
+
+Additional synthetic tests cover both protected recording and attached
+listener denial. `.github/workflows/sdr-radio-tests.yml` separately runs
+SDR + local DAB tests under Python 3.11/3.12 and validates the Radio Center
+inline JavaScript with Node. This explicit isolated matrix is **not a
+replacement for whole-repository Stage4/5 checks** and does not claim
+physical Pi/Nooelec RF verification. At Phase1b the global CI still had
+one unrelated `ai_smoke_admission` failure; coordinate on the owning
+AI branch before release.
