@@ -152,11 +152,15 @@ def proposal(snapshot: HardwareSnapshot, *, pcie_nvme_boot: bool = False,
         "npu_detected": detected,
         "npu_usable": ready,
         "npu_memory_bytes": snapshot.dedicated_npu_ram_bytes if ready else None,
-        "cpu_fallback": True,
+        "cpu_fallback": True,  # Architecture supports CPU execution; not a verified installed model.
+        "cpu_runtime_detected": snapshot.cpu_runtime_found,
+        "cpu_fallback_model_verified": False,
+        "cpu_fallback_both_boot_layouts_verified": False,
         "remote_option_available": True,
         "remote_configured": remote_configured,
-        "pcie_conflict_warning": bool(detected and pcie_nvme_boot),
-        "storage_alternative": "Verified USB 3.0 SSD" if detected and pcie_nvme_boot else None,
+        "pcie_conflict_warning": bool(pcie_nvme_boot),
+        "storage_alternative": ("USB 3.0 SSD boot candidate; hardware testing required"
+                                if pcie_nvme_boot else None),
         "actions_require_owner_confirmation": [
             "install driver/runtime", "download models", "move storage",
             "connect remote server"
