@@ -1,0 +1,422 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-05",
+  "status": "published_frequency_seed_NOT_received",
+  "caveat": "Preset frequency is a published candidate only. Receiver presence, signal lock, service contents, current coverage and plaintext access must be verified. No satellite frequencies are DVB-T2 presets.",
+  "frequencies": [
+    {
+      "id": "de_nrw_koeln_wdr_tv",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Köln/Bonn",
+      "kind": "dvb_t2",
+      "frequency_hz": 514000000,
+      "bandwidth_hz": 8000000,
+      "channel": "UHF 26",
+      "label": "WDR Fernsehen regional multiplex (Köln/Bonn)",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dvb-tzwei-hd-128.html"
+    },
+    {
+      "id": "de_nrw_duesseldorf_wdr_tv",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Düsseldorf/Langenberg",
+      "kind": "dvb_t2",
+      "frequency_hz": 674000000,
+      "bandwidth_hz": 8000000,
+      "channel": "UHF 46",
+      "label": "WDR Fernsehen regional multiplex (Düsseldorf)",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dvb-tzwei-hd-128.html"
+    },
+    {
+      "id": "de_nrw_dortmund_wdr_tv",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Dortmund",
+      "kind": "dvb_t2",
+      "frequency_hz": 506000000,
+      "bandwidth_hz": 8000000,
+      "channel": "UHF 25",
+      "label": "WDR Fernsehen regional multiplex (Dortmund)",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dvb-tzwei-hd-128.html"
+    },
+    {
+      "id": "de_nrw_muenster_wdr_tv",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Münster",
+      "kind": "dvb_t2",
+      "frequency_hz": 578000000,
+      "bandwidth_hz": 8000000,
+      "channel": "UHF 34",
+      "label": "WDR Fernsehen regional multiplex (Münster)",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dvb-tzwei-hd-128.html"
+    },
+    {
+      "id": "de_nrw_wdr_dab_11d",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Köln/NRW",
+      "kind": "dab",
+      "frequency_hz": 222064000,
+      "channel": "11D",
+      "label": "WDR NRW DAB+ ensemble",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dab-plus-128.html"
+    },
+    {
+      "id": "de_nrw_wdr_dab_9a",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Köln/NRW",
+      "kind": "dab",
+      "frequency_hz": 202928000,
+      "channel": "9A",
+      "label": "WDR Regional DAB+ ensemble",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dab-plus-128.html"
+    },
+    {
+      "id": "de_national_dab_5c",
+      "country": "DE",
+      "region": "ALL",
+      "locality": "Germany candidate",
+      "kind": "dab",
+      "frequency_hz": 178352000,
+      "channel": "5C",
+      "label": "First national DAB+ multiplex",
+      "source": "https://www.deutschlandfunkkultur.de/frequenzsuche"
+    },
+    {
+      "id": "de_koeln_wdr2_fm",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Kölnturm",
+      "kind": "fm",
+      "frequency_hz": 98600000,
+      "channel": "FM",
+      "label": "WDR 2",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/ukw-senderstandorte-100.amp"
+    },
+    {
+      "id": "de_koeln_1live_fm",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Kölnturm",
+      "kind": "fm",
+      "frequency_hz": 87600000,
+      "channel": "FM",
+      "label": "1LIVE",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/ukw-senderstandorte-100.amp"
+    },
+    {
+      "id": "de_bonn_wdr5_fm",
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "locality": "Bonn",
+      "kind": "fm",
+      "frequency_hz": 88000000,
+      "channel": "FM",
+      "label": "WDR 5",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/ukw-senderstandorte-100.amp"
+    },
+    {
+      "id": "tr_izmir_radyo1",
+      "country": "TR",
+      "region": "İzmir",
+      "locality": "İzmir Merkez",
+      "kind": "fm",
+      "frequency_hz": 94700000,
+      "channel": "FM",
+      "label": "TRT Radyo 1",
+      "source": "https://radyo.trt.net.tr/frekanslar/izmir-merkez"
+    },
+    {
+      "id": "tr_izmir_trtfm",
+      "country": "TR",
+      "region": "İzmir",
+      "locality": "İzmir Merkez",
+      "kind": "fm",
+      "frequency_hz": 91200000,
+      "channel": "FM",
+      "label": "TRT FM",
+      "source": "https://radyo.trt.net.tr/frekanslar/izmir-merkez"
+    },
+    {
+      "id": "tr_izmir_radyo3",
+      "country": "TR",
+      "region": "İzmir",
+      "locality": "İzmir Merkez",
+      "kind": "fm",
+      "frequency_hz": 88000000,
+      "channel": "FM",
+      "label": "TRT Radyo 3",
+      "source": "https://radyo.trt.net.tr/frekanslar/izmir-merkez"
+    },
+    {
+      "id": "tr_izmir_radyohaber",
+      "country": "TR",
+      "region": "İzmir",
+      "locality": "İzmir Merkez",
+      "kind": "fm",
+      "frequency_hz": 99100000,
+      "channel": "FM",
+      "label": "TRT Radyo Haber",
+      "source": "https://radyo.trt.net.tr/frekanslar/izmir-merkez"
+    },
+    {
+      "id": "de_cb_lk0nod_24",
+      "country": "DE",
+      "region": "ALL",
+      "locality": "LK0NOD node (coverage unverified)",
+      "kind": "nfm",
+      "frequency_hz": 27235000,
+      "channel": "CB 24",
+      "label": "LK0NOD packet BBS/chat candidate, AFSK 1200",
+      "source": "https://www.lk0nod.de/packet-radio/index.html"
+    },
+    {
+      "id": "de_cb_lk0nod_77",
+      "country": "DE",
+      "region": "ALL",
+      "locality": "LK0NOD node (coverage unverified)",
+      "kind": "nfm",
+      "frequency_hz": 26925000,
+      "channel": "CB 77",
+      "label": "LK0NOD packet BBS/chat candidate, AFSK 1200",
+      "source": "https://www.lk0nod.de/packet-radio/index.html"
+    }
+  ],
+  "bands": [
+    {
+      "id": "de_dvb_uhf_21_48",
+      "country": "DE",
+      "name": "Germany DVB-T/T2 UHF channels 21–48 (blind sweep)",
+      "kind": "dvb_t2",
+      "start_hz": 474000000,
+      "stop_hz": 690000000,
+      "step_hz": 8000000,
+      "bandwidth_hz": 8000000,
+      "receiver": "dvb_tuner",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/dvb-tzwei-hd-128.html",
+      "note": "UHF channel-grid proposal, NOT a list of active local transmitters; region and local signal decide actual channels."
+    },
+    {
+      "id": "de_fm_87_5_108",
+      "country": "DE",
+      "name": "FM broadcast step scan",
+      "kind": "fm",
+      "start_hz": 87500000,
+      "stop_hz": 108000000,
+      "step_hz": 100000,
+      "receiver": "radio_sdr",
+      "source": "https://www1.wdr.de/unternehmen/der-wdr/empfang-technik/ukw-senderstandorte-100.amp",
+      "note": "Candidate broadcast band, not a list of active signals. Step/coverage may need refinement."
+    },
+    {
+      "id": "tr_fm_87_5_108",
+      "country": "TR",
+      "name": "FM broadcast step scan",
+      "kind": "fm",
+      "start_hz": 87500000,
+      "stop_hz": 108000000,
+      "step_hz": 100000,
+      "receiver": "radio_sdr",
+      "source": "https://radyo.trt.net.tr/frekanslar/izmir-merkez",
+      "note": "Candidate broadcast band only."
+    },
+    {
+      "id": "de_amateur_2m",
+      "country": "DE",
+      "name": "Amateur 2m band — receive-only exploratory candidate",
+      "kind": "nfm",
+      "start_hz": 144000000,
+      "stop_hz": 146000000,
+      "step_hz": 12500,
+      "receiver": "radio_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Band allocation only, not a transmission list. Do not decode/store private communications or transmit."
+    },
+    {
+      "id": "de_amateur_70cm",
+      "country": "DE",
+      "name": "Amateur 70cm band — receive-only exploratory candidate",
+      "kind": "nfm",
+      "start_hz": 430000000,
+      "stop_hz": 440000000,
+      "step_hz": 25000,
+      "receiver": "radio_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Band allocation only; scanning must be chunked (max 256 probes per explicit task). No RF transmission."
+    },
+    {
+      "id": "de_amateur_40m",
+      "country": "DE",
+      "name": "Amateur HF 40m receive-only (LSB candidate)",
+      "kind": "lsb",
+      "start_hz": 7000000,
+      "stop_hz": 7200000,
+      "step_hz": 1000,
+      "receiver": "hf_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Germany amateur 40m allocation. A real HF-capable antenna/receiver and applicable privacy/legal checks are required. 1 kHz stepping is an experiment, not a known station map."
+    },
+    {
+      "id": "de_amateur_20m",
+      "country": "DE",
+      "name": "Amateur HF 20m receive-only (USB candidate)",
+      "kind": "usb",
+      "start_hz": 14000000,
+      "stop_hz": 14350000,
+      "step_hz": 1000,
+      "receiver": "hf_sdr",
+      "source": "https://www.gesetze-im-internet.de/afuv_2005/BJNR024200005.html",
+      "note": "Germany amateur 20m allocation. Need HF receiver, demodulator, actual band plan and privacy/regulatory compliance; no fixed channel claims."
+    }
+  ],
+  "access_rules": {
+    "transmission_enabled": false,
+    "scan_on_open": false,
+    "hardware_probed_before_scan": true,
+    "recording_never_retuned_implicitly": true,
+    "local_browser_web_only_for_external_forums": true
+  },
+  "channel_groups": [
+    {
+      "id": "dab_band_iii",
+      "name": "DAB+ Band III 5A–12D (published channel raster)",
+      "country": "DE",
+      "kind": "dab",
+      "source": "https://tvhelfer.de/dab/kanalraster",
+      "disclaimer": "Full standardized channel centers, NOT locally active radio stations; needs real DAB-capable receiver and decoder.",
+      "points": [
+        {
+          "channel": "5A",
+          "frequency_hz": 174928000
+        },
+        {
+          "channel": "5B",
+          "frequency_hz": 176640000
+        },
+        {
+          "channel": "5C",
+          "frequency_hz": 178352000
+        },
+        {
+          "channel": "5D",
+          "frequency_hz": 180064000
+        },
+        {
+          "channel": "6A",
+          "frequency_hz": 181936000
+        },
+        {
+          "channel": "6B",
+          "frequency_hz": 183648000
+        },
+        {
+          "channel": "6C",
+          "frequency_hz": 185360000
+        },
+        {
+          "channel": "6D",
+          "frequency_hz": 187072000
+        },
+        {
+          "channel": "7A",
+          "frequency_hz": 188928000
+        },
+        {
+          "channel": "7B",
+          "frequency_hz": 190640000
+        },
+        {
+          "channel": "7C",
+          "frequency_hz": 192352000
+        },
+        {
+          "channel": "7D",
+          "frequency_hz": 194064000
+        },
+        {
+          "channel": "8A",
+          "frequency_hz": 195936000
+        },
+        {
+          "channel": "8B",
+          "frequency_hz": 197648000
+        },
+        {
+          "channel": "8C",
+          "frequency_hz": 199360000
+        },
+        {
+          "channel": "8D",
+          "frequency_hz": 201072000
+        },
+        {
+          "channel": "9A",
+          "frequency_hz": 202928000
+        },
+        {
+          "channel": "9B",
+          "frequency_hz": 204640000
+        },
+        {
+          "channel": "9C",
+          "frequency_hz": 206352000
+        },
+        {
+          "channel": "9D",
+          "frequency_hz": 208064000
+        },
+        {
+          "channel": "10A",
+          "frequency_hz": 209936000
+        },
+        {
+          "channel": "10B",
+          "frequency_hz": 211648000
+        },
+        {
+          "channel": "10C",
+          "frequency_hz": 213360000
+        },
+        {
+          "channel": "10D",
+          "frequency_hz": 215072000
+        },
+        {
+          "channel": "11A",
+          "frequency_hz": 216928000
+        },
+        {
+          "channel": "11B",
+          "frequency_hz": 218640000
+        },
+        {
+          "channel": "11C",
+          "frequency_hz": 220352000
+        },
+        {
+          "channel": "11D",
+          "frequency_hz": 222064000
+        },
+        {
+          "channel": "12A",
+          "frequency_hz": 223936000
+        },
+        {
+          "channel": "12B",
+          "frequency_hz": 225648000
+        },
+        {
+          "channel": "12C",
+          "frequency_hz": 227360000
+        },
+        {
+          "channel": "12D",
+          "frequency_hz": 229072000
+        }
+      ]
+    }
+  ]
+}

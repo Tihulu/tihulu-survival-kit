@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tihulu — Window & Task Manager (Prototype)</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1c2b33;background:#f5f7f7}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1100px;margin:auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(1.4rem,3vw,2rem);margin:.3rem 0}h2{font-size:1.13rem}p{line-height:1.5}
+.muted{color:#54646b;font-size:.9rem}.banner{padding:13px;border-radius:12px;background:#eaf2f5;border:1px solid #bdd6df}
+.panel{background:#fff;border:1px solid #d9e1e3;border-radius:16px;padding:16px;margin-top:16px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.actions button{background:#124e63;color:white;border:0;padding:10px 13px;border-radius:9px;cursor:pointer;font-weight:600}
+.actions button.alt{background:#edf2f3;color:#243941;border:1px solid #c5d3d7}
+.actions button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #20a7c2;outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:11px}
+.app{border:1px solid #d8e2e5;border-radius:11px;padding:13px;display:grid;gap:7px}
+.apphead{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.apphead label{font-weight:700}.status{display:inline-block;border-radius:20px;background:#e5eeef;padding:4px 9px;font-size:.8rem}
+.status.live{background:#daf1df;color:#125825}.options{display:flex;flex-wrap:wrap;gap:12px;font-size:.84rem}
+.options label{display:flex;align-items:center;gap:4px}
+.job{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:13px 0;border-top:1px solid #e4eaea;flex-wrap:wrap}
+.job strong{font-size:.95rem}.job button{background:#edf2f3;border:1px solid #bccbd0;border-radius:8px;padding:8px;cursor:pointer}
+small{color:#56656e}
+#feedback{min-height:42px;padding:12px;background:#f4f6f7;border-radius:10px}
+@media(max-width:550px){.shell{padding:12px}.panel{padding:12px}.actions button{flex:1}.job{align-items:stretch}.job button{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header><div><div class="muted">TIHULU SURVIVAL KIT · PROTOTYPE</div><h1>Window & Task Manager</h1></div><span class="status">Demo — no real service integration</span></header>
+<p class="banner"><strong>Preview only.</strong> Changes on this page affect the example state in your browser. They do not control Raspberry Pi services, recordings, or files. Actual RAM/CPU usage has not been measured.</p>
+<section class="panel" aria-labelledby="apps-title">
+<h2 id="apps-title">Applications</h2><p class="muted">Select and open or close application views. Tabs on other devices and ongoing server-owned jobs are tracked separately.</p>
+<div class="actions">
+<button type="button" id="open">Open selected</button>
+<button type="button" class="alt" id="close">Close selected</button>
+<button type="button" class="alt" id="pause">Pause optional background tasks</button>
+</div>
+<div id="apps" class="grid" style="margin-top:14px"></div>
+</section>
+<section class="panel" aria-labelledby="tasks-title">
+<h2 id="tasks-title">Ongoing jobs</h2>
+<p class="muted">TV recording, file transfers, and long-running AI tasks remain server-owned even if the tabs close. A real job must not be marked stopped until its executor acknowledges cancellation.</p>
+<div id="jobs"></div>
+</section>
+<section class="panel" aria-live="polite"><h2>Operation result</h2><div id="feedback">Choose an action.</div></section>
+</main>
+<script>
+"use strict";
+const apps=[
+{id:"news",name:"News & Politics",views:0,hard:true,background:false,startup:false},
+{id:"tv",name:"TV & Teletext",views:0,hard:true,background:false,startup:false},
+{id:"radio",name:"Radio & Data Networks",views:0,hard:true,background:false,startup:false},
+{id:"ai",name:"Offline AI",views:0,hard:true,background:false,startup:false},
+{id:"translator",name:"Translator / OCR / ASR",views:0,hard:true,background:false,startup:false},
+{id:"wiki",name:"Wikipedia / Kiwix",views:0,hard:true,background:false,startup:false},
+{id:"course",name:"Courses / Kolibri",views:0,hard:true,background:false,startup:false},
+{id:"files",name:"Files",views:0,hard:true,background:false,startup:false},
+{id:"maps",name:"Offline Maps",views:0,hard:true,background:false,startup:false}
+];
+const jobs=[
+{id:"record1",app:"tv",label:"Sample TV recording",kind:"recording",state:"running"},
+{id:"ai1",app:"ai",label:"Sample AI document analysis",kind:"ai",state:"running"},
+{id:"file1",app:"files",label:"Sample file transfer",kind:"transfer",state:"running"}
+];
+let paused=false;
+const appBox=document.getElementById("apps");
+const jobsBox=document.getElementById("jobs");
+const feedback=document.getElementById("feedback");
+function hasJob(id){return jobs.some(j=>j.app===id&&(j.state==="running"||j.state==="cancel_requested"))}
+function say(s){feedback.textContent=s}
+function redraw(){
+ appBox.replaceChildren();
+ for(const a of apps){
+  const item=document.createElement("div");item.className="app";
+  const head=document.createElement("div");head.className="apphead";
+  const choice=document.createElement("label");const cb=document.createElement("input");
+  cb.type="checkbox";cb.className="selection";cb.value=a.id;cb.setAttribute("aria-label",a.name+" select");
+  const label=document.createElement("span");label.textContent=a.name;choice.append(cb,label);
+  const stat=document.createElement("span");
+  const live=a.views>0||hasJob(a.id);
+  stat.className="status"+(live?" live":"");
+  stat.textContent=a.views>0?"Open • "+a.views+" tabs":hasJob(a.id)?"Background job active":"Closed";
+  head.append(choice,stat);
+  const opts=document.createElement("div");opts.className="options";
+  for(const [key,text] of [["hard","Hard enabled"],["background","Background"],["startup","Start at boot"]]){
+    const l=document.createElement("label");const toggle=document.createElement("input");
+    toggle.type="checkbox";toggle.checked=a[key];toggle.setAttribute("aria-label",a.name+" "+text);
+    toggle.addEventListener("change",()=>{if(key==="hard"&&!toggle.checked&&(a.views||hasJob(a.id))){toggle.checked=true;say("Cannot set Hard OFF while a task is active. Stop it safely first.");return;}
+       a[key]=toggle.checked;say(a.name+": "+text+" = "+(a[key]?"On":"Closed")+" (demo only)");});
+    l.append(toggle,document.createTextNode(text));opts.append(l);
+  }
+  const note=document.createElement("small");note.textContent="RAM usage: not measured";
+  item.append(head,opts,note);appBox.append(item);
+ }
+ jobsBox.replaceChildren();
+ for(const job of jobs){
+  const wrapper=document.createElement("div");wrapper.className="job";
+  const info=document.createElement("div");
+  const line=document.createElement("strong");line.textContent=job.label;
+  const state=document.createElement("div");state.className="muted";
+  state.textContent=job.kind==="recording"?"Recording task protected • ":"";
+  state.textContent+=job.state==="running"?"Sample job running":"Cancellation requested — waiting for executor acknowledgment";
+  info.append(line,state);wrapper.append(info);
+  const b=document.createElement("button");b.type="button";b.textContent="Request stop";
+  b.disabled=job.state!=="running";
+  b.addEventListener("click",()=>{
+   if(job.kind==="recording"&&!window.confirm("DEMO ONLY: A real recording must be finalized safely. Simulate a cancellation request?"))return;
+   job.state="cancel_requested";say(job.label+": Cancellation requested (demo). No real process was stopped.");redraw();
+  });wrapper.append(b);jobsBox.append(wrapper);
+ }
+}
+function selected(){return Array.from(document.querySelectorAll(".selection:checked"),e=>e.value)}
+document.getElementById("open").addEventListener("click",()=>{
+const ids=selected();if(!ids.length){say("Select one or more applications first.");return}
+for(const id of ids){const a=apps.find(x=>x.id===id);if(a.hard){a.views++;} }
+say("Selected Hard ON application views were opened in the demo. No real service command was issued.");redraw()
+});
+document.getElementById("close").addEventListener("click",()=>{
+const ids=selected();if(!ids.length){say("Select one or more applications first.");return}
+let protectedJobs=0;
+for(const id of ids){const a=apps.find(x=>x.id===id);a.views=0;if(hasJob(id))protectedJobs++;}
+say("Selected application views were closed (demo). "+(protectedJobs?protectedJobs+" app(s) retain their ongoing jobs.":"No active sample jobs were affected."));redraw()
+});
+document.getElementById("pause").addEventListener("click",()=>{paused=!paused;document.getElementById("pause").textContent=paused?"Resume optional background tasks":"Pause optional background tasks";say(paused?"New optional background work paused (demo). Active jobs continue.":"Optional background pause cleared (demo).");});
+redraw();
+</script>
+</body>
+</html>

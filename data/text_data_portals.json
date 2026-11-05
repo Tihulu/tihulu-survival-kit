@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-05",
+  "note": "Browser links and published candidates, not guaranteed operational sessions. Broadcast Teletext is one-way, not a chat server.",
+  "portals": [
+    {
+      "id": "ard_text",
+      "title": "ARD Text — DVB Teletext",
+      "transport": "dvb_teletext",
+      "interactive": false,
+      "requires_internet": false,
+      "requires": "Actual DVB tuner + same-mux Teletext PID decoder",
+      "starting_page": 100,
+      "link": null,
+      "provenance": "https://hilfe.ard.de/artikel/untertitel-am-fernseher-aktivieren/",
+      "availability": "broadcast_carriage_unverified"
+    },
+    {
+      "id": "zdftext",
+      "title": "ZDFtext — DVB Teletext",
+      "transport": "dvb_teletext",
+      "interactive": false,
+      "requires_internet": false,
+      "requires": "Actual DVB tuner and Teletext decoder",
+      "starting_page": 100,
+      "link": null,
+      "provenance": "https://www.zdf.de/unternehmen/verantwortung/barrierefreiheit-faq-100.html",
+      "availability": "broadcast_carriage_unverified"
+    },
+    {
+      "id": "trt_telegun",
+      "title": "TRT TELEGÜN — DVB Teletext",
+      "transport": "dvb_teletext",
+      "interactive": false,
+      "requires_internet": false,
+      "requires": "Actual Turkish terrestrial service carrying Teletext + compatible tuner",
+      "starting_page": 100,
+      "link": null,
+      "provenance": "https://www.trt.net.tr/corporate/teletext",
+      "availability": "broadcast_carriage_unverified"
+    },
+    {
+      "id": "teletext_art",
+      "title": "Teletext Art and linked viewers",
+      "transport": "web_https",
+      "interactive": true,
+      "requires_internet": true,
+      "requires": "External HTTPS website; individual viewer may or may not accept content submission",
+      "starting_page": null,
+      "link": "https://teletextart.co.uk/teletext-links",
+      "provenance": "https://teletextart.co.uk/teletext-links",
+      "availability": "published_url_not_checked_by_app"
+    },
+    {
+      "id": "lk0nod_forum",
+      "title": "LK0NOD public forum",
+      "transport": "web_https",
+      "interactive": true,
+      "requires_internet": true,
+      "requires": "Remote forum account/site permission; open external browser",
+      "starting_page": null,
+      "link": "https://www.lk0nod.de/forum/",
+      "provenance": "https://www.lk0nod.de/lk0nod/projekt.html",
+      "availability": "published_url_not_checked_by_app"
+    },
+    {
+      "id": "lk0nod_telnet",
+      "title": "LK0NOD browser Telnet portal",
+      "transport": "web_https",
+      "interactive": true,
+      "requires_internet": true,
+      "requires": "Remote service account and user interaction through its own web terminal",
+      "starting_page": null,
+      "link": "https://www.lk0nod.de/telnet.html",
+      "provenance": "https://www.lk0nod.de/lk0nod-hilfe-online.html",
+      "availability": "published_url_not_checked_by_app"
+    },
+    {
+      "id": "lk0nod_sdr",
+      "title": "LK0NOD WebSDR / listening",
+      "transport": "web_https",
+      "interactive": false,
+      "requires_internet": true,
+      "requires": "Website streaming radio RX, not Tihulu DVB tuner nor transmission",
+      "starting_page": null,
+      "link": "https://www.lk0nod.de/lk0nod/index.html",
+      "provenance": "https://www.lk0nod.de/lk0nod/index.html",
+      "availability": "published_url_not_checked_by_app"
+    },
+    {
+      "id": "tihulu_local_bbs",
+      "title": "Tihulu Local BBS / Forum",
+      "transport": "local_bbs",
+      "interactive": true,
+      "requires_internet": false,
+      "requires": "Future installed authenticated local Pi BBS server, currently not deployed",
+      "starting_page": null,
+      "link": null,
+      "provenance": "https://github.com/Tihulu/tihulu-survival-kit",
+      "availability": "planned_unavailable"
+    },
+    {
+      "id": "packet_rf",
+      "title": "Packet-radio BBS / Chat over RF",
+      "transport": "packet_rf",
+      "interactive": true,
+      "requires_internet": false,
+      "requires": "Separate approved transmitting radio and radio authorization; not DVB or receive-only SDR",
+      "starting_page": null,
+      "link": null,
+      "provenance": "https://www.lk0nod.de/packet-radio/index.html",
+      "availability": "hardware_and_authorization_required"
+    }
+  ],
+  "default_permissions": {
+    "automatic_transmit": false,
+    "web_credentials_stored_by_tihulu": false,
+    "unrestricted_remote_proxy": false,
+    "auto_open_external_urls": false
+  }
+}

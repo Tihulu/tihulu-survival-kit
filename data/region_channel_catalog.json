@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-05",
+  "status": "published_candidates_not_received",
+  "description": "Tiny bundled location index. Most cities have no verified local channel pack; users may add frequencies or later install explicitly curated signed-by-hash GitHub packs.",
+  "coverage_note": "A candidate is not a coverage guarantee or proof that a programme is decodable. Radio requires an independent FM/DAB receiver; the WinTV-soloHD is DVB only.",
+  "city_options": {
+    "DE": {
+      "Baden-Württemberg": [
+        "Stuttgart"
+      ],
+      "Bayern": [
+        "München"
+      ],
+      "Berlin": [
+        "Berlin"
+      ],
+      "Brandenburg": [
+        "Potsdam"
+      ],
+      "Bremen": [
+        "Bremen",
+        "Bremerhaven"
+      ],
+      "Hamburg": [
+        "Hamburg"
+      ],
+      "Hessen": [
+        "Wiesbaden",
+        "Frankfurt am Main"
+      ],
+      "Mecklenburg-Vorpommern": [
+        "Schwerin"
+      ],
+      "Niedersachsen": [
+        "Hannover"
+      ],
+      "Nordrhein-Westfalen": [
+        "Köln",
+        "Bonn",
+        "Düsseldorf",
+        "Dortmund",
+        "Münster",
+        "Essen",
+        "Aachen",
+        "Wuppertal"
+      ],
+      "Rheinland-Pfalz": [
+        "Mainz"
+      ],
+      "Saarland": [
+        "Saarbrücken"
+      ],
+      "Sachsen": [
+        "Dresden",
+        "Leipzig"
+      ],
+      "Sachsen-Anhalt": [
+        "Magdeburg"
+      ],
+      "Schleswig-Holstein": [
+        "Kiel"
+      ],
+      "Thüringen": [
+        "Erfurt"
+      ]
+    },
+    "TR": {
+      "İzmir": [
+        "İzmir",
+        "İzmir Merkez",
+        "Bornova",
+        "Karşıyaka"
+      ]
+    }
+  },
+  "countrywide_candidates": {
+    "DE": [
+      "de_national_dab_5c"
+    ],
+    "TR": []
+  },
+  "region_candidates": {
+    "DE": {
+      "Nordrhein-Westfalen": [
+        "de_nrw_wdr_dab_11d",
+        "de_nrw_wdr_dab_9a"
+      ]
+    },
+    "TR": {}
+  },
+  "city_candidates": [
+    {
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "city": "Köln",
+      "preset_ids": [
+        "de_nrw_koeln_wdr_tv",
+        "de_koeln_wdr2_fm",
+        "de_koeln_1live_fm"
+      ]
+    },
+    {
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "city": "Bonn",
+      "preset_ids": [
+        "de_nrw_koeln_wdr_tv",
+        "de_bonn_wdr5_fm"
+      ]
+    },
+    {
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "city": "Düsseldorf",
+      "preset_ids": [
+        "de_nrw_duesseldorf_wdr_tv"
+      ]
+    },
+    {
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "city": "Dortmund",
+      "preset_ids": [
+        "de_nrw_dortmund_wdr_tv"
+      ]
+    },
+    {
+      "country": "DE",
+      "region": "Nordrhein-Westfalen",
+      "city": "Münster",
+      "preset_ids": [
+        "de_nrw_muenster_wdr_tv"
+      ]
+    },
+    {
+      "country": "TR",
+      "region": "İzmir",
+      "city": "İzmir Merkez",
+      "preset_ids": [
+        "tr_izmir_radyo1",
+        "tr_izmir_trtfm",
+        "tr_izmir_radyo3",
+        "tr_izmir_radyohaber"
+      ]
+    },
+    {
+      "country": "TR",
+      "region": "İzmir",
+      "city": "İzmir",
+      "preset_ids": [
+        "tr_izmir_radyo1",
+        "tr_izmir_trtfm",
+        "tr_izmir_radyo3",
+        "tr_izmir_radyohaber"
+      ]
+    }
+  ],
+  "download_policy": {
+    "optional_large_packs": "future_trusted_manifests_only",
+    "background_downloads": false,
+    "requires_explicit_user_action": true,
+    "max_uncompressed_bytes": 1048576,
+    "packs": []
+  }
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — TV / Radyo Kumandası (Demo)</title>
+<style>
+:root{font:16px system-ui;color:#17333f;background:#eff5f6}*{box-sizing:border-box}
+body{margin:0}main{max-width:520px;margin:auto;padding:14px}
+section{background:#fff;border:1px solid #d2e2e5;border-radius:17px;padding:15px;margin:12px 0}
+h1{font-size:1.55rem}h2{font-size:1.1rem}
+button,select,input{font:inherit;border-radius:12px;padding:13px;border:1px solid #c5d6dc;max-width:100%}
+button{background:#135d72;color:white;border:0;cursor:pointer;min-height:46px}
+button.light{background:#e6eef0;color:#204553}button:focus-visible{outline:3px solid #65acbe}
+.controls{display:flex;flex-wrap:wrap;gap:9px}.controls>*{flex:1;min-width:80px}
+label{display:grid;gap:5px;margin:8px 0}
+.dpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;text-align:center}
+.dpad button{min-height:66px;font-size:1.1rem}
+.screen{padding:15px;background:#143441;color:#fff;border-radius:14px;min-height:85px}
+.warn{background:#fff6e3;border-color:#e8c982}
+.muted,small{color:#566b70}a{color:#126078}#status{white-space:pre-wrap}
+</style></head><body><main>
+<header><small>TIHULU · LOCAL REMOTE · EXPERIMENTAL</small><h1>TV / Radyo Kumandası</h1><p class="muted">Telefon, tablet ya da bilgisayardan kumanda taslağı.</p></header>
+<section class="warn"><strong>Bu sürüm ağ kumandası değildir.</strong> Sadece aynı tarayıcı profili / aynı origin sekmeleri arasında BroadcastChannel önizlemesi yapabilir; başka telefondaki tarayıcıyla eşleşmez. Pi'de yayın oynatımı, WebSocket, yetkilendirme, ses/altyazı, çeviri ve AI henüz bağlı değil.</section>
+<section><div class="controls"><label>Hedef<select id="target"><option value="tv">TV ekranı</option><option value="radio">Radyo oynatıcı</option></select></label>
+<label>Liste<select id="profile"></select></label></div>
+<label>Kanallar<select id="channel"></select></label>
+<div class="controls"><button id="select">Seçili kanala geç (demo)</button><button id="play">Oynat / Duraklat</button></div></section>
+<section class="screen"><strong id="now">Yayın bağlı değil</strong><p id="detail">Gerçek sinyal alımı ve media playback yok.</p></section>
+<section><h2>Kumanda tuşları</h2>
+<div class="dpad"><span></span><button id="channel-up">CH +</button><span></span>
+<button id="volume-down">VOL −</button><button id="ok">OK</button><button id="volume-up">VOL +</button>
+<button id="previous">CH −</button><button id="mute">Sessiz</button><button id="stop">Durdur</button></div>
+<div class="controls" style="margin-top:12px"><button id="subtitles" class="light">Altyazı</button><button id="teletext" class="light">Teletext</button>
+<button id="fullscreen" class="light">Tam ekran isteği</button></div>
+</section>
+<section><h2>Translator ve AI</h2>
+<div class="controls"><label>Çeviri dili<select id="lang"><option value="tr">Türkçe</option><option value="en">English</option><option value="de">Deutsch</option></select></label></div>
+<div class="controls"><button id="translate">Seçili metni çevir</button><button id="ai">AI ile sor / özetle</button></div>
+<p class="muted">Kaynaklı altyazı veya Teletext gelince paylaşılan Translator / Local AI işçileri kullanılacak; burada metin uydurulmaz.</p></section>
+<section><div id="status" role="status">Hazır değil.</div><p><a href="region_channel_setup.html">Kanal listeleri</a> · <a href="remote_display.html" target="_blank" rel="noopener">Demo ekran aç</a></p></section>
+</main><script>
+"use strict";
+const $=id=>document.getElementById(id), KEY="tihulu-region-lineups-demo";
+const make=(tag,text)=>{const el=document.createElement(tag);el.textContent=text||"";return el};
+let profiles=[],index=0,channel=null,bus=null;
+try{profiles=(JSON.parse(localStorage.getItem(KEY)||"{}").profiles||[])}catch{}
+try{if("BroadcastChannel" in window)bus=new BroadcastChannel("tihulu-remote-demo")}catch{}
+const status=s=>$("status").textContent=s;
+const active=()=>profiles.find(x=>x.id===$("profile").value);
+function selectOptions(node,entries){node.replaceChildren(...entries.map(x=>{const op=make("option",x.label);op.value=x.value;return op}))}
+function channels(){
+ const p=active();if(!p)return [];
+ return (p.items||[]).filter(x=>$("target").value==="tv"?x.mode.startsWith("dvb_"):!x.mode.startsWith("dvb_"));
+}
+function refresh(){
+ const a=channels();selectOptions($("channel"),a.map(x=>({label:x.label+" · "+(x.frequencyHz/1e6)+" MHz",value:x.id})));
+ index=0;channel=a[0]||null;$("now").textContent=channel?channel.label:"Kanal listesi boş";
+ $("detail").textContent=channel?channel.mode+" · "+(channel.frequencyHz/1e6)+" MHz (katalog adayı)":"Önce bölgesel kanal listesi oluştur.";
+}
+function action(command){
+ const a=channels();
+ if(["select_channel","next_channel","previous_channel"].includes(command)){
+  if(!a.length){status("Bu tür için kaydedilmiş kanal yok.");return}
+  if(command==="select_channel")index=Math.max(0,a.findIndex(x=>x.id===$("channel").value));
+  if(command==="next_channel")index=(index+1)%a.length;
+  if(command==="previous_channel")index=(index+a.length-1)%a.length;
+  channel=a[index];$("channel").value=channel.id;
+  $("now").textContent=channel.label;$("detail").textContent=channel.mode+" · "+(channel.frequencyHz/1e6)+" MHz";
+ }
+ const msg={kind:"tihulu-remote-demo",command,medium:$("target").value,
+    channel:channel?{id:channel.id,label:channel.label,mode:channel.mode,frequencyHz:channel.frequencyHz}:null};
+ if(bus)bus.postMessage(msg);
+ status("Önizleme komutu: "+command+". Gerçek Pi/TV cihazına komut gönderilmedi.");
+}
+if(bus)bus.onmessage=event=>{
+ const d=event.data;
+ if(d&&d.kind==="tihulu-display-demo-ack")status("Aynı tarayıcı demosundan yanıt: "+d.command+" (gerçek playback yok).");
+};
+selectOptions($("profile"),profiles.map(p=>({label:p.label+" · "+p.city,value:p.id})));
+$("profile").onchange=refresh;$("target").onchange=refresh;$("channel").onchange=()=>{const a=channels();index=a.findIndex(x=>x.id===$("channel").value);channel=a[index]||null};
+const binds={"select":"select_channel","channel-up":"next_channel","previous":"previous_channel",
+ "volume-down":"volume_down","volume-up":"volume_up","mute":"mute","ok":"select_channel",
+ "stop":"stop","play":"play_pause","subtitles":"subtitles","teletext":"teletext","fullscreen":"fullscreen_request"};
+for(const [id,cmd] of Object.entries(binds))$(id).onclick=()=>action(cmd);
+$("translate").onclick=()=>status("Translator bağlı değil. Gerçek bir altyazı/Teletext metni ve yüklü model gerekir. Seçilen dil: "+$("lang").value);
+$("ai").onclick=()=>status("Local AI bağlı değil. Kaynaklı metin ve yüklü model gerekir; sahte özet üretilmedi.");
+refresh();status("Prototip hazır. Aynı-origin demo ekranını ayrıca açabilirsin.");
+</script></body></html>

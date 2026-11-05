@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — Bölgesel Kanal Kurulumu (Demo)</title>
+<style>
+:root{font:16px system-ui;color:#163843;background:#edf5f6}*{box-sizing:border-box}body{margin:0}
+main{max-width:1050px;margin:auto;padding:16px}h1{font-size:1.7rem}h2{font-size:1.2rem}
+section{background:#fff;border:1px solid #d4e0e3;border-radius:14px;padding:16px;margin:14px 0}
+.warning{background:#fff7e8;border-color:#e5c781}.muted,small{color:#526b71}
+.controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{display:grid;gap:5px;min-width:160px;flex:1}
+input,select,button{font:inherit;border:1px solid #c6d5d9;border-radius:8px;padding:9px;max-width:100%}
+button{background:#116075;color:white;border:0;cursor:pointer}button.light{background:#e8f0f2;color:#1b4652}
+.item{border-top:1px solid #e1e9eb;padding:12px 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.status{padding:12px;white-space:pre-wrap;background:#edf4f5;border-radius:10px}
+.badge{padding:4px 9px;background:#eaf2f3;border-radius:15px;font-size:.8rem}
+a{color:#0b5972}input[type=checkbox]{accent-color:#116075;width:18px;height:18px}
+@media(max-width:520px){main{padding:9px}.row{align-items:flex-start}button{min-height:42px}}
+</style></head><body><main>
+<header><small>TIHULU · FIRST RUN / REGIONAL CHANNELS · PROTOTYPE</small>
+<h1>TV ve radyo kanal listeleri</h1><p>Ülke, eyalet/il ve şehir seç; kutucuklarla çoklu kanal ekle, özel frekans gir, sıra değiştir ve her kanalı düzenle.</p></header>
+<section class="warning"><strong>Gerçek tuner bağlı değil.</strong> Seçimler sadece bu tarayıcıdaki yerel depolamaya kaydedilir; başka telefon veya bilgisayara aktarılmaz. Bir frekans adayı alınabilen yayın demek değildir. DVB TV alıcısı FM/DAB alamaz.</section>
+<section><h2>1 · Bölgeyi seç</h2>
+<div class="controls">
+<label class="field">Ülke<select id="country"><option value="DE">Almanya</option><option value="TR">Türkiye</option></select></label>
+<label class="field">Eyalet / İl<select id="region"></select></label>
+<label class="field">Şehir<select id="city"></select></label>
+<label class="field">Listede yoksa şehir gir<input id="city-other" maxlength="100" placeholder="İsteğe bağlı"></label>
+</div>
+<div class="controls" style="margin-top:12px"><label class="field">Liste adı<input id="name" value="Ev kanalları"></label>
+<button id="new-profile">Yeni liste oluştur</button></div>
+<p class="muted" id="coverage"></p></section>
+<section><h2>2 · Kanalları çoklu seç</h2>
+<div class="controls"><label>Filtre <select id="medium"><option value="all">TV + Radyo</option><option value="tv">TV</option><option value="radio">Radyo</option></select></label>
+<button id="all" class="light">Tümünü seç</button><button id="none" class="light">Seçimi temizle</button>
+<button id="add">Seçilenleri ekle</button></div>
+<div id="candidates"></div></section>
+<section><h2>3 · Kanal listem</h2><div class="controls"><label>Aktif liste<select id="profiles"></select></label>
+<a href="remote_control.html">Telefon kumandası</a> <a href="tv_center.html">TV Center</a> <a href="radio_center.html">Radio Center</a></div>
+<p class="muted">Kanalı düzenle, sırala veya ayarlamayı önizle. Değiştirme işlemi kendiliğinden tarama başlatmaz.</p>
+<div id="items"></div><h3>Özel kanal</h3><div class="controls">
+<label class="field">İsim<input id="custom-name" value="Özel radyo"></label>
+<label class="field">Tür<select id="custom-mode"><option value="fm">FM</option><option value="dab">DAB+</option><option value="dvb_t2">DVB-T2</option><option value="dvb_t">DVB-T</option><option value="dvb_c">DVB-C</option><option value="am">AM</option><option value="nfm">NFM</option></select></label>
+<label class="field">Frekans (MHz)<input id="custom-freq" type="number" min=".1" max="2000" step=".001" value="98.600"></label>
+<button id="add-custom">Özel kanal ekle</button></div></section>
+<section><h2>4 · Ek bölge katalogları</h2><p>Küçük başlangıç listeleri uygulama içinde. Büyük şehir paketleri ileride GitHub deposundan açık kullanıcı onayı ve SHA-256 kontrolüyle indirilebilecek; henüz indirilecek bir paket yayımlanmadı.</p>
+<button disabled>Ek katalog henüz yok</button></section>
+<div id="status" class="status" role="status">Katalog yükleniyor...</div>
+<footer><p><a href="channel_explorer.html">Channel &amp; Signal Explorer</a> · AGPL-3.0-only · local-only preview</p></footer>
+</main>
+<script>
+"use strict";
+const byId=id=>document.getElementById(id),KEY="tihulu-region-lineups-demo";
+let regions={},index={},frequency={},profiles=[],current=null;
+const message=s=>byId("status").textContent=s;
+const make=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;return x};
+const mkButton=(text,fn)=>{const b=make("button",text);b.className="light";b.type="button";b.onclick=fn;return b};
+const uid=()=>String(Date.now())+"-"+Math.random().toString(36).slice(2);
+const active=()=>profiles.find(p=>p.id===current);
+const selectedCity=()=>byId("city-other").value.trim()||byId("city").value;
+function save(){try{localStorage.setItem(KEY,JSON.stringify({profiles,current}))}catch{message("Tarayıcı depolaması kapalı; yalnızca bu sekmede değişiklik yapılıyor.")}}
+function opts(select,names){select.replaceChildren(...names.map(s=>{const o=make("option",s);o.value=s;return o}))}
+function regionChanged(){
+ const country=byId("country").value;
+ const regionList=regions.countries.find(c=>c.iso===country).regions;
+ opts(byId("region"),regionList);
+ byId("region").value=country==="DE"?"Nordrhein-Westfalen":"İzmir";cityChanged();
+}
+function cityChanged(){
+ const country=byId("country").value,region=byId("region").value;
+ let cities=(index.city_options[country]||{})[region]||[];
+ if(country==="TR")cities=[...new Set([region,...cities])];
+ opts(byId("city"),cities.length?cities:[region]);
+ if(country==="DE"&&region==="Nordrhein-Westfalen")byId("city").value="Köln";
+ if(country==="TR"&&region==="İzmir")byId("city").value="İzmir Merkez";
+ byId("city-other").value="";renderCandidates();
+}
+function candidates(){
+ const country=byId("country").value,region=byId("region").value,city=selectedCity();
+ const group=index.city_candidates.find(g=>g.country===country&&g.region===region&&g.city===city);
+ const ids=[...(group?group.preset_ids:[]),...((index.region_candidates[country]||{})[region]||[]),...(index.countrywide_candidates[country]||[])];
+ const library=new Map(frequency.frequencies.map(p=>[p.id,p]));
+ return [...new Set(ids)].map(id=>library.get(id)).filter(Boolean);
+}
+const allowed=(mode,medium)=>medium==="all"||(medium==="tv"?mode.startsWith("dvb_"):!mode.startsWith("dvb_"));
+function renderCandidates(){
+ const area=byId("candidates");area.replaceChildren();
+ const entries=candidates().filter(p=>allowed(p.kind,byId("medium").value));
+ for(const p of entries){
+  const row=make("div");row.className="item";
+  const label=make("label");const cb=make("input");cb.type="checkbox";cb.dataset.preset=p.id;
+  label.append(cb,document.createTextNode(" "+p.label+" — "+(p.frequency_hz/1e6)+" MHz — "+p.kind));
+  const secondary=make("small"," · "+(p.kind.startsWith("dvb_")?"DVB tuner":"Ayrı FM/DAB/SDR alıcısı")+" · "+p.locality);
+  label.append(secondary);row.append(label);area.append(row);
+ }
+ byId("coverage").textContent=entries.length?
+  entries.length+" bölgesel aday bulundu; gerçek sinyal veya kapsama doğrulanmış değil.":
+  "Bu şehir için hazır yerel frekans bulunmuyor. Özel kanal ekleyebilirsin.";
+}
+function syncProfiles(){
+ const sel=byId("profiles");sel.replaceChildren(...profiles.map(p=>{const o=make("option",p.label+" / "+p.city);o.value=p.id;return o}));
+ if(!active())current=profiles.length?profiles[0].id:null;
+ if(current)sel.value=current;renderItems();
+}
+function createProfile(){
+ const label=byId("name").value.trim(),city=selectedCity();
+ if(!label||!city||label.length>120||city.length>100){message("Geçerli liste ve şehir adı gir.");return null}
+ const p={id:uid(),label,country:byId("country").value,region:byId("region").value,city,items:[]};
+ profiles.push(p);current=p.id;save();syncProfiles();message("Yeni liste oluşturuldu: "+label);return p;
+}
+function ensureProfile(){return active()||createProfile()}
+function addSelected(){
+ const p=ensureProfile();if(!p)return;
+ if(p.country!==byId("country").value||p.region!==byId("region").value||p.city!==selectedCity()){
+  message("Farklı şehir için yeni liste oluştur ve tekrar seç.");return;
+ }
+ let count=0;const map=new Map(candidates().map(x=>[x.id,x]));
+ document.querySelectorAll("[data-preset]:checked").forEach(c=>{
+  const x=map.get(c.dataset.preset);
+  if(!x||p.items.some(i=>i.presetId===x.id))return;
+  p.items.push({id:uid(),presetId:x.id,label:x.label,mode:x.kind,frequencyHz:x.frequency_hz,
+   offsetHz:0,source:x.source,state:"published_not_received"});count++;
+ });
+ save();renderItems();message(count+" kaynaklı kanal adayı listeye eklendi. RF taraması yapılmadı.");
+}
+function move(i,step){
+ const p=active(),j=i+step;
+ if(!p||j<0||j>=p.items.length)return;
+ [p.items[i],p.items[j]]=[p.items[j],p.items[i]];save();renderItems();
+}
+function renderItems(){
+ const area=byId("items");area.replaceChildren();const p=active();
+ if(!p){area.append(make("p","Önce bölge listesi oluştur."));return}
+ p.items.forEach((item,i)=>{
+  const row=make("div");row.className="item";
+  const title=make("strong",(i+1)+". "+item.label),note=make("p",item.mode+" — "+(item.frequencyHz/1e6).toFixed(3)+" MHz — "+item.state);
+  note.className="muted";row.append(title,note);
+  const actions=make("div");actions.className="controls";
+  actions.append(
+   mkButton("↑",()=>move(i,-1)),mkButton("↓",()=>move(i,1)),
+   mkButton("Ayarla",()=>message("Önizleme: "+item.label+" / "+((item.frequencyHz+item.offsetHz)/1e6)+" MHz. Alıcıya komut gitmedi.")),
+   mkButton("Sil",()=>{p.items.splice(i,1);save();renderItems()}));
+  const editor=make("div");editor.className="controls";editor.hidden=true;
+  const editName=make("input");editName.value=item.label;editName.setAttribute("aria-label","Kanal adı");
+  const editMode=make("select");opts(editMode,["dvb_t2","dvb_t","dvb_c","fm","dab","am","nfm","usb","lsb"]);editMode.value=item.mode;
+  const editFreq=make("input");editFreq.type="number";editFreq.step=".001";editFreq.value=item.frequencyHz/1e6;editFreq.setAttribute("aria-label","Frekans MHz");
+  const editOffset=make("input");editOffset.type="number";editOffset.value=item.offsetHz/1000;editOffset.min="-500";editOffset.max="500";editOffset.setAttribute("aria-label","İnce ayar kHz");
+  editor.append(editName,editMode,editFreq,editOffset,mkButton("Kaydet",()=>{
+   const f=Number(editFreq.value),offset=Number(editOffset.value);
+   if(!editName.value.trim()||!Number.isFinite(f)||f<.1||f>2000||!Number.isFinite(offset)||Math.abs(offset)>500){message("Frekans/offset uygun değil.");return}
+   item.label=editName.value.trim();item.mode=editMode.value;item.frequencyHz=Math.round(f*1e6);
+   item.offsetHz=Math.round(offset*1000);item.presetId=null;item.source="user_entry";item.state="manual_unverified";
+   save();renderItems();message("Kanal güncellendi. Otomatik frekans ayarlanmadı.");
+  }));
+  actions.append(mkButton("Düzenle",()=>{editor.hidden=!editor.hidden}));
+  row.append(actions,editor);area.append(row);
+ });
+}
+function addCustom(){
+ const p=ensureProfile(),f=Number(byId("custom-freq").value),label=byId("custom-name").value.trim();
+ if(!p||!label||!Number.isFinite(f)||f<.1||f>2000){message("Özel kanal adı/frekansı geçersiz.");return}
+ p.items.push({id:uid(),presetId:null,label,mode:byId("custom-mode").value,
+  frequencyHz:Math.round(f*1e6),offsetHz:0,source:"user_entry",state:"manual_unverified"});
+ save();renderItems();message("Kullanıcı kanalı eklendi; yayın doğrulanmış değil.");
+}
+async function init(){
+ try{
+  const files=["../data/region_profiles.json","../data/region_channel_catalog.json","../data/channel_frequency_presets.json"];
+  [regions,index,frequency]=await Promise.all(files.map(u=>fetch(u).then(r=>{if(!r.ok)throw Error("HTTP "+r.status);return r.json()})));
+  if(index.status!=="published_candidates_not_received")throw Error("Katalog durum kodu hatalı");
+  try{const saved=JSON.parse(localStorage.getItem(KEY)||"{}");profiles=saved.profiles||[];current=saved.current||null}catch{}
+  regionChanged();syncProfiles();message("Küçük bölge kataloğu yüklendi, tarama yapılmadı.");
+ }catch(e){message("Yerel JSON yüklenemedi: "+e.message+". Prototipi file:// değil HTTP ile aç.")}
+}
+byId("country").onchange=regionChanged;byId("region").onchange=cityChanged;
+byId("city").onchange=renderCandidates;byId("city-other").oninput=renderCandidates;byId("medium").onchange=renderCandidates;
+byId("all").onclick=()=>document.querySelectorAll("[data-preset]").forEach(c=>c.checked=true);
+byId("none").onclick=()=>document.querySelectorAll("[data-preset]").forEach(c=>c.checked=false);
+byId("new-profile").onclick=createProfile;byId("add").onclick=addSelected;
+byId("profiles").onchange=()=>{current=byId("profiles").value;save();renderItems()};
+byId("add-custom").onclick=addCustom;init();
+</script></body></html>

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu Channel & Signal Explorer — demo</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#183440;background:#f4f7f7}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1050px;margin:auto;padding:22px}
+h1{font-size:1.8rem;margin:8px 0}h2{font-size:1.15rem;margin:5px 0}h3{font-size:1.04rem}
+p{line-height:1.5}.muted,small{color:#526970}.box{background:white;border:1px solid #d6e2e4;border-radius:14px;padding:15px;margin:13px 0}
+.warn{background:#e8f3f5;border-color:#bad1d8}.tabs,.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+button,select,input[type="number"],input[type="text"]{font:inherit;border-radius:9px;padding:9px;border:1px solid #bdced2}
+button{cursor:pointer;background:#16576b;color:white;border:0}button.secondary{background:#e6eef0;color:#1f4552}
+button:disabled{opacity:.5;cursor:default}button[aria-pressed="true"]{outline:3px solid #66a8b7}
+input[type="checkbox"]{width:17px;height:17px}.field{display:grid;gap:5px;min-width:130px}
+.field label{font-size:.9rem}select,input[type="number"],input[type="text"]{max-width:100%}
+.preset{display:flex;gap:10px;align-items:center;padding:10px 3px;border-top:1px solid #e2eaeb;flex-wrap:wrap}
+.preset span{flex:1;min-width:200px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tag{font-size:.77rem;background:#edf3f4;border-radius:20px;padding:5px 9px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.card{border:1px solid #dae5e6;padding:12px;border-radius:10px}
+a{color:#0f6076}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #57b1ca}
+.status{min-height:34px;border-radius:10px;background:#f2f6f7;padding:10px;white-space:pre-line;overflow-wrap:anywhere}
+@media(max-width:500px){.wrap{padding:10px}.box{padding:12px}.preset{align-items:flex-start}.controls button{flex:1}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header><small>TIHULU · CHANNEL & SIGNAL EXPLORER · EXPERIMENTAL FRONTEND</small><h1>Find broadcasts, channels and text networks</h1><p><a href="region_channel_setup.html">Country/city channel lineup</a> · <a href="remote_control.html">TV/radio remote demo</a> · <a href="remote_display.html">Display demo</a></p></header>
+<div class="box warn"><strong>Prototype, not a live receiver.</strong> Tuning, radio scans, network connections, Teletext decoding, translation and AI are not connected here. Only owner-supplied entries are stored in this page's temporary memory. Published presets are not proof of signal reception.</div>
+<div class="tabs box" role="group" aria-label="Application view">
+<button type="button" class="mode" data-mode="all">All channels</button>
+<button type="button" class="mode" data-mode="tv">Television</button>
+<button type="button" class="mode" data-mode="radio">Radio / Amateur</button>
+<button type="button" class="mode" data-mode="text">Teletext / Text Sites</button>
+</div>
+<section class="box" id="frequency-section">
+<div class="row"><h2>Published frequency presets</h2><span class="tag">Unverified on your receiver</span></div>
+<p class="muted">Choose several known frequencies, or add your own. TV and Radio share the same channel/favorites library.</p>
+<div class="controls"><label for="country">Country</label>
+<select id="country"><option value="DE">Germany (NRW examples)</option><option value="TR">Turkey (Izmir examples)</option><option value="ALL">All published presets</option></select>
+<button class="secondary" id="all-visible">Select visible</button>
+<button class="secondary" id="none">Clear selection</button>
+</div>
+<div id="presets"></div>
+<div class="controls">
+<button type="button" id="scan-selected">Scan selected frequencies</button>
+<span id="selected-count" class="muted"></span>
+</div>
+</section>
+<section class="box" id="manual-section">
+<h2>Manual tuning and signal discovery</h2>
+<div class="controls">
+<div class="field"><label for="standard">Broadcast type</label>
+<select id="standard"><option value="dvb_t2">DVB-T2 TV / DVB radio</option><option value="dvb_t">DVB-T TV</option><option value="dvb_c">DVB-C (needs symbol rate)</option><option value="fm">FM radio / RadioText</option><option value="dab">DAB+ digital radio</option><option value="nfm">Narrowband FM / public amateur</option><option value="am">AM radio</option><option value="usb">USB amateur voice</option><option value="lsb">LSB amateur voice</option></select></div>
+<div class="field"><label for="frequency">Center frequency (MHz)</label><input id="frequency" type="number" value="514.000" step="0.001" min="0.1" max="2000"></div>
+<div class="field"><label for="offset">Fine adjustment (kHz)</label><input id="offset" type="number" value="0" step="1" min="-500" max="500"></div>
+<div class="field"><label for="label">Custom label</label><input id="label" type="text" value="My channel" maxlength="120"></div>
+</div>
+<div class="controls" style="margin-top:13px">
+<button id="tune" type="button">Tune / Probe</button>
+<button class="secondary" id="save-manual" type="button">Save manual candidate</button>
+</div>
+<p class="muted">Fine tuning is offered only when the connected backend supports it. In a real app, tuner ownership and original recordings are protected before changing frequency.</p>
+<h3>Band sweep — step-by-step, receive only</h3>
+<div class="controls"><select id="band">
+<option value="dvb">DVB-T2 UHF 21–48 / 8 MHz centers</option>
+<option value="dab_full">DAB+ Band III 5A–12D / all 32 centers</option>
+<option value="fm_de">Germany FM 87.5–108 MHz / 100 kHz</option>
+<option value="fm_tr">Turkey FM 87.5–108 MHz / 100 kHz</option>
+<option value="vhf">Germany amateur 144–146 MHz / 12.5 kHz</option>
+<option value="uhf">Germany amateur 430–440 MHz / 25 kHz</option>
+<option value="hf40">Germany amateur HF 40m (7.0–7.2 MHz)</option>
+<option value="hf20">Germany amateur HF 20m (14–14.35 MHz)</option>
+</select>
+<button id="sweep">Plan selected band scan</button></div>
+<p class="muted">Large bands run in bounded chunks. A spectrum peak or unidentified signal does not prove a radio station or a decoded text service. No RF transmission is ever initiated.</p>
+<div id="scan-status" class="status" role="status">No scan attempted.</div>
+</section>
+<section class="box" id="saved-section">
+<h2>My channel list</h2>
+<p class="muted">Only manually entered candidates are shown in this prototype. A real backend will add verified decoded channels, DVB radio services and separately labelled unidentified signals.</p>
+<div class="controls"><label><input type="checkbox" id="favorites"> Favorites only</label>
+<label for="sort">Sort</label><select id="sort">
+<option value="name">Name</option><option value="frequency">Frequency</option><option value="status">Status</option></select></div>
+<div id="saved"></div>
+</section>
+<section class="box" id="text-section">
+<h2>Teletext and text network browser</h2>
+<p class="muted">Traditional TV Teletext pages are **receive-only**, but websites and public forums can be used through their own interactive browser pages. Logging in and sending messages requires that website's own rules or suitable separate radio hardware.</p>
+<div class="controls"><label for="page-number">Teletext page</label><input id="page-number" type="number" value="100" min="100" max="899" step="1">
+<label for="subpage">Subpage</label><input id="subpage" type="number" value="0" min="0" max="99">
+<button id="open-page" type="button">Open broadcast page</button></div>
+<p id="page-status" class="status">No DVB page decoder connected. A page number alone cannot retrieve content.</p>
+<div class="cardgrid">
+<div class="card"><strong>Teletext Art directory</strong><p>Online Teletext-style artworks and viewers.</p><a href="https://teletextart.co.uk/teletext-links" target="_blank" rel="noopener noreferrer">Open interactive website</a></div>
+<div class="card"><strong>LK0NOD forum</strong><p>Public community website. Site login and posting work only according to its permissions.</p><a href="https://www.lk0nod.de/forum/" target="_blank" rel="noopener noreferrer">Visit forum</a></div>
+<div class="card"><strong>LK0NOD Telnet portal</strong><p>Text-based node/BBS/chat via its own web portal; does not use your TV antenna.</p><a href="https://www.lk0nod.de/telnet.html" target="_blank" rel="noopener noreferrer">Open web terminal</a></div>
+<div class="card"><strong>Tihulu Local BBS</strong><p>Offline Wi-Fi forum planned, not deployed. No chat server is active in this demo.</p><span class="tag">Planned · unavailable</span></div>
+</div>
+<h3>Translate or ask AI about a selected page</h3>
+<div class="controls"><label><input type="checkbox" id="translate"> Translator</label>
+<label><input type="checkbox" id="ai"> Local AI</label>
+<select id="translation-language"><option value="tr">Turkish</option><option value="en">English</option><option value="de">German</option></select>
+<button id="text-analyze">Preview text processing</button></div>
+<p id="text-ai-status" class="status">Choose an actual decoded page or permitted website text in the future real app. Original source text is preserved.</p>
+</section>
+<footer class="muted">English engineering preview · <a href="../docs/CHANNEL_SIGNAL_EXPLORER.md">technical guide</a> · <a href="https://github.com/Tihulu/tihulu-survival-kit/blob/main/LICENSE">AGPL-3.0-only</a></footer>
+</main>
+<script>
+"use strict";
+const presets=[
+{country:"DE",mode:"dvb_t2",mhz:514,label:"WDR Köln / UHF 26",location:"Köln / Bonn"},
+{country:"DE",mode:"dvb_t2",mhz:674,label:"WDR Düsseldorf / UHF 46",location:"Düsseldorf"},
+{country:"DE",mode:"dvb_t2",mhz:506,label:"WDR Dortmund / UHF 25",location:"Dortmund"},
+{country:"DE",mode:"dab",mhz:222.064,label:"WDR NRW DAB 11D",location:"NRW"},
+{country:"DE",mode:"dab",mhz:202.928,label:"WDR Regional DAB 9A",location:"NRW"},
+{country:"DE",mode:"dab",mhz:178.352,label:"German National DAB 5C",location:"Germany"},
+{country:"DE",mode:"fm",mhz:98.6,label:"WDR 2 FM",location:"Kölnturm"},
+{country:"DE",mode:"fm",mhz:87.6,label:"1LIVE FM",location:"Kölnturm"},
+{country:"TR",mode:"fm",mhz:94.7,label:"TRT Radyo 1",location:"İzmir Merkez"},
+{country:"TR",mode:"fm",mhz:91.2,label:"TRT FM",location:"İzmir Merkez"},
+{country:"TR",mode:"fm",mhz:88,label:"TRT Radyo 3",location:"İzmir Merkez"},
+{country:"TR",mode:"fm",mhz:99.1,label:"TRT Radyo Haber",location:"İzmir Merkez"}
+];
+const bandplans={
+dab_full:{start:174.928,stop:229.072,step:0,device:"separate DAB receiver",count:32},
+dvb:{start:474,stop:690,step:8,device:"DVB-T2 tuner"},
+fm_de:{start:87.5,stop:108,step:.1,device:"separate FM SDR"},
+fm_tr:{start:87.5,stop:108,step:.1,device:"separate FM SDR"},
+vhf:{start:144,stop:146,step:.0125,device:"separate VHF SDR"},
+uhf:{start:430,stop:440,step:.025,device:"separate UHF SDR"},
+hf40:{start:7,stop:7.2,step:.001,device:"separate HF SSB receiver"},
+hf20:{start:14,stop:14.35,step:.001,device:"separate HF SSB receiver"}
+};
+const selected=new Set(), saved=[], modeButtons=document.querySelectorAll("button.mode");
+const status=document.getElementById("scan-status"), select=document.getElementById("country");
+const modeValue=new URLSearchParams(location.search).get("mode");
+let appMode=["all","tv","radio","text"].includes(modeValue)?modeValue:"all";
+function keep(p){return appMode==="all"||appMode==="text"||(
+appMode==="tv"?p.mode.startsWith("dvb"):!p.mode.startsWith("dvb"));}
+function view(){return presets.filter(p=>(select.value==="ALL"||p.country===select.value)&&keep(p));}
+function redraw(){
+  const list=document.getElementById("presets");list.replaceChildren();
+  for(const p of view()){
+    const row=document.createElement("label");row.className="preset";
+    const box=document.createElement("input");box.type="checkbox";
+    const key=p.country+":"+p.mode+":"+p.mhz;box.checked=selected.has(key);
+    box.addEventListener("change",()=>{box.checked?selected.add(key):selected.delete(key);drawCount();});
+    const text=document.createElement("span");text.textContent=p.label+" · "+p.mhz+" MHz · "+p.location;
+    row.append(box,text);list.append(row);
+  }
+  if(!list.children.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No presets for this region/view. Manual tuning remains available.";list.append(empty);}
+  drawCount();
+  for(const b of modeButtons)b.setAttribute("aria-pressed",String(b.dataset.mode===appMode));
+  document.getElementById("text-section").hidden=!(appMode==="all"||appMode==="text");
+  document.getElementById("frequency-section").hidden=appMode==="text";
+  document.getElementById("manual-section").hidden=appMode==="text";
+  drawSaved();
+}
+function drawCount(){document.getElementById("selected-count").textContent=
+Array.from(selected).filter(x=>view().some(p=>p.country+":"+p.mode+":"+p.mhz===x)).length+" published frequencies selected";}
+function drawSaved(){
+ const l=document.getElementById("saved");l.replaceChildren();
+ let items=saved.filter(p=>keep(p));
+ if(document.getElementById("favorites").checked)items=items.filter(x=>x.favorite);
+ const sort=document.getElementById("sort").value;
+ items.sort((a,b)=>sort==="frequency"?a.mhz-b.mhz:sort==="status"?a.state.localeCompare(b.state):a.label.localeCompare(b.label));
+ if(!items.length){const msg=document.createElement("p");msg.className="muted";msg.textContent="No saved channel candidates in this demo.";l.append(msg);return;}
+ for(const item of items){
+  const row=document.createElement("div");row.className="preset";
+  const text=document.createElement("span");text.textContent=item.label+" · "+item.mhz+" MHz · "+item.mode+" · "+item.state;
+  const fav=document.createElement("button");fav.className="secondary";fav.textContent=item.favorite?"★ Favorite":"☆ Favorite";
+  fav.addEventListener("click",()=>{item.favorite=!item.favorite;drawSaved();});
+  const del=document.createElement("button");del.className="secondary";del.textContent="Remove";
+  del.addEventListener("click",()=>{saved.splice(saved.indexOf(item),1);drawSaved();});
+  row.append(text,fav,del);l.append(row);
+ }
+}
+for(const b of modeButtons)b.addEventListener("click",()=>{appMode=b.dataset.mode;redraw();});
+select.addEventListener("change",redraw);
+document.getElementById("all-visible").addEventListener("click",()=>{
+ for(const p of view())selected.add(p.country+":"+p.mode+":"+p.mhz);redraw();});
+document.getElementById("none").addEventListener("click",()=>{selected.clear();redraw();});
+document.getElementById("scan-selected").addEventListener("click",()=>{
+ const chosen=view().filter(p=>selected.has(p.country+":"+p.mode+":"+p.mhz));
+ status.textContent=chosen.length
+ ? "Preview only: "+chosen.length+" frequency preset(s) selected. No receiver connected, so no scan was performed. Station names remain catalog entries, not detected signals."
+ : "Select one or more published frequencies first. No scan performed.";
+});
+function manual(){
+ const mhz=Number(document.getElementById("frequency").value);
+ const offset=Number(document.getElementById("offset").value);
+ const mode=document.getElementById("standard").value;
+ if(!Number.isFinite(mhz)||mhz<.1||mhz>2000||!Number.isFinite(offset)||Math.abs(offset)>500)
+ throw new Error("Frequency or offset out of allowed range");
+ return {mhz:mhz+offset/1000,mode,label:document.getElementById("label").value.trim()};
+}
+document.getElementById("tune").addEventListener("click",()=>{
+ try{const x=manual();status.textContent="Preview only: "+x.mode+" at "+x.mhz.toFixed(3)+" MHz. No connected receiver or tuner backend. Tuning was NOT performed.";}
+ catch(e){status.textContent=e.message;}
+});
+document.getElementById("save-manual").addEventListener("click",()=>{
+ try{const x=manual();if(!x.label)throw new Error("Enter a channel label.");
+ const exists=saved.find(y=>y.mode===x.mode&&y.mhz===x.mhz);if(exists)exists.label=x.label;
+ else saved.push({...x,favorite:false,state:"Manual candidate — not received"});
+ status.textContent="Saved to demo-only in-memory channel list; no RF signal has been verified.";
+ drawSaved();}catch(e){status.textContent=e.message;}
+});
+document.getElementById("sweep").addEventListener("click",()=>{
+ const b=bandplans[document.getElementById("band").value];
+ const n=b.count||Math.floor((b.stop-b.start)/b.step+1e-6)+1;
+ status.textContent="Planned band sweep: "+b.start+"–"+b.stop+" MHz, "+b.step+" MHz steps, "+
+ n+" "+(b.count?"discrete DAB centers":"probe points")+", chunked into groups of up to 128. Requires "+b.device+
+ ". No scan, spectrum measurement or transmission was executed.";
+});
+document.getElementById("open-page").addEventListener("click",()=>{
+ const p=Number(document.getElementById("page-number").value),
+       sub=Number(document.getElementById("subpage").value);
+ const valid=Number.isInteger(p)&&p>=100&&p<=899&&Number.isInteger(sub)&&sub>=0&&sub<=99;
+ document.getElementById("page-status").textContent=valid
+ ?"Teletext "+p+"/"+sub+": no real DVB Teletext decoder connected, so no page was received."
+ :"Invalid Teletext page/subpage (pages 100–899, subpages 0–99).";
+});
+document.getElementById("text-analyze").addEventListener("click",()=>{
+ const actions=[document.getElementById("translate").checked&&"Translation",
+ document.getElementById("ai").checked&&"Local AI"].filter(Boolean);
+ document.getElementById("text-ai-status").textContent=actions.length
+ ?actions.join(" + ")+" selected, output "+document.getElementById("translation-language").value+
+ ". No content was fetched/decoded or processed; shared model workers are not connected."
+ :"Select Translator and/or Local AI first; no processing performed.";
+});
+for(const id of ["favorites","sort"])document.getElementById(id).addEventListener("change",drawSaved);
+redraw();
+</script>
+</body>
+</html>

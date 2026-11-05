@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu News Center — Source Selection (Prototype)</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172e39;background:#f4f7f8}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:840px;margin:auto;padding:23px}
+h1{margin:8px 0;font-size:1.6rem}h2{font-size:1.15rem}.muted{color:#51656d}
+.notice,.panel{background:white;border:1px solid #d0dee2;border-radius:14px;padding:16px;margin-top:14px}
+.notice{background:#edf5f7}.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.source{padding:10px 0;border-bottom:1px solid #e4ecee}
+.medium{padding:12px;border:1px solid #d2dde1;border-radius:11px;display:flex;align-items:center;gap:8px}
+.medium span{font-size:.82rem;color:#53646a}label{cursor:pointer}
+button,select{padding:9px 12px;border-radius:9px;font:inherit}
+button{background:#174d64;border:none;color:#fff;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.output{font-size:.9rem;line-height:1.7}
+.status{color:#405860;font-size:.88rem}
+a{color:#16566e}
+</style>
+</head>
+<body>
+<main class="shell">
+<h1>News & Politics — Source Selection</h1>
+<div class="notice"><strong>Local prototype only.</strong> Choose several input transports, sources and language/AI actions at once. All source cards are candidates or mock examples. This page does not scan, translate, use AI, tune an antenna, or fetch any live feeds. No receiver, model, news API or backend is connected.</div>
+<section class="panel">
+<h2>Choose input transports</h2>
+<div class="three">
+<label class="medium"><input id="internet" type="checkbox" checked><div><strong>Internet</strong><div><span>RSS, public APIs and verified social accounts</span></div></div></label>
+<label class="medium"><input id="tv_antenna" type="checkbox"><div><strong>TV Antenna</strong><div><span>DVB Teletext and programme data</span></div></div></label>
+<label class="medium"><input id="radio_antenna" type="checkbox"><div><strong>Radio Antenna</strong><div><span>FM RDS, DAB Journaline and APRS</span></div></div></label>
+</div>
+<p class="muted"><strong>Multi-select:</strong> Internet, TV Antenna and Radio Antenna can all be enabled together. Choose any number of visible sources below. Your purchased DVB TV receiver is not an FM/DAB SDR, and recordings must not be interrupted.</p>
+</section>
+<section class="panel">
+<h2>Select individual sources</h2>
+<div class="controls">
+<label for="region">Region</label>
+<select id="region"><option value="DE">Germany</option><option value="TR">Turkey</option></select>
+<button id="select-visible" type="button">Select visible</button>
+<button id="clear" type="button">Clear selection</button>
+</div>
+<div id="sources"></div>
+</section>
+<section class="panel">
+<div class="controls">
+<button id="scan" type="button">Scan selected sources</button>
+<span id="count" class="muted"></span>
+</div>
+<div id="results" class="output" aria-live="polite">Select a transport and source, then request a scan.</div>
+</section>
+<section class="panel">
+<h2>Translator and Local AI (on demand)</h2>
+<p class="muted">Select several currently visible source items for a future local processing task. The original text, timestamp and source attribution must remain available. This preview does not download articles, receive broadcasts, load models or produce real AI output.</p>
+<div class="controls"><button id="choose-articles" type="button">Use selected sources as sample items</button><span id="items-count" class="muted">No items selected</span></div>
+<h3>Translate into (multiple languages allowed)</h3>
+<div class="controls">
+<label><input type="checkbox" class="target" value="en"> English</label>
+<label><input type="checkbox" class="target" value="tr"> Turkish</label>
+<label><input type="checkbox" class="target" value="de"> German</label>
+</div>
+<h3>Local AI actions (select any combination)</h3>
+<div class="controls">
+<label><input type="checkbox" id="summarize"> Summarize selected texts</label>
+<label><input type="checkbox" id="ask"> Answer a question</label>
+<label><input type="checkbox" id="compare"> Compare different sources</label>
+</div>
+<div class="controls" style="margin-top:12px">
+<label for="analysis-language">AI output language</label>
+<select id="analysis-language"><option value="tr">Turkish</option><option value="en">English</option></select>
+</div>
+<label for="question">Your question (only used if selected)</label>
+<textarea id="question" rows="2" style="width:100%;margin:8px 0;padding:10px;font:inherit;border-radius:8px;border:1px solid #c2d2d8" placeholder="What do these sources report about the event?"></textarea>
+<div class="controls"><button type="button" id="preview-ai">Preview selected task</button></div>
+<div id="ai-preview" class="output" aria-live="polite" style="margin-top:10px">No translation or AI task has been requested.</div>
+</section>
+<p class="muted">See <a href="../docs/NEWS_INPUT_SCANNING.md">implementation notes</a>. <a href="https://github.com/Tihulu/tihulu-survival-kit/blob/main/LICENSE">AGPL-3.0-only license</a>. This page is not linked to an actual news service.</p>
+</main>
+<script>
+"use strict";
+// Demonstration subset only: all identifiers are examples from project catalogs.
+// Production frontend must obtain the full catalog and permissions from a trusted server.
+const directory=[
+{id:"internet:tr_1",name:"Sözcü TV",region:"TR",medium:"internet"},
+{id:"internet:tr_18",name:"TRT Haber",region:"TR",medium:"internet"},
+{id:"internet:tr_24",name:"HKP — Halkın Kurtuluş Partisi",region:"TR",medium:"internet"},
+{id:"internet:de_41",name:"ARD / tagesschau24",region:"DE",medium:"internet"},
+{id:"internet:de_46",name:"taz",region:"DE",medium:"internet"},
+{id:"tv_antenna:ard_text",name:"ARD Text (Teletext)",region:"DE",medium:"tv_antenna"},
+{id:"tv_antenna:zdftext",name:"ZDFtext",region:"DE",medium:"tv_antenna"},
+{id:"tv_antenna:trt_telegun",name:"TRT TELEGUN",region:"TR",medium:"tv_antenna"},
+{id:"radio_antenna:dab_plus_text",name:"DAB+ DLS / Journaline",region:"DE",medium:"radio_antenna"},
+{id:"radio_antenna:fm_rds",name:"FM RDS / RadioText",region:"ALL",medium:"radio_antenna"},
+{id:"radio_antenna:aprs",name:"APRS public messages / weather",region:"ALL",medium:"radio_antenna"}
+];
+const mediumIds=["internet","tv_antenna","radio_antenna"];
+const selected=new Set();
+const controls=Object.fromEntries(mediumIds.map(x=>[x,document.getElementById(x)]));
+const region=document.getElementById("region");
+const sources=document.getElementById("sources");
+const status=document.getElementById("results");
+const count=document.getElementById("count");
+function visible(){return directory.filter(x=>controls[x.medium].checked&&(x.region==="ALL"||x.region===region.value));}
+function draw(){
+  sources.replaceChildren();
+  for(const source of visible()){
+    const row=document.createElement("div");row.className="source";
+    const label=document.createElement("label");
+    const chk=document.createElement("input");chk.type="checkbox";chk.checked=selected.has(source.id);
+    chk.addEventListener("change",()=>{chk.checked?selected.add(source.id):selected.delete(source.id);drawCount();});
+    const text=document.createElement("span");text.textContent=" "+source.name+" ("+source.medium.replace("_"," ")+")";
+    label.append(chk,text);row.append(label);sources.append(row);
+  }
+  if(!sources.children.length){const msg=document.createElement("p");msg.className="muted";msg.textContent="No sources for the enabled transports and selected region.";sources.append(msg);}
+  drawCount();
+}
+function drawCount(){count.textContent=Array.from(selected).filter(id=>visible().some(s=>s.id===id)).length+" source(s) selected for enabled inputs";}
+for(const el of [...Object.values(controls),region])el.addEventListener("change",()=>{draw();status.textContent="Input selection changed; no scan executed.";});
+document.getElementById("select-visible").addEventListener("click",()=>{visible().forEach(s=>selected.add(s.id));draw();});
+document.getElementById("clear").addEventListener("click",()=>{selected.clear();draw();});
+document.getElementById("scan").addEventListener("click",()=>{
+ const ids=visible().filter(s=>selected.has(s.id));
+ if(!ids.length){status.textContent="Select at least one source first. No scan performed.";return;}
+ status.replaceChildren();
+ const intro=document.createElement("p");
+ intro.textContent="Prototype only — no scan was performed. Selected input groups:";
+ status.append(intro);
+ const list=document.createElement("ul");
+ for(const source of ids){
+   const item=document.createElement("li");
+   item.textContent=source.name+": "+(source.medium==="internet"?"Unverified Internet endpoint — no fetch adapter":
+     source.medium==="tv_antenna"?"DVB receiver/Teletext decoder not connected — no tuner scan":
+     "Separate radio SDR/decoder not connected — no radio scan");
+   list.append(item);
+ }
+ status.append(list);
+});
+const selectedArticles=new Set();
+const itemCount=document.getElementById("items-count");
+const aiPreview=document.getElementById("ai-preview");
+function updateArticleCount(){
+  itemCount.textContent=selectedArticles.size+" sample source item(s) chosen";
+}
+document.getElementById("choose-articles").addEventListener("click",()=>{
+  selectedArticles.clear();
+  for(const source of visible().filter(s=>selected.has(s.id)).slice(0,12)){
+    selectedArticles.add(source.id);
+  }
+  updateArticleCount();
+  aiPreview.textContent=selectedArticles.size
+    ?"Sample items chosen. No articles were fetched. Choose Translator/AI actions below."
+    :"No source items selected. Check multiple visible sources first.";
+});
+document.getElementById("preview-ai").addEventListener("click",()=>{
+  const langs=Array.from(document.querySelectorAll(".target:checked"),e=>e.value);
+  const summary=document.getElementById("summarize").checked;
+  const ask=document.getElementById("ask").checked;
+  const compare=document.getElementById("compare").checked;
+  const question=document.getElementById("question").value.trim();
+  const aiLanguage=document.getElementById("analysis-language").value;
+  if(!selectedArticles.size){
+    aiPreview.textContent="Select source items first. No task started.";return;
+  }
+  if(!langs.length&&!summary&&!ask&&!compare){
+    aiPreview.textContent="Choose at least one translation language or AI action.";return;
+  }
+  if(compare&&selectedArticles.size<2){
+    aiPreview.textContent="Comparison requires at least two different source items.";return;
+  }
+  if(ask&&!question){
+    aiPreview.textContent="Type a question before choosing Ask.";return;
+  }
+  const preview=[
+    "Demo only — no model processing or translation occurred.",
+    "Selected sample source IDs: "+Array.from(selectedArticles).join(", "),
+    "Translation languages: "+(langs.join(", ")||"none"),
+    "AI output language: "+aiLanguage,
+    "AI actions: "+([summary&&"summaries",ask&&"Q&A",compare&&"source comparison"].filter(Boolean).join(", ")||"none"),
+    "Runtime: actual installed Translator and Local AI workers are required; shared leases must be released after use."
+  ];
+  aiPreview.replaceChildren();
+  for(const item of preview){const p=document.createElement("p");p.textContent=item;aiPreview.append(p);}
+});
+draw();
+</script>
+</body>
+</html>
