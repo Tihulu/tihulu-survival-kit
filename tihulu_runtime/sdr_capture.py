@@ -232,7 +232,8 @@ class ManagedSdrScan:
 
     def scan(self, receiver: Receiver, points: tuple[TunePoint, ...], *,
              owner_id: str, job_id: str, backend: ReceiverBackend | None,
-             user_triggered: bool = False) -> tuple[ScanRecord, ...]:
+             user_triggered: bool = False,
+             grant_token: str | None = None) -> tuple[ScanRecord, ...]:
         if not user_triggered:
             raise PermissionError("No implicit RF scan or background sweep")
         if not owner_id or not job_id:
@@ -249,7 +250,8 @@ class ManagedSdrScan:
                for point in points):
             raise ValueError("Unsupported mode or frequency in SDR scan chunk")
         self.services.acquire("radio", task_id=job_id,
-                              owner_id=owner_id, mode="foreground")
+                              owner_id=owner_id, mode="foreground",
+                              grant_token=grant_token)
         lock = SdrCooperativeLock(receiver.receiver_id, root=self.lock_root)
         try:
             lock.acquire()
@@ -263,7 +265,9 @@ class ManagedSdrScan:
 
     def manual_tune(self, receiver: Receiver, *, point: TunePoint,
                     owner_id: str, job_id: str, backend: ReceiverBackend,
-                    user_triggered: bool = False) -> ScanRecord:
+                    user_triggered: bool = False,
+                    grant_token: str | None = None) -> ScanRecord:
         return self.scan(receiver, (point,), owner_id=owner_id,
                          job_id=job_id, backend=backend,
-                         user_triggered=user_triggered)[0]
+                         user_triggered=user_triggered,
+                         grant_token=grant_token)[0]
