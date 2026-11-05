@@ -113,11 +113,12 @@ class ModelTests(unittest.TestCase):
         online = data(self.now)
         online["aircraft"][0].update(
             {"seen_pos": 1, "lat": 50.3, "lon": 6.4, "type": "mlat"})
-        a = merge_aircraft([
+        a = next(x for x in merge_aircraft([
             from_readsb(local, source_id="local-readsb", origin="local",
                         at_utc=self.now),
             from_readsb(online, source_id="adsb.lol", origin="internet",
-                        at_utc=self.now)], at_utc=self.now)[0]
+                        at_utc=self.now)], at_utc=self.now)
+                 if x.icao == "abc123")
         self.assertEqual(a.position_kind, "external_mlat")
         self.assertEqual(a.latitude, 50.3)
 
