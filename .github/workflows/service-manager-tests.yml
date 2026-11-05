@@ -6,6 +6,12 @@ on:
       - "tests/**"
       - "data/radio_text_networks.json"
       - "prototype/task_manager.html"
+      - "prototype/lan_remote.html"
+      - "prototype/lan_remote.js"
+      - "prototype/region_channel_setup.html"
+      - "prototype/remote_control.html"
+      - "data/region_channel_catalog.json"
+      - "data/channel_frequency_presets.json"
       - ".github/workflows/service-manager-tests.yml"
   pull_request:
     paths:
@@ -13,6 +19,12 @@ on:
       - "tests/**"
       - "data/radio_text_networks.json"
       - "prototype/task_manager.html"
+      - "prototype/lan_remote.html"
+      - "prototype/lan_remote.js"
+      - "prototype/region_channel_setup.html"
+      - "prototype/remote_control.html"
+      - "data/region_channel_catalog.json"
+      - "data/channel_frequency_presets.json"
       - ".github/workflows/service-manager-tests.yml"
 jobs:
   unittest:
@@ -27,3 +39,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Validate service policy, shared sessions and radio data catalog (no hardware)
         run: python -m unittest discover -s tests -v
+      - name: Check LAN remote browser JavaScript syntax
+        run: node --check prototype/lan_remote.js
