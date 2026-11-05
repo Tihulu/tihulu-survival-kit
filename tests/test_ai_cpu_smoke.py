@@ -3,10 +3,12 @@ import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import subprocess
+import time
+from threading import Event, Thread
 from types import SimpleNamespace
 from unittest.mock import patch
 import unittest
-from tihulu_runtime.ai_cpu_smoke import MARKER, cpu_smoke_test
+from tihulu_runtime.ai_cpu_smoke import MARKER, cpu_smoke_test, _execute_cancellable
 
 
 class FakeRegistry:
@@ -160,6 +162,54 @@ class CpuSmokeTests(unittest.TestCase):
                    side_effect=subprocess.TimeoutExpired(['llama-cli','--version'],1)):
             out=cpu_smoke_test(self.registry,'base',**self.kwargs())
         self.assertEqual(out.status,'runner_version_unavailable')
+
+
+    def test_cancellable_runner_pre_cancel_no_process(self):
+        event = Event()
+        event.set()
+        with patch('tihulu_runtime.ai_cpu_smoke.subprocess.Popen') as spawn:
+            status, marked = _execute_cancellable([str(self.runner)], {}, 1, event)
+        self.assertEqual(status, "cancelled")
+        self.assertFalse(marked)
+        spawn.assert_not_called()
+
+    def test_real_fake_runner_cancel_terminates_process(self):
+        self.runner.write_text('#!/bin/sh\\nwhile :; do sleep 1; done\\n')
+        self.runner.chmod(0o700)
+        event = Event()
+        thread = Thread(target=lambda: (time.sleep(0.15), event.set()))
+        thread.start()
+        try:
+            status, marked = _execute_cancellable(
+                [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 3, event)
+        finally:
+            thread.join(timeout=2)
+        self.assertEqual(status, "cancelled")
+        self.assertFalse(marked)
+
+    def test_cancellable_output_is_bounded(self):
+        self.runner.write_text('#!/bin/sh\\ni=0; while [ "$i" -lt 10000 ]; do printf x; i=$((i+1)); done\\n')
+        self.runner.chmod(0o700)
+        status, marked = _execute_cancellable(
+            [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 4, Event())
+        self.assertEqual(status, "output_limit_exceeded")
+        self.assertFalse(marked)
+
+    def test_cancellable_timeout_kills_process(self):
+        self.runner.write_text('#!/bin/sh\\nsleep 3\\n')
+        self.runner.chmod(0o700)
+        status, marked = _execute_cancellable(
+            [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 0.2, Event())
+        self.assertEqual(status, "timed_out")
+        self.assertFalse(marked)
+
+    def test_cancellable_success_with_fake_marker(self):
+        self.runner.write_text('#!/bin/sh\\necho TIHULU_CPU_OK\\n')
+        self.runner.chmod(0o700)
+        status, marked = _execute_cancellable(
+            [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 3, Event())
+        self.assertEqual(status, "marker_observed")
+        self.assertTrue(marked)
 
 
 if __name__ == '__main__':
