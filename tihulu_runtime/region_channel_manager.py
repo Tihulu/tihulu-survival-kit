@@ -144,7 +144,31 @@ class RegionChannelCatalog:
         if (doc.get("schema_version") != 1 or
                 doc.get("status") != "published_candidates_not_received"):
             raise ValueError("Invalid remote candidate pack")
-        parsed = {}
+        # Large future packs can provide new published candidate frequencies,
+        # not merely geographic labels. Validate everything before mutation.
+        new_presets: dict[str, FrequencyPreset] = {}
+        for record in doc.get("frequencies", []):
+            pid = _text(record["id"])
+            if pid in self.library.presets or pid in new_presets:
+                raise ValueError("Cannot overwrite or duplicate a frequency seed")
+            country, region = record["country"], record["region"]
+            if country not in self.regions or (region != "ALL"
+                and region not in self.regions[country]):
+                raise ValueError("Invalid downloaded frequency geography")
+            mode = record["kind"]
+            hz = _frequency(record["frequency_hz"])
+            url = record["source"]
+            if mode not in MODES or not isinstance(url, str) or not (
+                    url.startswith("https://")):
+                raise ValueError("Downloaded candidate requires mode and source")
+            bandwidth = record.get("bandwidth_hz")
+            if bandwidth is not None:
+                _frequency(bandwidth)
+            new_presets[pid] = FrequencyPreset(
+                pid, _text(record["label"], max_length=180), country, region,
+                mode, hz, url, bandwidth, record.get("locality", ""),
+                record.get("channel", ""))
+        parsed: dict[tuple[str,str,str], list[str]] = {}
         for group in doc["city_candidates"]:
             key = (group["country"], group["region"], group["city"])
             self.validate_location(*key)
@@ -152,11 +176,16 @@ class RegionChannelCatalog:
             if not ids or len(ids) > 256:
                 raise ValueError("Invalid city pack size")
             for pid in ids:
-                self._validate_preset(pid, key[0], key[1])
+                preset = new_presets.get(pid) or self.library.presets.get(pid)
+                if preset is None or preset.country != key[0] or preset.region not in (
+                        key[1], "ALL"):
+                    raise ValueError("Unknown or geographically mismatched pack preset")
             if key in parsed:
                 raise ValueError("Duplicate downloaded city group")
             parsed[key] = ids
-        # Atomic in-memory update, never alter saved owner lineups or RF records.
+        # Atomic in-memory update; never rewrite measured RF history or owner
+        # preferences. Persisted pack files need an authenticated server cache.
+        self.library.presets.update(new_presets)
         for key, ids in parsed.items():
             self.city_candidates[key] = list(dict.fromkeys(
                 self.city_candidates.get(key, []) + ids))
@@ -282,7 +311,7 @@ class ChannelLineupStore:
              offset_hz: int = 0) -> None:
         self._profile(owner_id, profile_id)
         _text(label, max_length=180)
-        if mode not in MODES or abs(offset_hz) > 500_000 or type(offset_hz) is not int:
+        if mode not in MODES or type(offset_hz) is not int or abs(offset_hz) > 500_000:
             raise ValueError("Invalid mode/fine adjustment")
         _frequency(frequency_hz)
         # Editing a published candidate makes it a user entry, not sourced RF.
