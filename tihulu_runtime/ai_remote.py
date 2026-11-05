@@ -48,13 +48,19 @@ class RemoteEndpoint:
 
 def _private_host(host: str) -> None:
     """Refuse public remote addresses; HTTPS/ACL still required against DNS rebinding."""
-    addresses = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
-    cgnat = ipaddress.ip_network("100.64.0.0/10")
+    try:
+        addresses = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except OSError as exc:
+        raise RemoteAIError("Remote private host DNS resolution failed") from exc
+    private_networks = tuple(ipaddress.ip_network(net) for net in (
+        "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
+        "127.0.0.0/8", "100.64.0.0/10", "fc00::/7",
+        "fe80::/10", "::1/128"))
     if not addresses:
         raise RemoteAIError("Remote host has no resolved private address")
     for item in addresses:
         address = ipaddress.ip_address(item[4][0].split("%")[0])
-        if not (address.is_private or address.is_loopback or address in cgnat):
+        if not any(address in network for network in private_networks):
             raise RemoteAIError("Remote host resolves outside private LAN/tailnet")
 
 
