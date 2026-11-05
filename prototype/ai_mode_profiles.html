@@ -18,8 +18,8 @@ hr{border:0;border-top:1px solid #2b2c32;margin:17px 0}
 .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0}
 .row input{width:19px;height:19px;accent-color:#eee}
 .status{border:1px solid #383940;background:#17181b;border-radius:10px;padding:13px;margin-top:12px;line-height:1.75}
-button{width:100%;margin-top:14px;border:0;border-radius:99px;min-height:43px;font:inherit;background:#eee;color:#18181c;cursor:pointer}
-button:focus-visible,input:focus-visible{outline:3px solid #82b3ea;outline-offset:3px}
+select{width:100%;margin-top:8px;padding:10px;border:1px solid #45474d;background:#17181b;color:#eeeef0;border-radius:9px;font:inherit}\nbutton{width:100%;margin-top:14px;border:0;border-radius:99px;min-height:43px;font:inherit;background:#eee;color:#18181c;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #82b3ea;outline-offset:3px}
 .warning{font-size:.85rem;color:#dbb77c;margin:12px 0 0}
 @media(max-width:450px){.panel{padding:14px}.head{align-items:flex-start;flex-direction:column}}
 </style>
@@ -41,6 +41,15 @@ button:focus-visible,input:focus-visible{outline:3px solid #82b3ea;outline-offse
 <label class="row"><span>Uyumlu Hailo modeli yüklü (simülasyon)</span><input id="hailo-model" type="checkbox"></label>
 <label class="row"><span>CPU Base modeli kullanılabilir (simülasyon)</span><input id="base" type="checkbox" checked></label>
 <label class="row"><span>Auto için Advanced geçişine önceden izin verildi</span><input id="auto" type="checkbox"></label>
+<hr>
+<h2>Sistem diski ve HAT geçişi (simülasyon)</h2>
+<label for="boot-root" class="muted">Kök dosya sistemi hangi ortamda?</label>
+<select id="boot-root">
+<option value="unknown">Bilinmiyor / doğrulanamadı</option>
+<option value="nvme">PCIe NVMe — HAT değişiminde açılış riski</option>
+<option value="sd">microSD — ikinci açılış doğrulanmalı</option>
+<option value="usb">/dev/sd* — USB olduğu ayrıca doğrulanmalı</option>
+</select>
 <div class="status" id="result" role="status" aria-live="polite"></div>
 <button type="button" id="apply">Simüle edilen profili göster</button>
 <p class="warning">Fiziksel AI HAT+ 2 çıkarmak için önce Raspberry Pi tamamen kapatılmalı ve güç kesilmelidir. PCIe NVMe sistem diski varsa ikinci açılış düzeni ayrıca test edilmelidir.</p>
@@ -68,11 +77,19 @@ function refresh(){
     effective=ready?"Advanced (Hailo)":base?"Base (CPU)":"Yerel AI kullanılamıyor";
     reason=ready?"Uyumlu Hailo modeli var kabul edildi.":"Advanced tercihi korunur; HAT/uyumlu model yoksa Base fallback.";
   }
+  const boot=el("boot-root").value;
+  const bootHint={
+    unknown:"Sistem diski bilinmiyor: fiziksel değişiklik güvenli onaylanamaz.",
+    nvme:"PCIe NVMe kök disk: HAT değişimi sistemin açılmasını engelleyebilir; alternatif kurulum gerekir.",
+    sd:"microSD kök disk: yalnızca bir açılış durumu biliniyor, ikinci donanım düzeni test edilmeli.",
+    usb:"/dev/sd* gözlendi: gerçek USB bağlantısı, güç ve yeniden açılış ayrıca doğrulanmalı."
+  }[boot];
   el("result").textContent="Tercih edilen: "+preferred+"\nEtkin (yalnızca demo): "+effective+"\n"+reason+
-   "\nEnerji: ölçülmedi · Gerçek kurulum: yapılmadı";
+   "\nSistem diski: "+bootHint+"\nHer iki HAT düzeninde açılış: doğrulanmadı"+\n   "\nEnerji: ölçülmedi · Gerçek kurulum: yapılmadı";
   el("result").style.whiteSpace="pre-line";
 }
 document.querySelectorAll("input").forEach(x=>x.addEventListener("change",refresh));
+el("boot-root").addEventListener("change",refresh);
 el("apply").addEventListener("click",refresh);refresh();
 </script>
 </body></html>
