@@ -1,11 +1,14 @@
-name: Stage 4 on-demand service manager
+name: Stage 4-5 experimental regression (no hardware)
 on:
+  workflow_dispatch:
   push:
     paths:
       - "tihulu_runtime/**"
       - "tests/**"
       - "data/radio_text_networks.json"
       - "prototype/task_manager.html"
+      - "prototype/local_ai_sources.html"
+      - "prototype/ai_mode_profiles.html"
       - "prototype/lan_remote.html"
       - "prototype/lan_remote.js"
       - "docs/LAN_REMOTE_GATEWAY_EXPERIMENT.md"
@@ -20,6 +23,8 @@ on:
       - "tests/**"
       - "data/radio_text_networks.json"
       - "prototype/task_manager.html"
+      - "prototype/local_ai_sources.html"
+      - "prototype/ai_mode_profiles.html"
       - "prototype/lan_remote.html"
       - "prototype/lan_remote.js"
       - "docs/LAN_REMOTE_GATEWAY_EXPERIMENT.md"
@@ -39,7 +44,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Validate service policy, shared sessions and radio data catalog (no hardware)
+      - name: Run full Python prototype unit test suite (synthetic, no Pi hardware)
         run: python -m unittest discover -s tests -v
+      - name: Validate local AI HTML inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          for name in ("prototype/local_ai_sources.html",
+                       "prototype/ai_mode_profiles.html"):
+              source = Path(name).read_text(encoding="utf-8")
+              scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>",
+                                   source, flags=re.I | re.S)
+              if not scripts:
+                  raise SystemExit(f"No inline script in {name}")
+              for script in scripts:
+                  subprocess.run(["node", "--check"], input=script, text=True,
+                                 check=True)
+              print(f"JavaScript syntax OK: {name} ({len(scripts)} script(s))")
+          PY
       - name: Check LAN remote browser JavaScript syntax
         run: node --check prototype/lan_remote.js
