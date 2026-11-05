@@ -65,3 +65,9 @@ Model execution directly from an SSD needs backend-specific model-path support; 
 - https://github.com/hailo-ai/hailo_model_zoo_genai
 
 **No claims of real hardware test success. No installed models, driver changes, disk repartitioning or remote GPU operation have been performed by this PR.**
+
+## Checkpoint 066 experimental Base/Balanced/Advanced operating profiles
+
+The owner wants to physically remove AI HAT+ 2 for a lower-resource setup **without reinstalling or losing basic offline AI**. New system operation profiles **Base (tested CPU-only GGUF), Balanced (tested CPU or separately approved compatible Hailo model), Advanced (verified Hailo-10H compatible model)**, with separately approved `Auto` routing. This is **not** the old Light/Balanced/Maximum model-size shortlist and **not** Eco/Balanced/Custom energy policy. A CPU Base model and boot volume must remain usable after shutting down, disconnecting power, removing HAT and booting again. AI HAT+ 2 and the existing Pi5 NVMe HAT share the exposed PCIe path; current simultaneous NVMe-boot/HAT feasibility is unverified. No hot unplug, auto-reformat, downloads, remote/cloud fallback, or presumed watt savings. Validate device/runtime/model allowlist, original chats, file/wiki RAG permissions, USB storage and actual whole-system energy.
+
+Draft-only code: [router](../../tihulu_runtime/ai_profiles.py), [22 mocked tests](../../tests/test_ai_profiles.py), [compact mode selector simulation](../../prototype/ai_mode_profiles.html) and [full implementation cautions](MODULAR_AI_MODES_BASE_BALANCED_ADVANCED.md). No tested local inference, Hailo GenAI or physical energy benchmark exists. Whole Stage5 not approved.
