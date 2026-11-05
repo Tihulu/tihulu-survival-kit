@@ -61,6 +61,26 @@ class SourceInputTests(unittest.TestCase):
         self.assertEqual(states["tv_antenna"], "hardware_unavailable")
         self.assertEqual(states["radio_antenna"], "hardware_unavailable")
 
+    def test_three_media_selected_simultaneously_are_checked_independently(self):
+        chosen = [NewsInput("internet:test", "Verified RSS", "internet",
+                            "news", "ALL", verified=True),
+                  NewsInput("tv_antenna:test", "Verified Teletext", "tv_antenna",
+                            "dvb_teletext", "DE", verified=True),
+                  NewsInput("radio_antenna:test", "Verified DAB", "radio_antenna",
+                            "dab_data", "DE", verified=True)]
+        router = NewsSourceRouter(chosen)
+        adapters = {medium: FakeAdapter(count=1) for medium in
+                    ("internet", "tv_antenna", "radio_antenna")}
+        selection = InputPreferences(
+            enabled_media=frozenset(adapters),
+            selected_source_ids=frozenset(item.id for item in chosen))
+        results = router.scan(selection, ScanContext(
+            internet_available=True, dvb_receiver_ready=True,
+            radio_receiver_ready=True), user_triggered=True, adapters=adapters)
+        self.assertEqual(len(results), 3)
+        self.assertTrue(all(result.state == "checked" for result in results))
+        self.assertTrue(all(len(adapter.calls) == 1 for adapter in adapters.values()))
+
     def test_tv_scan_cannot_retune_recording(self):
         source = next(x for x in self.tv if x.country == "DE")
         selected = InputPreferences(enabled_media=frozenset({"tv_antenna"}),
