@@ -168,7 +168,7 @@ class FlightRadarWSGI:
             ("Cache-Control", "no-store"),
             ("X-Content-Type-Options", "nosniff"),
             ("Content-Security-Policy", "default-src 'self'; script-src 'self'; "
-             "style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
+             "style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; "
              "object-src 'none'; frame-ancestors 'self'"),
             ("Content-Length", str(len(raw)))])
         return [raw]
