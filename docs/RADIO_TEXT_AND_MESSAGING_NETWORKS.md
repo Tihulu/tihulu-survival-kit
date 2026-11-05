@@ -10,7 +10,7 @@ The Hauppauge **WinTV-soloHD model 01589** tuner (Amazon ASIN B0152XLPFS) is mar
 - **Additional DVB data**: present/following EPG, full EIT programme schedule, DVB subtitles, language tracks, audio description where actually carried; expose signal parameters/frequency, stream metadata and per-station service IDs.
 - **HbbTV**: AIT signalling and some broadcast-side application content may be carried, but working interactivity typically requires full HbbTV browser/DSM-CC and often internet return path. Do not label this "two-way Teletext from antenna". HbbTV embedding must respect content restrictions.
 - **Channel changes**: a single tuner generally cannot decode unrelated RF multiplexes at the same moment. Receiving TV+teletext from the same locked multiplex may work if demux/driver allows multi-PID; never retune away from an active user-authorized recording. Queue/ask for takeover. A cache of watched teletext pages can be temporary, but **do not** delete original TV recordings or user exports as "news cache".
-- **Region**: user chooses Germany -> Bundesland -> city/postcode or Turkey -> il -> city; local scan when owner starts it. Other countries later. Display "available from broadcaster" separately from "received on this tuner now".
+- **Region**: user chooses Germany -> Bundesland -> city/postcode or Turkey -> province -> city; local scan when owner starts it. Other countries later. Display "available from broadcaster" separately from "received on this tuner now".
 - **Implementation test** (future): capture DVB TS with Tvheadend/tv tools, inspect stream descriptors and teletext descriptors, run compatible decoder (libzvbi/FFmpeg only after confirming feature and format), verify page bytes, correct language, page cycling, caption time, 24h temporary cache and RF mute/edge cases. Do NOT claim tested teletext today.
 
 Sources: https://dvb.org/?standard=specification-for-conveying-itu-r-system-b-teletext-in-dvb-bitstreams ; https://hilfe.ard.de/artikel/untertitel-am-fernseher-aktivieren/ ; https://www.zdf.de/unternehmen/verantwortung/barrierefreiheit-faq-100.html ; https://www.trt.net.tr/corporate/teletext ; https://developer.hbbtv.org/guide/introduction/overview-about-hbbtv-architecture
@@ -24,7 +24,7 @@ Sources: https://dvb.org/?standard=specification-for-conveying-itu-r-system-b-te
 Sources: https://www.dabplus.de/faq/ ; https://aprs.fi/doc/guide/guide.html
 
 ## Two-way BBS, chat, old-school text communities — not teletext:
-- **CB Packet Radio LK0NOD, LK0BOX / LKCHAT**: actual Germany project with BBS, chat, online access. Its own 2026 documentation lists CH24 27.235 MHz and CH77 26.925 MHz. Requires suitable CB transceiver/TNC and lawful use for RF; web access only needs Internet. Do not promise signal in Köln.
+- **CB Packet Radio LK0NOD, LK0BOX / LKCHAT**: actual Germany project with BBS, chat, online access. Its own 2026 documentation lists CH24 27.235 MHz and CH77 26.925 MHz. Requires suitable CB transceiver/TNC and lawful use for RF; web access only needs Internet. Do not promise reception in Cologne.
   - https://www.lk0nod.de/lk0nod-hilfe-online.html
 - **DB0APK-7/9 amateur Packet Radio node+BBS (DK0PI)**: documented 438.150 MHz store-and-forward BBS (OpenBCM/LinBPQ); use suitable transceiver and authorization to transmit.
   - https://www.dk0pi.de/2025-05-06-packet-radio-mailbox.html
@@ -37,6 +37,6 @@ Sources: https://www.dabplus.de/faq/ ; https://aprs.fi/doc/guide/guide.html
 - **Teletext art / Teefax viewers**: can bookmark web teletext-format communities; they are NOT DVB broadcast chat. https://teletextart.co.uk/teletext-links
 
 ### Next UI (Radio & TV Data)
-Channel > **Teletekst** > page no / previous-next / subpages / text language / copy-export; **DVB EPG**; **Radio Data** > RDS / DLS+ / Journaline / APRS; **Mesaj Ağları** > view/listen / (only if authorized: connect/send); **Community / Forum** > region-specific BBS, Meshtastic communities, bookmarked web links. All inputs use a shared **hardware capability registry** that visibly distinguishes "purchased", "connected", "decoder ready", "signal detected" and "available service". Never mark a USB TV tuner as a transmitter.
+Channel > **Teletext** > page no / previous-next / subpages / text language / copy-export; **DVB EPG**; **Radio Data** > RDS / DLS+ / Journaline / APRS; **Messaging Networks** > view/listen / (only if authorized: connect/send); **Community / Forum** > region-specific BBS, Meshtastic communities, bookmarked web links. All inputs use a shared **hardware capability registry** that visibly distinguishes "purchased", "connected", "decoder ready", "signal detected" and "available service". Never mark a USB TV tuner as a transmitter.
 
 Idle/resource policy: TV/news/teletext background refresh OFF by default, no constant active tuner lock, no surprise transmission or Internet. User-triggered operations acquire Stage4 leases, and active recording is protected. News/social items still expire after 24h; original saved audio/TV recordings and user-created exports persist.
