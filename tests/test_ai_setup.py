@@ -2,6 +2,7 @@
 import unittest
 import io
 import json
+from types import SimpleNamespace
 from contextlib import redirect_stdout
 from tihulu_runtime.ai_boot_topology import BootTopology
 from tihulu_runtime.ai_hardware import HardwareSnapshot
@@ -78,7 +79,7 @@ class SetupTests(unittest.TestCase):
         with TemporaryDirectory() as folder:
             path = Path(folder) / "small.gguf"
             path.write_bytes(b"GGUFexample-content")
-            registry.return_value.models = {"base": object()}
+            registry.return_value.models = {"base": SimpleNamespace(path="/models/base.gguf", sha256="hash", device_uuid=None)}
             registry.return_value.availability.return_value = "present_not_reverified"
             registry.return_value.verified_path.return_value = path
             output = io.StringIO()
@@ -118,7 +119,7 @@ class SetupTests(unittest.TestCase):
         boot.return_value = BootTopology(
             "Pi 5", "/dev/nvme0n1p2", "/dev/nvme0n1p2", "/dev/nvme0n1p2",
             "pcie_nvme", "root_mount_source")
-        registry.return_value.models = {"base": object()}
+        registry.return_value.models = {"base": SimpleNamespace(path="/models/base.gguf", sha256="hash", device_uuid=None)}
         registry.return_value.availability.return_value = "storage_unavailable"
         registry.return_value.verified_path.side_effect = RuntimeError("offline SSD")
         output = io.StringIO()
