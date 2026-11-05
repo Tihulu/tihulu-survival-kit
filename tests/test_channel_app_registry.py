@@ -2,6 +2,7 @@
 import unittest
 from pathlib import Path
 from tihulu_runtime.channel_app_registry import SharedChannelWorkspace
+from tihulu_runtime.region_channel_manager import RegionChannelCatalog, ChannelLineupStore
 from tihulu_runtime.channel_explorer import (
     ChannelStore, FrequencyLibrary, Receiver, ScanRecord, DetectedService
 )
@@ -61,6 +62,33 @@ class WorkspaceTests(unittest.TestCase):
         result=self.workspace.scan_presets(owner_id="alice",app="radio",
                 preset_ids=["tr_izmir_radyo1"],receiver=self.sdr,user_triggered=True)
         self.assertEqual(result[0].state,"backend_missing")
+
+    def test_regional_lineups_share_tv_radio_workspace_and_owner(self):
+        catalog=RegionChannelCatalog(
+            DATA.parent/"region_profiles.json",
+            DATA.parent/"region_channel_catalog.json",DATA)
+        lineups=ChannelLineupStore(":memory:",catalog)
+        try:
+            shared=SharedChannelWorkspace(self.workspace.library,self.store,
+                                          lineups=lineups)
+            profile=lineups.create(owner_id="alice",country="DE",
+                       region="Nordrhein-Westfalen",city="Köln",label="home")
+            lineups.add_presets(owner_id="alice",profile_id=profile,
+                preset_ids=["de_nrw_koeln_wdr_tv","de_koeln_wdr2_fm"])
+            self.assertEqual(len(shared.regional_candidates(country="DE",
+                region="Nordrhein-Westfalen",city="Köln"))>=4,True)
+            tv=shared.regional_saved(owner_id="alice",profile_id=profile,app="tv")
+            radio=shared.regional_saved(owner_id="alice",profile_id=profile,app="radio")
+            self.assertEqual(len(tv),1)
+            self.assertEqual(len(radio),1)
+            self.assertEqual(tv[0]["state"],"published_not_received")
+            with self.assertRaises(KeyError):
+                shared.regional_saved(owner_id="bob",profile_id=profile)
+            result=shared.tune_regional(owner_id="alice",profile_id=profile,
+               item_id=tv[0]["item_id"],receiver=self.dvb,user_triggered=True)
+            self.assertEqual(result.state,"backend_missing")
+        finally:
+            lineups.close()
 
     def test_receiver_scan_does_not_auto_save_when_disabled(self):
         results=self.workspace.scan_presets(owner_id="alice",app="tv",
