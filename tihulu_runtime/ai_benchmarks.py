@@ -18,7 +18,7 @@ from .ai_hardware import BACKENDS, HardwareSnapshot
 
 METRICS = frozenset((
     'tokens_per_second', 'time_to_first_token_ms', 'observed_peak_memory_bytes',
-    'joules_per_response', 'turkish_score', 'multilingual_score',
+    'joules_per_response', 'total_joules_including_remote', 'turkish_score', 'multilingual_score',
     'translation_score', 'summarization_score', 'wikipedia_rag_score',
     'reasoning_score', 'overall_score'))
 
