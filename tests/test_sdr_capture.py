@@ -11,9 +11,11 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tihulu_runtime import Module, ServiceManager, Blocked
-from tihulu_runtime.channel_explorer import Receiver, TunePoint
+from tihulu_runtime.channel_explorer import (ChannelExplorer, ProbeReading,
+                                            Receiver, TunePoint)
 from tihulu_runtime.sdr_radio import RtlFmStream, SdrBusy, SdrTunerBroker
-from tihulu_runtime.sdr_capture import ManagedFmCapture, SdrCooperativeLock
+from tihulu_runtime.sdr_capture import (ManagedFmCapture, ManagedSdrScan,
+                                         SdrCooperativeLock)
 
 
 class Adapter:
@@ -241,6 +243,112 @@ class ManagedFmTests(unittest.TestCase):
         self.begin(job_id="job-2")
         self.managed.stop(owner_id="alice", job_id="job-2")
         self.assertEqual(len(self.processes), 2)
+
+
+class MockProbe:
+    def __init__(self):
+        self.probed = []
+
+    def probe(self, receiver, point):
+        self.probed.append((receiver.receiver_id, point.mode, point.tuned_hz))
+        return ProbeReading("energy_only", signal_quality=12.5,
+                            technical_details="mock-not-a-station")
+
+
+class ManagedSdrScanTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name) / "locks"
+        self.adapter = Adapter()
+        self.services = ServiceManager([Module("radio", installed=True)],
+                                       self.adapter)
+        self.radio = receiver()
+        self.explorer = ChannelExplorer()
+        self.scanner = ManagedSdrScan(self.services, self.explorer,
+                                      lock_root=self.root)
+        self.probe = MockProbe()
+        self.fm = TunePoint("fm", 98_600_000)
+
+    def do_scan(self, points=None, **overrides):
+        args = dict(receiver=self.radio, points=(self.fm,) if points is None else points,
+                    owner_id="alice", job_id="scan-1", backend=self.probe,
+                    user_triggered=True)
+        args.update(overrides)
+        return self.scanner.scan(**args)
+
+    def test_explicit_scan_uses_shared_explorer_and_releases_resources(self):
+        readings = self.do_scan((self.fm, TunePoint("dab", 222_064_000)))
+        self.assertEqual(len(readings), 2)
+        self.assertEqual([r.state for r in readings], ["energy_only", "energy_only"])
+        self.assertEqual(readings[0].detail, "mock-not-a-station")
+        self.assertEqual(self.services.snapshot()["radio"]["active_tasks"], 0)
+        self.assertEqual(self.adapter.started, ["radio"])
+        self.assertEqual(self.adapter.stopped, ["radio"])
+        with SdrCooperativeLock(self.radio.receiver_id, root=self.root):
+            pass
+
+    def test_scan_is_opt_in_and_needs_real_adapter(self):
+        with self.assertRaises(PermissionError):
+            self.do_scan(user_triggered=False)
+        with self.assertRaises(ValueError):
+            self.do_scan(backend=None)
+        self.assertEqual(self.adapter.started, [])
+        self.assertEqual(self.probe.probed, [])
+
+    def test_bad_modes_cannot_route_dvb_to_sdr(self):
+        with self.assertRaises(ValueError):
+            self.do_scan(points=(TunePoint("dvb_t2", 514_000_000),))
+        with self.assertRaises(ValueError):
+            self.do_scan(points=(TunePoint("fm", 2_000_000_000),))
+        with self.assertRaises(ValueError):
+            self.do_scan(points=tuple())
+        self.assertEqual(self.probe.probed, [])
+        self.assertEqual(self.adapter.started, [])
+
+    def test_existing_fm_stream_prevents_manual_or_multi_point_retune(self):
+        broker = SdrTunerBroker()
+        process = FakeProcess()
+        stream = RtlFmStream(broker, which=lambda _: "/usr/bin/rtl_fm",
+                             popen=lambda *a, **k: process)
+        fm = ManagedFmCapture(self.services, stream, lock_root=self.root)
+        fm.start(self.radio, frequency_hz=98_600_000, owner_id="alice",
+                 job_id="listen-1", device_index=0)
+        with self.assertRaises(SdrBusy):
+            self.scanner.manual_tune(self.radio, point=self.fm, owner_id="bob",
+                                     job_id="scan-2", backend=self.probe,
+                                     user_triggered=True)
+        self.assertFalse(self.probe.probed)
+        self.assertFalse(process.terminated)
+        self.assertEqual(self.services.snapshot()["radio"]["active_tasks"], 1)
+        fm.stop(owner_id="alice", job_id="listen-1")
+        result = self.scanner.manual_tune(
+            self.radio, point=self.fm, owner_id="bob", job_id="scan-2",
+            backend=self.probe, user_triggered=True)
+        self.assertEqual(result.state, "energy_only")
+
+    def test_failed_probe_releases_all_leases(self):
+        class Broken:
+            def probe(self, receiver, point):
+                raise RuntimeError("device disconnected")
+        results = self.do_scan(backend=Broken())
+        self.assertEqual(results[0].state, "scan_failed")
+        self.assertEqual(self.services.snapshot()["radio"]["active_tasks"], 0)
+        with SdrCooperativeLock(self.radio.receiver_id, root=self.root):
+            pass
+
+    def test_hard_off_blocks_scan_before_lock(self):
+        self.services.set_policy("radio", hard=False, owner_verified=True)
+        with self.assertRaises(Blocked):
+            self.do_scan()
+        self.assertEqual(self.probe.probed, [])
+        self.assertFalse(self.root.exists())
+
+    def test_canonical_usb_receiver_id_required(self):
+        other = receiver("faked-sdr-id")
+        with self.assertRaises(ValueError):
+            self.do_scan(receiver=other)
+        self.assertFalse(self.adapter.started)
 
 
 if __name__ == "__main__":
