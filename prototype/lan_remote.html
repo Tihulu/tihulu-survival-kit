@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu LAN TV/Radio — experimental</title>
+<style>
+:root{font:16px system-ui,sans-serif;background:#edf4f4;color:#173744}
+*{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:auto;padding:16px}
+h1{font-size:1.6rem}h2{font-size:1.17rem}p{line-height:1.45}.muted,small{color:#516c73}
+.box{border:1px solid #d0dfe1;background:white;padding:18px;border-radius:15px;margin:12px 0}
+.warning{background:#fff8e8;border-color:#e6ce92}.tabs{display:flex;gap:10px;flex-wrap:wrap}
+button,input,select{font:inherit;padding:11px;border-radius:9px;border:1px solid #bdd0d4;max-width:100%}
+button{background:#17677d;border:0;color:white;cursor:pointer}
+button.alt{background:#e5eff1;color:#17465a}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #69abc1}
+button:disabled{opacity:.55;cursor:default}.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:end}
+.field{display:grid;gap:5px;flex:1;min-width:155px}.panel[hidden]{display:none}
+#status{white-space:pre-wrap;min-height:50px}.item{border-top:1px solid #e0eaec;padding:12px 2px}
+.item label{display:flex;align-items:center;gap:8px}.item small{display:block}
+.pill{background:#e9f0f2;border-radius:20px;padding:4px 9px;font-size:.8rem}
+.screen{background:#173c4c;color:white;padding:21px;border-radius:14px;min-height:130px}
+.screen small{color:#bad2da}.remote-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:520px}
+.remote-grid button{min-height:63px}.spaced{margin-top:12px}
+a{color:#125a71}input[type=checkbox]{width:18px;height:18px}
+@media(max-width:550px){main{padding:9px}.box{padding:13px}.remote-grid button{min-height:56px}}
+</style></head><body><main>
+<header><small>TIHULU · EXPERIMENTAL LOCAL NETWORK CONTROL</small>
+<h1>Bölgesel Kanallar · TV / Radyo Kumandası</h1>
+<p class="muted">Aynı Raspberry Pi sunucusu üzerinde kanal listelerini kaydet ve eşleşmiş telefonla başka tarayıcıya komut gönder.</p></header>
+<section class="box warning"><strong>Önemli:</strong> Bu sayfa deneysel HTTPS ağ geçidine aittir. Komutlar telefondan bilgisayardaki <em>tarayıcı ekranına</em> iletilebilir; DVB tuner, gerçek televizyon, ses düzeyi, altyazı ve AI henüz kontrol edilmez. Ekranın yanıtı yalnızca “komutu gördüm” anlamına gelir. Güvenli LAN kurulumu ve sertifika gerekir.</section>
+<nav class="tabs box" aria-label="Görünüm"><button data-show="owner">Kurulum / kanal listeleri</button><button class="alt" data-show="display">Bilgisayar ekranı</button><button class="alt" data-show="phone">Telefon kumandası</button></nav>
+<section id="owner" class="box panel">
+<h2>1. Yönetici erişimi</h2>
+<p class="muted">Sunucu başlatılırken tanımlanan güçlü sahip anahtarı. Anahtar URL'ye eklenmez ve bu demo arayüzünde diske kaydedilmez.</p>
+<div class="controls"><label class="field">Owner token <input id="owner-secret" type="password" autocomplete="off" placeholder="TIHULU_OWNER_TOKEN"></label><button id="connect-owner">Bağlan</button></div>
+<h2>2. Ülke / şehir</h2>
+<div class="controls"><label class="field">Ülke<select id="country"></select></label><label class="field">Eyalet / il<select id="region"></select></label>
+<label class="field">Şehir<select id="city"></select></label>
+<label class="field">Özel şehir<input id="custom-city" placeholder="İsteğe bağlı" maxlength="100"></label></div>
+<div class="controls spaced"><label class="field">Liste adı<input id="profile-label" value="Ev kanalları" maxlength="120"></label>
+<button id="new-profile">Yeni bölge listesi</button></div>
+<h2>3. Yayın adayları</h2><p class="muted">Katalogdan gelen frekanslar gerçek yayın alındığını garanti etmez. FM/DAB için ayrıca uygun alıcı gerekir.</p>
+<div id="candidates"></div><div class="controls"><button id="select-visible" class="alt">Tümünü seç</button>
+<button id="add-presets">Seçili kanalları ekle</button></div>
+<h2>4. Kaydedilmiş listeler</h2>
+<label class="field">Aktif liste<select id="owner-profile"></select></label>
+<div id="owner-items"></div>
+<h3>Özel kanal ekle</h3><div class="controls">
+<label class="field">Kanal adı<input id="custom-label" value="Kendi radyom"></label>
+<label class="field">Tür<select id="custom-mode"><option value="fm">FM</option><option value="dab">DAB+</option><option value="dvb_t2">DVB-T2</option><option value="dvb_t">DVB-T</option><option value="dvb_c">DVB-C</option><option value="am">AM</option></select></label>
+<label class="field">MHz<input id="custom-frequency" type="number" step=".001" value="98.600"></label><button id="add-custom">Kanal ekle</button></div>
+</section>
+<section id="display" class="box panel" hidden>
+<h2>Bilgisayar / TV Center ekranı</h2><p class="muted">Ekranın bulunduğu bilgisayarda yönetici token'ını yukarıda girip burada oturum başlat. Kod telefondaki kumanda sayfasına yazılır. Gerçek tuner açılmaz.</p>
+<div class="controls"><label class="field">Ekran türü<select id="display-medium"><option value="tv">TV</option><option value="radio">Radyo</option></select></label>
+<button id="register-display">Ekranı kaydet ve eşleştirme kodu oluştur</button><button id="revoke-display" class="alt">Ekran bağlantısını kapat</button></div>
+<div class="screen spaced"><strong id="display-title">Ekran bağlı değil</strong><p id="display-code">Eşleştirme kodu yok</p>
+<small id="display-detail">Telefon bağlantısı yok; yayın oynatıcısı entegre değil.</small></div>
+</section>
+<section id="phone" class="box panel" hidden>
+<h2>Telefon kumandası</h2><p class="muted">Bilgisayarda gösterilen sekiz haneli tek kullanımlık kodu gir. Eşleştirme oturumları geçicidir ve sunucu yeniden başladığında silinir.</p>
+<div class="controls"><label class="field">8 haneli kod<input id="pair-code" inputmode="numeric" maxlength="8" autocomplete="one-time-code"></label>
+<button id="pair">Telefonu eşleştir</button></div>
+<div class="controls spaced"><label class="field">Liste<select id="phone-profile"></select></label><label class="field">Kanal<select id="phone-channel"></select></label>
+<button id="phone-select">Seçili kanalı gönder</button></div>
+<div class="remote-grid spaced">
+<span></span><button data-action="next_channel">CH +</button><span></span>
+<button data-action="volume_down">VOL −</button><button data-action="play_pause">PLAY/PAUSE</button><button data-action="volume_up">VOL +</button>
+<button data-action="previous_channel">CH −</button><button data-action="mute">MUTE</button><button data-action="stop">STOP</button>
+<button data-action="subtitles">Altyazı</button><button data-action="teletext">Teletext</button><span></span>
+</div>
+<div class="spaced"><strong id="phone-status">Eşleştirme bekleniyor.</strong></div>
+<h3>Translator / AI</h3><p class="muted">Gerçek kaynaklı altyazı/Teletext ve paylaşılan model işçileri bağlanana kadar kullanılmaz.</p>
+<button disabled>Kaynak metni çevir (henüz yok)</button> <button disabled>AI ile sor (henüz yok)</button>
+</section>
+<section class="box" aria-live="polite"><strong>İşlem durumu</strong><div id="status">Oturum bekleniyor.</div></section>
+<footer><small>Geliştirme prototipi · GNU AGPL-3.0-only · <a href="https://github.com/Tihulu/tihulu-survival-kit">Kaynak kodu</a></small></footer>
+</main><script src="/app.js" defer></script></body></html>
