@@ -238,24 +238,35 @@ class ChannelExplorer:
                                               "hardware_missing",
                                               detail="Receiver unavailable or mode/band unsupported"))
                     continue
-                # No retune while a service or original recording owns this
-                # physical receiver. Same-frequency sharing requires a *tested*
-                # demux and exact lock frequency equality.
-                if receiver.recording_active and not (
-                        receiver.share_locked_mux and
-                        point.mode in DVB_MODES and
-                        receiver.locked_frequency_hz == freq):
-                    results.append(ScanRecord(receiver.receiver_id, point.mode, freq,
-                                              "recording_protected",
-                                              detail="Retuning could interrupt an active recording"))
-                    continue
+                # Normal scanning backends may force a retune even when the
+                # target frequency equals the current multiplex. Never invoke
+                # their probe() method while a recording owns this receiver.
+                shared_probe = None
+                if receiver.recording_active:
+                    if not (receiver.share_locked_mux and
+                            point.mode in DVB_MODES and
+                            receiver.locked_frequency_hz == freq and
+                            point.offset_hz == 0):
+                        results.append(ScanRecord(receiver.receiver_id, point.mode, freq,
+                                                  "recording_protected",
+                                                  detail="Retuning could interrupt an active recording"))
+                        continue
+                    # Only a broker-approved, non-retuning demux reader may
+                    # inspect services already on the locked multiplex.
+                    shared_probe = getattr(backend, "probe_shared_mux", None)
+                    if not callable(shared_probe):
+                        results.append(ScanRecord(receiver.receiver_id, point.mode, freq,
+                                                  "recording_protected",
+                                                  detail="No non-retuning shared-multiplex reader"))
+                        continue
                 if backend is None:
                     results.append(ScanRecord(receiver.receiver_id, point.mode, freq,
                                               "backend_missing",
                                               detail="No verified receiver/decoder backend installed"))
                     continue
                 try:
-                    reading = backend.probe(receiver, point)
+                    reading = (shared_probe(receiver, point) if shared_probe is not None
+                               else backend.probe(receiver, point))
                     if reading.state not in ("no_signal", "energy_only",
                                              "signal_locked", "service_decoded"):
                         raise ValueError("Invalid signal reading")
