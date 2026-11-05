@@ -13,6 +13,8 @@ import os
 import shutil
 import tempfile
 
+from .ai_volumes import require_volume, volume_containing
+
 
 class StorageError(RuntimeError):
     pass
@@ -76,6 +78,8 @@ class ModelStorageRegistry:
         if not model_id or model_id in self.models:
             raise StorageError("Missing or already registered model ID")
         path = Path(filename)
+        if device_uuid is not None:
+            require_volume(path, device_uuid, writable=False)
         if not regular_file(path):
             raise StorageError("Model must exist as a regular non-symlink file")
         checksum = digest(path)
@@ -94,6 +98,11 @@ class ModelStorageRegistry:
     def availability(self, model_id: str) -> str:
         entry = self.models[model_id]
         path = Path(entry.path)
+        if entry.device_uuid is not None:
+            try:
+                require_volume(path, entry.device_uuid, writable=False)
+            except ValueError:
+                return "storage_unavailable"
         if not regular_file(path):
             return "storage_unavailable"
         if path.stat().st_size != entry.size_bytes:
@@ -103,12 +112,18 @@ class ModelStorageRegistry:
     def verified_path(self, model_id: str) -> Path:
         entry = self.models[model_id]
         path = Path(entry.path)
+        if entry.device_uuid is not None:
+            try:
+                require_volume(path, entry.device_uuid, writable=False)
+            except ValueError as exc:
+                raise StorageError("Expected model SSD UUID unavailable") from exc
         if not regular_file(path) or digest(path) != entry.sha256:
             raise StorageError("Model unavailable or checksum failed")
         return path
 
     def move_model(self, model_id: str, destination_dir: Path | str, *,
-                   owner_verified: bool = False) -> ModelLocation:
+                   owner_verified: bool = False,
+                   destination_uuid: str | None = None) -> ModelLocation:
         """Copy -> fsync -> SHA256 -> register. Original is ALWAYS preserved.
 
         Target directory must already exist. A future system-level storage
@@ -120,6 +135,13 @@ class ModelStorageRegistry:
             raise PermissionError("Owner confirmation required")
         source = self.verified_path(model_id)
         destination_dir = Path(destination_dir)
+        if destination_uuid is not None:
+            require_volume(destination_dir, destination_uuid)
+        else:
+            mounted = volume_containing(destination_dir)
+            if mounted is not None and mounted.uuid is not None:
+                require_volume(destination_dir, mounted.uuid)
+                destination_uuid = mounted.uuid
         if not destination_dir.is_dir() or destination_dir.is_symlink():
             raise StorageError("Target storage not mounted/available")
         destination = destination_dir / source.name
@@ -141,7 +163,7 @@ class ModelStorageRegistry:
                 raise StorageError("Migration integrity check failed")
             os.replace(temporary, destination)
             entry = ModelLocation(model_id, str(destination.resolve()), original.sha256,
-                                  size, None)
+                                  size, destination_uuid)
             self.models[model_id] = entry
             try:
                 self._save()
