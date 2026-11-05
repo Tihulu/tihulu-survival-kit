@@ -1,1 +1,129 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tihulu Radio Center — prototype</title></head><body style="font:1.1rem system-ui;max-width:700px;margin:2rem auto;padding:1rem"><h1>Radio Center</h1><p>Experimental, not connected to FM/DAB/SDR hardware. Published radio frequency lists, receive-only band scanning, manual tuning, unknown signals and saved favorites share the Channel & Signal Explorer.</p><p><a href="channel_explorer.html?mode=radio">Open shared Radio scanner and channel list</a></p><p><a href="region_channel_setup.html">City radio list (multi-select, reorder, edit)</a></p><p><a href="remote_control.html">Radio remote demo</a> · <a href="remote_display.html">Display demo</a></p><small>Preview only: separate SDR required; no cross-device command relay yet.</small><p><a href="channel_explorer.html?mode=text">Open Text/Data and BBS sites</a></p><p><a href="../docs/CHANNEL_SIGNAL_EXPLORER.md">Implementation plan</a></p></body></html>
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — Radio Center (Preview)</title>
+<style>
+:root{color-scheme:dark;--bg:#0e151c;--card:#19252f;--line:#364a56;--ink:#e8f0f5;--muted:#a8bcc7;--accent:#72dad0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px system-ui,sans-serif}
+main{max-width:1100px;padding:20px;margin:auto}h1{font-size:22px;margin:0}h2{font-size:17px;margin:0 0 10px}h3{font-size:14px;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.muted{color:var(--muted)}.tiny{font-size:12px}p{line-height:1.5}
+button,select{font:inherit;background:#293845;color:inherit;border:1px solid var(--line);padding:8px 11px;border-radius:8px}
+button:not([disabled]){cursor:pointer}button[aria-pressed=true]{border-color:var(--accent);color:#a0fff5}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}button:disabled{opacity:.55}
+.station{padding:10px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
+.label{font-size:12px;color:var(--muted)}.freq{font-variant-numeric:tabular-nums}
+.empty{background:repeating-linear-gradient(0deg,#17222c,#17222c 19px,#21303b 20px);min-height:130px;border:1px dashed #45636d;border-radius:8px;display:grid;place-items:center;color:var(--muted);text-align:center}
+.readout{font-size:22px;margin:15px 0}.panel-actions{display:flex;gap:4px}.panel-actions button{padding:4px 8px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:12px}
+[hidden]{display:none!important}a{color:#99e5dc}.warning{border:1px solid #84744a;padding:7px 10px;border-radius:8px;color:#f3dd99}
+@media(max-width:550px){main{padding:12px}.cols{grid-template-columns:1fr}}
+</style></head><body><main>
+<div class="row between">
+<div><h1>📻 Radio Center</h1><p class="muted tiny">Tihulu Survival Kit · Stage 8 · MW-29 · SDR-001</p></div>
+<span class="warning" role="status">UI DEMO — gerçek alıcı bağlı değil</span>
+</div>
+<div class="card row between">
+<div><strong>Nooelec NESDR SMArt v5</strong><div class="muted tiny">RTL2832U 0bda:2838 · FM + DAB+ PC testi doğrulandı; Pi doğrulanmadı</div></div>
+<div class="row" role="group" aria-label="Görünüm">
+<button id="b" aria-pressed="true">Basic View</button><button id="e" aria-pressed="false">Advanced / Expert View</button>
+</div>
+</div>
+<section id="basic">
+<div class="cols">
+<div class="card">
+<h2>İstasyonlar</h2><p class="muted tiny">Yayımlanmış frekans adayları; alınmış kanal olarak işaretlenmez.</p>
+<label for="region">Bölge</label>
+<select id="region"><option value="de">Almanya → NRW → Köln</option><option value="tr">Türkiye → İzmir</option></select>
+<div id="stationList" aria-live="polite"></div>
+<div class="row"><button id="dabScanShow" type="button">📡 Otomatik DAB+ Tarama</button><button disabled>Manuel frekans</button><button disabled>Favoriler</button></div>
+</div>
+<div class="card"><h2>Şimdi dinleniyor</h2>
+<div class="muted tiny">Alıcı devre dışı · istasyon çözülmedi</div><div class="readout">— MHz</div>
+<div>İstasyon / logo: —</div><p>Şarkı / DLS / RDS: <span class="muted">veri yok</span></p>
+<div class="label">Sinyal gücü: ölçülmedi</div>
+<div style="height:10px;background:#2c3c48;border-radius:8px;margin:6px 0 14px"></div>
+<div class="row"><button disabled>▶ Dinle</button><button disabled>⏺ Kaydet</button><button disabled>Ses</button></div>
+<p class="muted tiny">Kayıt, kontrol ve akış izinleri gerçek backend bağlanınca etkinleştirilecek. Dinlemek için AI gerekmez.</p>
+</div></div>
+</section>
+<section id="dabScanSetup" class="card" hidden aria-labelledby="dabScanTitle">
+<div class="row between"><h2 id="dabScanTitle">📡 Otomatik DAB+ Kanal Tarama</h2><button id="dabScanClose" type="button">Kapat</button></div>
+<p class="muted tiny">welle.io tarzı, kullanıcı isteğiyle çalışan Band III kanal taraması. Bu sayfa hâlâ <strong>UI önizlemesidir</strong>; gerçek SDR/decoder bağlantısı olmadığı için RF taraması başlamaz.</p>
+<div class="row">
+<label for="dabScope">Tarama kapsamı</label>
+<select id="dabScope"><option value="quick">Hızlı — bölgenin yayımlanmış DAB adayları</option><option value="full">Tam — Band III 5A–12D (32 blok)</option></select>
+<label><input type="checkbox" id="dabUpper" disabled> 13A–13F ek blokları da tara (+6)</label>
+</div>
+<div id="dabPlan" class="muted" role="status" aria-live="polite"></div>
+<div class="row" style="margin-top:12px">
+<progress id="dabScanProgress" max="32" value="0" aria-label="DAB kanal tarama ilerlemesi"></progress>
+<span id="dabScanStatus" class="muted tiny">Tarama başlamadı · 0/32</span>
+</div>
+<div class="row" style="margin-top:12px">
+<button disabled title="Gerçek welle-cli dekoderi ve doğrulanmış Pi5 USB alıcı adaptörü henüz bağlı değil">▶ Taramayı Başlat (backend bekleniyor)</button>
+<button disabled>■ İptal</button>
+<button disabled>Seçilen servisleri kaydet</button>
+</div>
+<p class="muted tiny">Gerçek backend bağlandığında blok/servis ilerlemesi, sinyal durumu, kayıtlılarla birleştirme ve iptal sunulacak. Yalnızca decoder tarafından bulunan servisler kaydedilebilir; favoriler korunur. Arka plan taraması varsayılan KAPALI.</p>
+</section>
+<section id="expert" hidden>
+<div class="card"><h2>Alıcı kontrolleri</h2><p class="muted tiny">Tek SDR: aynı anda yalnızca tek merkez frekansı. Gain, PPM ve DAB kanal seçimi gerçek backend olmadan kapalı.</p>
+<div class="row"><button disabled>Tune</button><button disabled>Gain: —</button><button disabled>PPM: —</button><button disabled>DAB MUX: —</button></div></div>
+<div class="cols" id="panels">
+<article class="card"><div class="panel-head"><h3>RF Spectrum</h3><div class="panel-actions"><button class="up" aria-label="Spectrum önceki konuma">←</button><button class="down" aria-label="Spectrum sonraki konuma">→</button></div></div><div class="empty">Ölçülen FFT yok</div></article>
+<article class="card"><div class="panel-head"><h3>Waterfall</h3><div class="panel-actions"><button class="up" aria-label="Waterfall önceki konuma">←</button><button class="down" aria-label="Waterfall sonraki konuma">→</button></div></div><div class="empty">Canlı IQ akışı yok</div></article>
+<article class="card"><div class="panel-head"><h3>DAB Constellation</h3><div class="panel-actions"><button class="up" aria-label="Constellation önceki konuma">←</button><button class="down" aria-label="Constellation sonraki konuma">→</button></div></div><div class="empty">DAB OFDM verisi yok</div></article>
+<article class="card"><div class="panel-head"><h3>Signal / Decoder health</h3><div class="panel-actions"><button class="up" aria-label="Decoder önceki konuma">←</button><button class="down" aria-label="Decoder sonraki konuma">→</button></div></div><p>SNR: — · FIC/CRC: — · AAC errors: —</p><p class="muted tiny">Eksik ölçüm sıfır veya başarılı olarak gösterilmez.</p></article>
+<article class="card"><div class="panel-head"><h3>Impulse Response / TII</h3><div class="panel-actions"><button class="up" aria-label="Impulse önceki konuma">←</button><button class="down" aria-label="Impulse sonraki konuma">→</button></div></div><div class="empty">welle-cli telemetri adaptörü henüz yok</div></article>
+<article class="card"><div class="panel-head"><h3>Ensemble & Services</h3><div class="panel-actions"><button class="up" aria-label="Services önceki konuma">←</button><button class="down" aria-label="Services sonraki konuma">→</button></div></div><div class="empty">DLS, Slideshow, servis ID ve logo verisi yok</div></article>
+</div><p class="muted tiny">← → düğmeleri panel sıralamasını bu demo sayfada değiştirir. Gerçek RF işlemi yapmaz.</p>
+</section>
+<div class="card tiny"><strong>Mevcut ortak modüller</strong>:
+<a href="channel_explorer.html?mode=radio">Channel Explorer</a> ·
+<a href="region_channel_setup.html">Bölgesel kanal yönetimi</a> ·
+<a href="tv_center.html">Ayrı DVB-T2 TV</a> ·
+<a href="../docs/SDR_RADIO_INTEGRATION.md">Mimari / sınırlamalar</a>
+<p class="muted">SDR alıcısı otomatik başlatılmaz. Arka plan taraması ve kayıt varsayılan olarak kapalıdır. Emergency resmî uyarı doğrulaması ayrı tutulur.</p>
+</div>
+</main><script>
+"use strict";
+const basic=document.getElementById("basic"),expert=document.getElementById("expert");
+const b=document.getElementById("b"),e=document.getElementById("e");
+function show(ex){basic.hidden=ex;expert.hidden=!ex;b.setAttribute("aria-pressed",String(!ex));e.setAttribute("aria-pressed",String(ex))}
+b.addEventListener("click",()=>show(false));e.addEventListener("click",()=>show(true));
+const candidates={
+ de:[["WDR 2","98,6 MHz"],["WDR DAB+ 11D","222,064 MHz"],["Ulusal DAB+ 5C","178,352 MHz"]],
+ tr:[["TRT Radyo 1","94,7 MHz"],["TRT FM","91,2 MHz"],["TRT Radyo 3","88,0 MHz"]]
+};
+function list(){const target=document.getElementById("stationList");target.replaceChildren();for(const [name,freq] of candidates[document.getElementById("region").value]){const item=document.createElement("div");item.className="station";
+const nameNode=document.createElement("span");nameNode.textContent=name;const value=document.createElement("span");value.className="freq muted";value.textContent=freq;item.append(nameNode,value);target.append(item)}}
+document.getElementById("region").addEventListener("change",()=>{list();if(!dabScanSetup.hidden)dabPreview()});list();
+const dabScanSetup=document.getElementById("dabScanSetup");
+const dabScope=document.getElementById("dabScope"),dabUpper=document.getElementById("dabUpper");
+function dabPreview(){
+  const isFull=dabScope.value==="full",isDe=document.getElementById("region").value==="de";
+  dabUpper.disabled=!isFull;
+  if(!isFull)dabUpper.checked=false;
+  const total=isFull?(dabUpper.checked?38:32):(isDe?3:0);
+  const plan=document.getElementById("dabPlan");
+  plan.textContent=!isFull&&!isDe
+    ?"İzmir hızlı DAB aday listesi henüz yok; ülke genelinde DAB yayını alındığı varsayılmaz. Tam taramayı seçebilirsin."
+    :isFull?"Planlanan frekanslar: 5A–12D"+(dabUpper.checked?" ve 13A–13F":"")+". Yayında oldukları veya alınabildikleri doğrulanmadı."
+    :"NRW yayımlanmış adayları: 5C (178,352 MHz), 9A (202,928 MHz), 11D (222,064 MHz). Alınmış kanal değiller.";
+  document.getElementById("dabScanProgress").max=Math.max(1,total);
+  document.getElementById("dabScanProgress").value=0;
+  document.getElementById("dabScanStatus").textContent="Tarama başlamadı · 0/"+total+" blok";
+}
+document.getElementById("dabScanShow").addEventListener("click",()=>{
+  dabScanSetup.hidden=false;
+  dabPreview();
+  dabScanSetup.scrollIntoView({block:"nearest",behavior:"smooth"});
+});
+document.getElementById("dabScanClose").addEventListener("click",()=>{dabScanSetup.hidden=true});
+dabScope.addEventListener("change",dabPreview);
+dabUpper.addEventListener("change",dabPreview);
+
+document.querySelectorAll(".panel-actions button").forEach(btn=>btn.addEventListener("click",()=>{const card=btn.closest("article"),parent=card.parentElement;if(btn.classList.contains("up")&&card.previousElementSibling)parent.insertBefore(card,card.previousElementSibling);else if(btn.classList.contains("down")&&card.nextElementSibling)parent.insertBefore(card.nextElementSibling,card);btn.focus()}));
+</script></body></html>

@@ -1,0 +1,69 @@
+name: Stage 8 SDR isolated regression (mock only)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "tihulu_runtime/sdr_radio.py"
+      - "tihulu_runtime/sdr_capture.py"
+      - "tihulu_runtime/dab_auto_scan.py"
+      - "data/channel_frequency_presets.json"
+      - "tihulu_runtime/welle_local.py"
+      - "tihulu_runtime/welle_cli_probe.py"
+      - "tests/test_sdr_radio.py"
+      - "tests/test_sdr_capture.py"
+      - "tests/test_dab_auto_scan.py"
+      - "tests/test_welle_local.py"
+      - "tests/test_welle_cli_probe.py"
+      - "prototype/radio_center.html"
+      - ".github/workflows/sdr-radio-tests.yml"
+  pull_request:
+    paths:
+      - "tihulu_runtime/sdr_radio.py"
+      - "tihulu_runtime/sdr_capture.py"
+      - "tihulu_runtime/dab_auto_scan.py"
+      - "data/channel_frequency_presets.json"
+      - "tihulu_runtime/welle_local.py"
+      - "tihulu_runtime/welle_cli_probe.py"
+      - "tests/test_sdr_radio.py"
+      - "tests/test_sdr_capture.py"
+      - "tests/test_dab_auto_scan.py"
+      - "tests/test_welle_local.py"
+      - "tests/test_welle_cli_probe.py"
+      - "prototype/radio_center.html"
+      - ".github/workflows/sdr-radio-tests.yml"
+jobs:
+  synthetic:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify SDR receiver, ownership and FM process contracts
+        run: python -m unittest discover -s tests -p "test_sdr_radio.py" -v
+      - name: Verify SDR cooperating-process locks and Stage4 foreground leases
+        run: python -m unittest discover -s tests -p "test_sdr_capture.py" -v
+      - name: Verify welle.io-style DAB automatic discovery (mock only)
+        run: python -m unittest discover -s tests -p "test_dab_auto_scan.py" -v
+      - name: Verify real subprocess lifecycle and source-backed welle-cli parser (mock binary)
+        run: python -m unittest discover -s tests -p "test_welle_cli_probe.py" -v
+      - name: Verify localhost DAB telemetry access contracts
+        run: python -m unittest discover -s tests -p "test_welle_local.py" -v
+      - name: Validate Basic / Expert preview JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          source = Path("prototype/radio_center.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", source, flags=re.I | re.S)
+          if not scripts:
+              raise SystemExit("No inline JavaScript found in Radio Center")
+          for script in scripts:
+              subprocess.run(["node", "--check"], input=script, text=True, check=True)
+          print("Radio Center JavaScript syntax OK")
+          PY
