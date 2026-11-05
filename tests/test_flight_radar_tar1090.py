@@ -27,10 +27,12 @@ class RichMapTests(unittest.TestCase):
         (self.html / "index.html").write_text(
             "<html><title>tar1090 REAL upstream fixture</title></html>")
         (self.html / "defaults.js").write_text("let DefaultCenterLat = 40.56;")
+        (self.html / "early.js").write_text("/* upstream startup fixture */")
         (self.html / "script.js").write_text("/* upstream JS fixture */")
         (self.html / "config.js").write_text("DefaultZoomLvl = 7;")
         (self.html / "style.css").write_text("body { color: white; }")
         (self.html / "libs").mkdir()
+        (self.html / "libs" / "jquery-3.6.1.min.js").write_text("// upstream lib")
         (self.html / "libs" / "ol.js").write_text("// upstream lib")
         (self.chunks / "chunks.json").write_text('{"chunks":[]}')
         (self.chunks / "chunk_0.gz").write_bytes(b"compressed-fixture")
