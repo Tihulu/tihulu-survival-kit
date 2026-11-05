@@ -99,7 +99,7 @@ Tihulu Home / Region Setup / Hardware Manager / Task Center
 | Backend | Initial role | Current adapter state | Explicit limitation |
 |---|---|---|---|
 | `rtl_fm` (rtl-sdr) | lightweight FM PCM | process adapter implemented, untested with RF | mono PCM, no RDS/technical FFT |
-| `welle-cli` (welle.io) | DAB/DAB+ and service data | executable detection only | future authenticated proxy, Pi CPU proof |
+| `welle-cli` (welle.io) | DAB/DAB+ and service data | read-only loopback telemetry reader + executable detection; no decoder supervisor | authenticated proxy, Pi CPU proof remain pending |
 | `welle.io` GUI | reference and proven workstation test | not embedded | Flatpak/GUI != backend web service |
 | `Gqrx` | proven workstation FM and spectrum reference | not embedded | heavyweight GUI, no shared Pi tuner control |
 | `SoapySDR` / `OpenWebRX+` | future wideband/IQ and Expert mode | research only | CPU/network exposure/security and licensing |
@@ -177,3 +177,29 @@ tuner commands, RF transmissions, guaranteed emergency alerts, or default
 continuous scanning. Only a trusted internal caller may approve changing a
 capture ownership or sharing policy. All native upstream licenses are reviewed
 before redistribution; no binaries vendored in this slice.
+
+## Phase 1b — local DAB telemetry reader (experimental; no live Pi reception)
+
+`tihulu_runtime/welle_local.py` provides `WelleLocalReader`, a conservative
+**read-only connector for an already-running welle-cli HTTP server**.
+It never launches welle-cli, changes DAB channels, scans RF, requests the
+continuous `/fic` endpoint, fetches `/mp3/<SID>` streams, or opens a
+LAN listener. The HTTP destination is fixed at `127.0.0.1` with a
+nonprivileged configurable port; only five allowlisted GET routes are
+usable (`/channel`, `/mux.json`, `/spectrum`,
+`/constellation`, `/impulseresponse`).
+
+The reader enforces short timeouts, 256 KiB response caps, small finite
+float32 spectrum series and strict decoder metadata JSON. It marks data
+`decoder_reported_not_independently_rf_verified`, because being able to
+read a decoder process does not itself prove the actual broadcast or
+safety/official alert validity. No requested real antenna/tuner evidence
+has been fabricated by these tests.
+
+`tests/test_welle_local.py` uses synthetic HTTP fakes to check read
+behaviour, localhost-only access, rejected endpoints, oversized/malformed
+payloads, and opt-in Expert snapshots. To activate this in the actual
+Survival Kit product, provide an OS-isolated decoder, a trusted service
+lease and an owner-authenticated app gateway; **do not expose welle-cli
+directly to a shared or untrusted LAN**. Pi ARM64 performance, welle-cli
+API-version behaviour and real metrics remain unvalidated.
