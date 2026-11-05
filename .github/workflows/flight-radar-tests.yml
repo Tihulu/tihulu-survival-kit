@@ -1,0 +1,47 @@
+name: Flight Radar Center experimental tests
+on:
+  pull_request:
+    paths:
+      - "tihulu_runtime/flight_radar_*.py"
+      - "tihulu_runtime/sdr_resource_broker.py"
+      - "tihulu_runtime/channel_explorer.py"
+      - "tihulu_runtime/channel_app_registry.py"
+      - "tihulu_runtime/catalog.py"
+      - "tests/test_flight_radar.py"
+      - "prototype/flight_radar.*"
+      - ".github/workflows/flight-radar-tests.yml"
+  push:
+    paths:
+      - "tihulu_runtime/flight_radar_*.py"
+      - "tihulu_runtime/sdr_resource_broker.py"
+      - "tests/test_flight_radar.py"
+      - "prototype/flight_radar.*"
+  workflow_dispatch:
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test Python Flight Radar source contracts and Stage4 integration (mock-only)
+        run: python -m unittest tests.test_flight_radar -v
+      - name: Full Python integration regression (mock-only)
+        run: python -m unittest discover -s tests -v
+      - name: Check responsive browser JavaScript syntax
+        run: node --check prototype/flight_radar.js
+      - name: Verify English-only Flight Radar page and endpoints
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("prototype/flight_radar.html").read_text()
+          assert '<html lang="en">' in p
+          assert "Flight Radar Center" in p
+          assert "Start session" in p
+          assert "No location is assumed" in p
+          print("Flight Radar page contract passed")
+          PY
