@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — Aşama 6 Dil & Altyazı Merkezi (tasarım demosu)</title>
+<style>
+:root{color-scheme:dark;background:#090a0c;color:#f0f1f4;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{margin:0;padding:20px 12px}main{max-width:690px;margin:auto}
+.shell{background:#101115;border:1px solid #343741;border-radius:17px;padding:17px;box-shadow:0 14px 50px #0005}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+h1{font-size:1.1rem;margin:0}p{line-height:1.52}.muted{color:#b8b9c2;font-size:.86rem;margin:8px 0}
+.tag{border:1px solid #555967;border-radius:99px;padding:5px 8px;font-size:.7rem;color:#ccd0df;white-space:nowrap}
+.modes{border:0;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.modes legend{font-size:.83rem;color:#c3c6d0;padding:0 0 8px}
+.mode{position:absolute;width:1px;height:1px;opacity:0}
+.modes label{display:grid;place-items:center;text-align:center;padding:10px 4px;border:1px solid #30343e;border-radius:10px;background:#1b1e24;font-size:.77rem;cursor:pointer;min-height:43px}
+.mode:checked+label{background:#353a45;border-color:#abb2c1;color:white}
+.mode:focus-visible+label{outline:2px solid #8ebcef;outline-offset:2px}
+.panel{display:none;padding:13px 0 0}.section{border:1px solid #30343e;background:#161820;border-radius:12px;padding:14px;margin:9px 0}
+.section h2{margin:0 0 6px;font-size:.98rem}
+.flow{font-size:.85rem;line-height:1.7;color:#e7e8ed}
+.sep{color:#a1a5b2;padding:0 4px}.gray{font-size:.82rem;color:#b9bdc8}
+.pair{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.box{background:#242833;border:1px solid #414654;padding:8px 10px;border-radius:8px;font-size:.84rem}
+.notice{background:#252027;border:1px solid #574a59;color:#e9d8e6;border-radius:9px;padding:10px;font-size:.83rem;margin-top:12px}
+.step{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.86rem}
+.dot{width:23px;height:23px;display:grid;place-items:center;border-radius:50%;background:#333947;font-size:.73rem;flex:none}
+.preview{border:1px dashed #626978;border-radius:10px;min-height:83px;display:grid;place-items:center;color:#b7bbc5;font-size:.84rem;text-align:center;padding:15px}
+.data{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.mini{border-radius:9px;background:#242630;padding:11px;font-size:.82rem}.mini strong{display:block;font-size:.75rem;color:#aab1c1;margin-bottom:5px}
+footer{border-top:1px solid #33343b;margin-top:16px;padding-top:11px;color:#b5b5bd;font-size:.77rem;line-height:1.5}
+#t-translate:checked~.panels #p-translate,#t-ocr:checked~.panels #p-ocr,#t-voice:checked~.panels #p-voice,#t-captions:checked~.panels #p-captions,#t-permissions:checked~.panels #p-permissions{display:block}
+@media(max-width:440px){.shell{padding:12px}.modes{grid-template-columns:repeat(3,1fr)}.data{grid-template-columns:1fr}header{flex-direction:column}}
+</style>
+</head>
+<body><main class="shell">
+<header><div><h1>Dil ve Altyazı Merkezi</h1><p class="muted">Tek servis havuzu · Translator · OCR · ASR · TTS</p></div><span class="tag">Aşama 6 · Tasarım</span></header>
+<p class="muted">Sekmeler tasarım akışlarını gösterir. Bu sayfa kamerayı, mikrofonu, dosyaları veya SDR cihazını açmaz.</p>
+<div class="tabs">
+<fieldset class="modes">
+<legend>İncelemek istediğin mini-arayüz</legend>
+<input class="mode" type="radio" name="view" id="t-translate" checked><label for="t-translate">Çeviri</label>
+<input class="mode" type="radio" name="view" id="t-ocr"><label for="t-ocr">Canlı OCR</label>
+<input class="mode" type="radio" name="view" id="t-voice"><label for="t-voice">Ses</label>
+<input class="mode" type="radio" name="view" id="t-captions"><label for="t-captions">Altyazı</label>
+<input class="mode" type="radio" name="view" id="t-permissions"><label for="t-permissions">Servisler</label>
+<div class="panels">
+<section class="panel" id="p-translate"><div class="section">
+<h2>Translator · MW-25</h2>
+<div class="pair"><span class="box">Kaynak: Otomatik</span><span class="gray">→</span><span class="box">Hedef: Türkçe</span></div>
+<div class="step"><span class="dot">1</span> İzinli seçili metin veya açık sayfa</div>
+<div class="step"><span class="dot">2</span> Doğrudan dil paketi ya da açıkça etiketli EN ara dili</div>
+<div class="step"><span class="dot">3</span> Orijinal + çeviri, istenirse ayrı AI özeti</div>
+<div class="data"><div class="mini"><strong>ORİJİNAL</strong> Kaynak metin burada görüntülenir.</div><div class="mini"><strong>ÇEVİRİ</strong> Kurulu bir dil paketi varsa burada görüntülenir.</div></div>
+<p class="gray">Kurulu model yoksa çeviri uydurulmaz. Wikipedia ve Browser orijinali korunur.</p>
+</div></section>
+<section class="panel" id="p-ocr"><div class="section">
+<h2>Canlı telefon kamerası OCR · MW-33</h2>
+<div class="preview">Kamera önizlemesi ancak kullanıcının açık izniyle ve güvenli HTTPS bağlantısında çalışabilir.</div>
+<div class="step"><span class="dot">1</span> Bu cihazın kamerası için açık izin</div>
+<div class="step"><span class="dot">2</span> Seçili alan / ROI → düşük hızlı kare örnekleme</div>
+<div class="step"><span class="dot">3</span> Metni düzelt → çevir / kopyala / isteğe bağlı AI</div>
+<p class="gray">Ham kamera görüntüsü kendiliğinden kaydedilmez. Kamera durdurulunca tarayıcı akışı da kapanmalı.</p>
+</div></section>
+<section class="panel" id="p-voice"><div class="section">
+<h2>Sesle soru sor · MW-34</h2>
+<div class="flow">Bas-konuş <span class="sep">›</span> Yerel ASR <span class="sep">›</span> Düzenlenebilir metin <span class="sep">›</span> İsteğe bağlı AI <span class="sep">›</span> Seçili TTS sesi</div>
+<div class="preview">Mikrofon kapalı · Ses modeli kurulmadı varsayımı</div>
+<p class="gray">Varsayılan: yazılı sohbet. Sürekli dinleme, otomatik kayıt ve bulut mikrofonu yok.</p>
+</div></section>
+<section class="panel" id="p-captions"><div class="section">
+<h2>Radyo / TV / Subtitle Studio · MW-37</h2>
+<div class="step"><span class="dot">1</span> Orijinal ses veya mevcut yayın altyazısını koru</div>
+<div class="step"><span class="dot">2</span> Gerekirse açık istekle yerel ASR → zaman kodları</div>
+<div class="step"><span class="dot">3</span> İsteğe bağlı tercüme ve düzenlenebilir ikinci iz</div>
+<div class="data"><div class="mini"><strong>ORİJİNAL ALTYAZI</strong> Zamanlı kaynak metin</div><div class="mini"><strong>ÇEVİRİ İZİ</strong> Kurulu dil paketi gerekebilir</div></div>
+<p class="gray">SRT / VTT dışa aktarım tasarımı. Altyazıyı kapatmak orijinal radyo/TV kaydını durdurmaz.</p>
+</div></section>
+<section class="panel" id="p-permissions"><div class="section">
+<h2>İzinler ve paylaşılan servisler · MW-11</h2>
+<div class="step"><span class="dot">1</span> Görev istediğinde uygun kurulu servisi kontrol et</div>
+<div class="step"><span class="dot">2</span> Gerekliyse bu sefer aç / kalıcı izin ver / vazgeç</div>
+<div class="step"><span class="dot">3</span> Stage4 görev hakkı → iş bitince son kullanıcıyla bırak</div>
+<div class="data"><div class="mini"><strong>BACKGROUND</strong> Varsayılan: KAPALI</div><div class="mini"><strong>STARTUP</strong> Varsayılan: KAPALI</div></div>
+<div class="notice">Emergency ve kullanıcı tarafından açılmış orijinal SDR/TV kayıtları, isteğe bağlı çeviri ve ses işlemlerinden önceliklidir.</div>
+</div></section>
+</div></fieldset></div>
+<footer>Statik ve etkileşimli tasarım önizlemesi; gerçek OCR, çeviri, model indirme, kamera/mikrofon erişimi, Subtitle Studio veya servis API'si bağlı değildir. İlgili özel tasarım: Stage6 Plan66/67 ve MW-11/25/33/34/37.</footer>
+</main></body></html>
