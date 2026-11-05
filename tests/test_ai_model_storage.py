@@ -66,6 +66,36 @@ class StorageTests(unittest.TestCase):
             with self.assertRaises(StorageError):
                 registry.verified_path('m')
 
+    def test_uuid_mismatch_blocks_external_migration(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            internal, external = root/'a', root/'b'
+            internal.mkdir()
+            external.mkdir()
+            source = internal/'m.gguf'
+            source.write_bytes(b'abc')
+            registry = ModelStorageRegistry(root/'registry.json')
+            registry.register('m', source, owner_verified=True)
+            with self.assertRaises(ValueError):
+                registry.move_model('m', external, owner_verified=True,
+                                    destination_uuid='MISSING-SSD-UUID')
+            self.assertEqual(registry.verified_path('m'), source)
+            self.assertFalse((external/'m.gguf').exists())
+
+    def test_missing_registered_uuid_denies_model_loading(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            model = root/'m.gguf'
+            model.write_bytes(b'abc')
+            registry = ModelStorageRegistry(root/'reg.json')
+            with patch('tihulu_runtime.ai_model_storage.require_volume'):
+                registry.register('m', model, owner_verified=True,
+                                  device_uuid='SSD-123')
+            self.assertEqual(registry.availability('m'), 'storage_unavailable')
+            with self.assertRaises(StorageError):
+                registry.verified_path('m')
+
     def test_symlink_is_not_a_model(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
