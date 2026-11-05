@@ -17,7 +17,8 @@ import os
 import re
 import stat
 
-from .channel_explorer import Receiver
+from .channel_explorer import (ChannelExplorer, Receiver, ReceiverBackend,
+                               ScanRecord, TunePoint, DVB_MODES)
 from .sdr_radio import RtlFmStream, SdrBusy, fm_command
 from .service_manager import ServiceManager
 
@@ -150,8 +151,9 @@ class ManagedFmCapture:
         """Always explicit foreground. No background/Startup auto wake."""
         if not owner_id or not job_id:
             raise PermissionError("Authenticated owner and server job required")
-        if receiver.kind != "radio_sdr" or not receiver.receiver_id:
-            raise ValueError("A verified SDR receiver is required")
+        if (receiver.kind != "radio_sdr" or
+                not receiver.receiver_id.startswith("usb-sdr:")):
+            raise ValueError("A canonical verified USB SDR receiver is required")
         # Validate the requested tune BEFORE consuming an optional lease.
         fm_command(frequency_hz=frequency_hz, device_index=device_index,
                    ppm=ppm, gain_db=gain_db)
@@ -212,3 +214,56 @@ class ManagedFmCapture:
                 "background_scan_enabled": False,
                 "actual_usb_hardware_exclusivity_verified": False,
             }
+
+
+class ManagedSdrScan:
+    """Route manual tune/preset batches through the same Stage4+flock gate.
+
+    The shared ChannelExplorer retains published-vs-received states and fine
+    tuning rules; this wrapper is the TRUSTED path for real SDR scan backends.
+    Never expose a raw ChannelExplorer backend to an unauthenticated client.
+    """
+
+    def __init__(self, services: ServiceManager, explorer: ChannelExplorer, *,
+                 lock_root: str | Path | None = None):
+        self.services = services
+        self.explorer = explorer
+        self.lock_root = lock_root
+
+    def scan(self, receiver: Receiver, points: tuple[TunePoint, ...], *,
+             owner_id: str, job_id: str, backend: ReceiverBackend | None,
+             user_triggered: bool = False) -> tuple[ScanRecord, ...]:
+        if not user_triggered:
+            raise PermissionError("No implicit RF scan or background sweep")
+        if not owner_id or not job_id:
+            raise PermissionError("Authenticated owner and job ID required")
+        if (receiver.kind != "radio_sdr" or
+                not receiver.receiver_id.startswith("usb-sdr:")):
+            raise ValueError("Only a canonical SDR-001 receiver is supported")
+        if backend is None:
+            raise ValueError("A trusted real SDR probe backend is required")
+        if not points or len(points) > 256:
+            raise ValueError("Scan chunk must contain 1..256 frequencies")
+        if any(point.mode in DVB_MODES or
+               not receiver.supports(point.mode, point.tuned_hz)
+               for point in points):
+            raise ValueError("Unsupported mode or frequency in SDR scan chunk")
+        self.services.acquire("radio", task_id=job_id,
+                              owner_id=owner_id, mode="foreground")
+        lock = SdrCooperativeLock(receiver.receiver_id, root=self.lock_root)
+        try:
+            lock.acquire()
+            return self.explorer.scan(receiver, points, user_triggered=True,
+                                      backend=backend)
+        finally:
+            # A batch holds one physical lock, not one unlock/retune per point.
+            lock.release()
+            self.services.release(job_id, owner_id=owner_id)
+            self.services.sweep_idle()
+
+    def manual_tune(self, receiver: Receiver, *, point: TunePoint,
+                    owner_id: str, job_id: str, backend: ReceiverBackend,
+                    user_triggered: bool = False) -> ScanRecord:
+        return self.scan(receiver, (point,), owner_id=owner_id,
+                         job_id=job_id, backend=backend,
+                         user_triggered=user_triggered)[0]
