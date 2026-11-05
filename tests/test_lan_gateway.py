@@ -5,6 +5,7 @@ import json
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tihulu_runtime.lan_remote_broker import LanRemoteBroker
@@ -49,6 +50,16 @@ class PairingBrokerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.broker.acknowledge(display["display_token"],sent["command_id"],
                                     accepted=True)
+
+    def test_simultaneous_displays_never_share_an_active_pairing_code(self):
+        with patch("tihulu_runtime.lan_remote_broker.secrets.randbelow",
+                   side_effect=[42,42,43]):
+            first=self.broker.register(owner="alice",medium="tv")
+            second=self.broker.register(owner="alice",medium="tv")
+        self.assertEqual(first["pairing_code"],"00000042")
+        self.assertEqual(second["pairing_code"],"00000043")
+        paired=self.broker.pair(second["pairing_code"],peer="second-phone")
+        self.assertEqual(paired["target_id"],second["target_id"])
 
     def test_expiry_and_revocation(self):
         first=self.broker.register(owner="alice",medium="radio")
