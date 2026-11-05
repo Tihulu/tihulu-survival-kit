@@ -174,7 +174,7 @@ class CpuSmokeTests(unittest.TestCase):
         spawn.assert_not_called()
 
     def test_real_fake_runner_cancel_terminates_process(self):
-        self.runner.write_text('#!/bin/sh\\nwhile :; do sleep 1; done\\n')
+        self.runner.write_text('#!/bin/sh\nwhile :; do sleep 1; done\n')
         self.runner.chmod(0o700)
         event = Event()
         thread = Thread(target=lambda: (time.sleep(0.15), event.set()))
@@ -188,7 +188,7 @@ class CpuSmokeTests(unittest.TestCase):
         self.assertFalse(marked)
 
     def test_cancellable_output_is_bounded(self):
-        self.runner.write_text('#!/bin/sh\\ni=0; while [ "$i" -lt 10000 ]; do printf x; i=$((i+1)); done\\n')
+        self.runner.write_text('#!/bin/sh\ni=0; while [ "$i" -lt 10000 ]; do printf x; i=$((i+1)); done\n')
         self.runner.chmod(0o700)
         status, marked = _execute_cancellable(
             [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 4, Event())
@@ -196,7 +196,7 @@ class CpuSmokeTests(unittest.TestCase):
         self.assertFalse(marked)
 
     def test_cancellable_timeout_kills_process(self):
-        self.runner.write_text('#!/bin/sh\\nsleep 3\\n')
+        self.runner.write_text('#!/bin/sh\nsleep 3\n')
         self.runner.chmod(0o700)
         status, marked = _execute_cancellable(
             [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 0.2, Event())
@@ -204,7 +204,7 @@ class CpuSmokeTests(unittest.TestCase):
         self.assertFalse(marked)
 
     def test_cancellable_success_with_fake_marker(self):
-        self.runner.write_text('#!/bin/sh\\necho TIHULU_CPU_OK\\n')
+        self.runner.write_text('#!/bin/sh\necho TIHULU_CPU_OK\n')
         self.runner.chmod(0o700)
         status, marked = _execute_cancellable(
             [str(self.runner)], {"PATH": "/usr/bin:/bin"}, 3, Event())
