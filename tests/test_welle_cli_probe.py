@@ -107,7 +107,8 @@ assert sys.stdin.readline().strip() == "."
         self.assertEqual(result.state, "service_decoded")
         self.assertIsNone(result.signal_quality)
         self.assertEqual([(s.service_id, s.label) for s in result.services],
-                         [("0xD011", "Synthetic WDR"), ("0xD012", "Test Data")])
+                         [("0xD011", "Synthetic WDR")])
+        # Unknown-component data entry must not be mislabelled as audio.
         self.assertNotIn("-w", cli.command(self.point))
 
     def test_only_unlabelled_fic_service_id_means_locked_not_station(self):
