@@ -195,6 +195,25 @@ class CoordinatorTests(TestCase):
         self.apps.executor_ack_finished(rec.id, outcome="completed",
                                         trusted_backend=True)
 
+    def test_atomic_job_creation_denies_new_recording_after_snapshot(self):
+        # Simulate a recording arriving AFTER the sampled count but BEFORE
+        # the controller starts a heavy AI job. Stage4 must recheck under lock.
+        original = self.apps.trusted_active_job_counts
+        def stale_sample(*, trusted_backend=False):
+            recording = self.apps.start_job("radio", owner_id="bob",
+                                            label="Started during AI admission",
+                                            kind="recording")
+            self.addCleanup(lambda: self.apps.executor_ack_finished(
+                recording.id, outcome="completed", trusted_backend=True))
+            return {"protected": 0, "long_ai": 0, "all_active": 0}
+        self.apps.trusted_active_job_counts = stale_sample
+        try:
+            out = self.run_case()
+        finally:
+            self.apps.trusted_active_job_counts = original
+        self.assertEqual(out.state, "stage4_acquire_denied")
+        self.smoke.assert_not_called()
+
     def test_cancel_requested_recording_still_blocks(self):
         rec = self.apps.start_job("radio", owner_id="bob", label="RF",
                                   kind="recording")
