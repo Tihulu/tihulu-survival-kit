@@ -45,3 +45,7 @@ Official GenAI/driver guidance: https://www.raspberrypi.com/documentation/comput
 6. Keep all offline Guide, Kiwix, Files and verified Emergency functions available even without a Local AI model.
 
 No claim of completed physical hardware, installer or energy tests is made in this document.
+
+## Checkpoint 067 — Read-only boot-medium evidence added
+
+A non-mutating diagnostic `python3 -m tihulu_runtime.ai_setup --boot-topology` now calls `ai_boot_topology.py` and provides a conservative root-drive classification with physical HAT change **never automatically authorized**. See [BOOT_TOPOLOGY_PREFLIGHT.md](BOOT_TOPOLOGY_PREFLIGHT.md) for the supported `/proc` / UUID scan, explicit unknown states and actual two-configuration Pi test procedure. The `ai_mode_profiles.html` card now has a **simulated** disk type selector to explain PCIe NVMe risk. This change is not a functioning bootloader, installer or proven energy saving. 13 synthetic tests were executed and passed locally; CI and real device verification remain outstanding.
