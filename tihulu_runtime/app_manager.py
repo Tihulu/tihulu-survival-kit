@@ -161,6 +161,27 @@ class AppManager:
             return [j for j in self._jobs.values() if j.owner_id == owner_id
                     and (include_finished or j.state in ("running", "cancel_requested"))]
 
+    def trusted_active_job_counts(self, *, trusted_backend: bool = False) -> dict[str, int]:
+        """Return privacy-preserving aggregate admission information.
+
+        Only trusted server schedulers may see these cross-owner counts.
+        A cancel_requested recording is still protected until executor ACK.
+        This is a snapshot, not an atomic lock against future new jobs.
+        """
+        if not trusted_backend:
+            raise PermissionError("Trusted backend required for global job counts")
+        with self._lock:
+            active = [j for j in self._jobs.values()
+                      if j.state in ("running", "cancel_requested")]
+            protected = sum(j.kind == "recording" or
+                            j.app_id in ("emergency_monitor", "emergency_center")
+                            for j in active)
+            return {
+                "protected": protected,
+                "long_ai": sum(j.kind == "long_ai" for j in active),
+                "all_active": len(active),
+            }
+
     def overview(self, *, owner_id: str) -> dict:
         """No invented RAM: actual runtime comes from adapter metrics later."""
         with self._lock:
