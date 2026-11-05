@@ -107,7 +107,7 @@ class ChannelExplorerTests(unittest.TestCase):
         locked=Receiver("tuner0","dvb_tuner",frozenset({"dvb_t2"}),
                         470000000,690000000,True,
                         locked_frequency_hz=514000000,recording_active=True,
-                        share_locked_mux=True)
+                        share_locked_mux=True,fine_tune_supported=True)
         # A scanner with only probe() must not run even at the same frequency.
         blocked=self.exp.manual_tune(locked,mode="dvb_t2",frequency_hz=514000000,
                                      user_triggered=True,backend=self.backend)
