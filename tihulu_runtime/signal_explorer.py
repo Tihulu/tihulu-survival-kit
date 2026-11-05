@@ -153,6 +153,20 @@ class SignalExplorer:
                 plan.frequencies_hz[0] == state.current_frequency_hz):
             raise ScanDenied("Recording protected: no retune across frequencies")
 
+    def tune_manual(self, *, mode: str, frequency_hz: int,
+                    bandwidth_hz: int | None, state: ReceiverState,
+                    receiver: ReceiverAdapter, owner_requested: bool) -> None:
+        """Manual tune is possible without requiring prior service discovery.
+
+        This is a receiver command only; it does not assert a successful lock.
+        """
+        with self._lock:
+            plan = ScanPlan(mode, (frequency_hz,), bandwidth_hz,
+                            owner_requested=owner_requested)
+            self._check(plan, state)
+            receiver.tune(mode=mode, frequency_hz=frequency_hz,
+                          bandwidth_hz=bandwidth_hz)
+
     def scan(self, plan: ScanPlan, state: ReceiverState, receiver: ReceiverAdapter
              ) -> list[FoundStation]:
         with self._lock:
