@@ -292,12 +292,17 @@ class ChannelStore:
             mode TEXT NOT NULL,
             frequency_hz INTEGER NOT NULL,
             service_id TEXT NOT NULL,
+            content_kind TEXT NOT NULL DEFAULT 'unknown',
             label TEXT NOT NULL,
             state TEXT NOT NULL,
             source TEXT NOT NULL,
             favorite INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY(owner_id, key)
         )""")
+        # Forward migration for channel lists created before content_kind.
+        cols = {c[1] for c in self._db.execute('PRAGMA table_info(channels)')}
+        if 'content_kind' not in cols:
+            self._db.execute("ALTER TABLE channels ADD COLUMN content_kind TEXT NOT NULL DEFAULT 'unknown'")
         self._db.commit()
 
     def close(self) -> None:
@@ -313,6 +318,7 @@ class ChannelStore:
         if service is not None and service not in record.services:
             raise ValueError("Service was not returned by the measured receiver")
         service_id = service.service_id if service is not None else ""
+        content_kind = service.content_kind if service is not None else 'unclassified'
         label = custom_label or (service.label if service else (
             "Unclassified signal" if record.state == "energy_only"
             else f"Frequency {record.frequency_hz} Hz"))
@@ -322,13 +328,14 @@ class ChannelStore:
             record.receiver_id, record.mode, record.frequency_hz, service_id
         ], separators=(",", ":")).encode("utf-8")).hexdigest()[:24]
         self._db.execute("""INSERT INTO channels (
-          owner_id,key,receiver_id,mode,frequency_hz,service_id,label,state,source,favorite
-        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+          owner_id,key,receiver_id,mode,frequency_hz,service_id,content_kind,label,state,source,favorite
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(owner_id,key) DO UPDATE SET
           label=excluded.label,state=excluded.state,source=excluded.source,
+          content_kind=excluded.content_kind,
           favorite=MAX(channels.favorite,excluded.favorite)""",
           (owner_id,key,record.receiver_id,record.mode,record.frequency_hz,
-           service_id,label,record.state,record.source,1 if favorite else 0))
+           service_id,content_kind,label,record.state,record.source,1 if favorite else 0))
         self._db.commit()
         return key
 
@@ -336,13 +343,13 @@ class ChannelStore:
         if not owner_id:
             raise ValueError("Owner required")
         query = """SELECT key,receiver_id,mode,frequency_hz,service_id,
-                    label,state,source,favorite FROM channels WHERE owner_id=?"""
+                    content_kind,label,state,source,favorite FROM channels WHERE owner_id=?"""
         if only_favorites:
             query += " AND favorite=1"
         query += " ORDER BY favorite DESC, label COLLATE NOCASE, frequency_hz"
         rows = self._db.execute(query, (owner_id,)).fetchall()
         names=("key","receiver_id","mode","frequency_hz","service_id",
-               "label","state","source","favorite")
+               "content_kind","label","state","source","favorite")
         return [dict(zip(names, row)) for row in rows]
 
     def set_favorite(self, key: str, *, owner_id: str, favorite: bool) -> None:
@@ -362,3 +369,25 @@ class ChannelStore:
         self._db.commit()
         if cur.rowcount != 1:
             raise KeyError("Channel not found for this owner")
+
+    def save_manual(self, *, owner_id: str, receiver_id: str, mode: str,
+                    frequency_hz: int, label: str) -> str:
+        """Save a user-named candidate without ever claiming a received signal."""
+        if mode not in MODES or not isinstance(frequency_hz, int) or (
+                not 100_000 <= frequency_hz <= 2_000_000_000):
+            raise ValueError("Invalid manually entered frequency")
+        if not receiver_id.strip() or len(receiver_id)>120:
+            raise ValueError("Receiver ID invalid")
+        if not owner_id or not label.strip() or len(label)>180:
+            raise ValueError("Owner or label invalid")
+        key=hashlib.sha256(json.dumps([receiver_id,mode,frequency_hz,"manual"],
+                 separators=(",", ":")).encode("utf-8")).hexdigest()[:24]
+        self._db.execute("""INSERT INTO channels
+           (owner_id,key,receiver_id,mode,frequency_hz,service_id,content_kind,
+            label,state,source,favorite)
+           VALUES (?,?,?,?,?,?,?,?,?,?,0)
+           ON CONFLICT(owner_id,key) DO UPDATE SET label=excluded.label""",
+           (owner_id,key,receiver_id,mode,frequency_hz,"","unverified",label,
+            "manual_unverified","user_entry"))
+        self._db.commit()
+        return key
