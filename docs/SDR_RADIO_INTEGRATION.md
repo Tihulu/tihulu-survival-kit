@@ -224,3 +224,57 @@ replacement for whole-repository Stage4/5 checks** and does not claim
 physical Pi/Nooelec RF verification. At Phase1b the global CI still had
 one unrelated `ai_smoke_admission` failure; coordinate on the owning
 AI branch before release.
+
+## Phase 2: cooperating-process lock, Stage4 leases and guarded tuning (2026-11-05)
+
+**Implemented (experimental):** tihulu_runtime/sdr_capture.py and tests/test_sdr_capture.py.
+All code is an internal trusted library, not a deployed Pi daemon, authenticated
+network API, physical SDR validation, recorded audio journal or browser stream.
+
+### Service lifecycle and scan safety
+- ManagedFmCapture: explicit foreground ServiceManager radio lease,
+  Linux SdrCooperativeLock and RtlFmStream worker. A launch failure releases
+  the cooperative lock and Stage4 service lease. Protected recording and
+  attached listener checks occur BEFORE process termination. Only a
+  confirmed successful worker stop releases the hardware/service leases.
+- ManagedSdrScan: wraps the existing ChannelExplorer rather than
+  replacing its region/channel database. Requires explicit user action,
+  trusted probe backend and 1..256 radio points, then holds the same
+  Stage4 service lease and per-receiver lock across the entire scan chunk.
+  A cooperating FM stream blocks both manual tuning and DAB/other scans.
+  The TV-001 DVB frontend remains an independent receiver.
+- Hard OFF stays OFF by default when user has chosen it. Stage4 one-time
+  owner-bound grants allow explicitly approved foreground tuning without
+  silently enabling background or startup.
+- Scans retain source provenance: energy_only is not a decoded station;
+  published frequency candidates do not imply actual reception.
+
+### Advisory device lock limitations
+- SdrCooperativeLock uses a private 0700 lock directory, owner-only 0600
+  no-follow lock files, nonblocking Linux flock, opaque hash-based names,
+  and never unlinks active lock files. CI includes a separate Python
+  subprocess holding the lock; the second process is blocked.
+- This is an *advisory* lock among cooperating Tihulu processes using
+  the same user, canonical receiver ID and lock directory. Gqrx, welle.io,
+  rtl_test and other noncooperating programs can still open the USB
+  device. Real USB-busy errors must be handled by the worker.
+- USB VID/PID alone cannot associate a physical tuner with a librtlsdr
+  index. A trusted USB identity and index mapper, host-level ownership
+  across service accounts, crash recovery and actual Pi power
+  measurements are still REQUIRED before claiming production safety.
+
+### Exact CI
+Dedicated Stage8 SDR GitHub Actions run
+https://github.com/Tihulu/tihulu-survival-kit/actions/runs/42099621596
+PASS in both Python 3.11 and Python 3.12: 45 synthetic tests per version
+(15 SDR/FM, 20 capture/lock/scan, 10 DAB-local) and Basic/Expert
+Radio Center JavaScript syntax. No real Pi or RF signal was exercised.
+The global Stage4/5 suite is still failing on a separately owned
+ai_smoke_admission unknown job counts test; never report overall CI PASS.
+
+### Remaining
+A trusted AppManager job adapter and durable server-owned task journal;
+actual trusted USB device-index mapping and noncooperating-device handling;
+sandboxed DAB decoder process, real RDS/spectrum/constellation and
+web authentication; protected NVMe master recorder/flush ACK;
+Pi 5 8GB CPU/RAM/USB power test and independent DVB-T2 coexistence.
