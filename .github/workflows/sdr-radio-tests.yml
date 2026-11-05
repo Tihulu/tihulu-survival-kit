@@ -8,10 +8,12 @@ on:
       - "tihulu_runtime/dab_auto_scan.py"
       - "data/channel_frequency_presets.json"
       - "tihulu_runtime/welle_local.py"
+      - "tihulu_runtime/welle_cli_probe.py"
       - "tests/test_sdr_radio.py"
       - "tests/test_sdr_capture.py"
       - "tests/test_dab_auto_scan.py"
       - "tests/test_welle_local.py"
+      - "tests/test_welle_cli_probe.py"
       - "prototype/radio_center.html"
       - ".github/workflows/sdr-radio-tests.yml"
   pull_request:
@@ -21,10 +23,12 @@ on:
       - "tihulu_runtime/dab_auto_scan.py"
       - "data/channel_frequency_presets.json"
       - "tihulu_runtime/welle_local.py"
+      - "tihulu_runtime/welle_cli_probe.py"
       - "tests/test_sdr_radio.py"
       - "tests/test_sdr_capture.py"
       - "tests/test_dab_auto_scan.py"
       - "tests/test_welle_local.py"
+      - "tests/test_welle_cli_probe.py"
       - "prototype/radio_center.html"
       - ".github/workflows/sdr-radio-tests.yml"
 jobs:
@@ -45,6 +49,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_sdr_capture.py" -v
       - name: Verify welle.io-style DAB automatic discovery (mock only)
         run: python -m unittest discover -s tests -p "test_dab_auto_scan.py" -v
+      - name: Verify real subprocess lifecycle and source-backed welle-cli parser (mock binary)
+        run: python -m unittest discover -s tests -p "test_welle_cli_probe.py" -v
       - name: Verify localhost DAB telemetry access contracts
         run: python -m unittest discover -s tests -p "test_welle_local.py" -v
       - name: Validate Basic / Expert preview JavaScript syntax
