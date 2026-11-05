@@ -99,7 +99,8 @@ class SharedChannelWorkspace:
                 raise ValueError("Preset incompatible with this application")
         points=self.library.preset_points(preset_ids)
         results=self.explorer.scan(receiver,points,backend=backend,
-                                   user_triggered=user_triggered)
+                                   user_triggered=user_triggered,
+                                   trusted_owner_id=owner_id)
         if save_discoveries:
             for r in results:
                 if r.state=="service_decoded":
@@ -122,7 +123,8 @@ class SharedChannelWorkspace:
             raise ValueError("Teletext needs DVB broadcast data")
         return self.explorer.scan(receiver,self.library.band_points(band_id,page=page,
                                    page_size=page_size),backend=backend,
-                                   user_triggered=user_triggered)
+                                   user_triggered=user_triggered,
+                                   trusted_owner_id=owner_id)
 
     def scan_discrete_group(self, *, owner_id: str, app: str,
                             group_id: str, receiver: Receiver,
@@ -135,7 +137,8 @@ class SharedChannelWorkspace:
         if app not in ("radio","all"):
             raise ValueError("Discrete radio group cannot be used by TV")
         return self.explorer.scan(receiver, points, backend=backend,
-                                  user_triggered=user_triggered)
+                                  user_triggered=user_triggered,
+                                  trusted_owner_id=owner_id)
 
     def tune_saved(self, *, owner_id: str, channel_key: str, receiver: Receiver,
                    offset_hz: int = 0,
@@ -148,4 +151,5 @@ class SharedChannelWorkspace:
         ch=records[0]
         return self.explorer.manual_tune(
             receiver,mode=ch["mode"],frequency_hz=ch["frequency_hz"],
-            fine_offset_hz=offset_hz,backend=backend,user_triggered=user_triggered)
+            fine_offset_hz=offset_hz,backend=backend,user_triggered=user_triggered,
+            trusted_owner_id=owner_id)
