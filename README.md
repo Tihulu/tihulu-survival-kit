@@ -139,11 +139,17 @@ See the [Development Status](docs/DEVELOPMENT_STATUS.md) for open work. Passing 
 
 **English is the primary documentation language.** All linked main guides are in English. The original Turkish README and guide translations are preserved as [README.tr.md](README.tr.md) and [docs/tr](docs/tr/). A future German translation will be linked only once prepared.
 
+## License
+
+The original Tihulu Survival Kit code and project-authored documentation are licensed under the **GNU Affero General Public License version 3.0 only (AGPL-3.0-only)**. See the complete [LICENSE](LICENSE) text.
+
+**AGPLv3 includes a network-use source-sharing requirement:** When a modified covered program is used to interact with users over a network, those users must be offered its corresponding source as required by section 13. Future Tihulu web interfaces should include a visible **Source Code / License** link. This license does **not** replace the independent licenses of bundled third-party software, offline Wikipedia data, datasets, media, fonts or hardware firmware; redistribution requires compliance with those terms as well.
+
 ## Contributions and licensing
 
 Please use [GitHub Issues](https://github.com/Tihulu/tihulu-survival-kit/issues) for suggestions or technical reports; do not post private credentials, tokens, locations or files. GitHub engineering communication should generally be in **English**. Turkish and German documentation, translations and user-interface text are explicitly welcome.
 
-Third-party software and offline content have their own attribution and licensing requirements; the project does not claim that a complete redistributable Tihulu application or licensed appliance image has already been published.
+The project's original work is AGPL-3.0-only, while third-party software and offline content retain their own attribution and licensing requirements. A complete redistributable Tihulu appliance image has not yet been published.
 
 ---
 
