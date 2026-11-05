@@ -344,6 +344,18 @@ class ManagedSdrScanTests(unittest.TestCase):
         self.assertEqual(self.probe.probed, [])
         self.assertFalse(self.root.exists())
 
+    def test_one_time_owner_grant_allows_only_selected_foreground_scan(self):
+        self.services.set_policy("radio", hard=False, owner_verified=True)
+        grant = self.services.authorize_once(
+            task_id="scan-1", owner_id="alice", scopes={"radio"},
+            owner_verified=True)
+        outcome = self.do_scan(grant_token=grant.token)
+        self.assertEqual(outcome[0].state, "energy_only")
+        self.assertFalse(self.services.policies["radio"].hard)
+        self.assertFalse(self.services.policies["radio"].background)
+        with self.assertRaises(Blocked):
+            self.do_scan(job_id="scan-2", grant_token=grant.token)
+
     def test_canonical_usb_receiver_id_required(self):
         other = receiver("faked-sdr-id")
         with self.assertRaises(ValueError):
