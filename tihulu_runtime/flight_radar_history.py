@@ -7,6 +7,7 @@ library never formats, mounts, downloads or scans an entire storage device.
 """
 from __future__ import annotations
 from dataclasses import dataclass
+from contextlib import closing
 from pathlib import Path
 import csv
 import io
@@ -37,13 +38,17 @@ class HistoryPolicy:
 class FlightHistory:
     """Trusted backend helper. Call with policy.enabled=True ONLY on opt-in."""
 
-    def __init__(self, database: str | Path, policy: HistoryPolicy = HistoryPolicy()):
+    def __init__(self, database: str | Path, policy: HistoryPolicy = HistoryPolicy(),
+                 *, storage_verified: bool = False):
         self.database = Path(database)
         self.policy = policy
+        self.storage_verified = storage_verified
 
     def _open(self) -> sqlite3.Connection:
         # Parent mount/path must be a trusted preselected writable volume.
         # No automatic fallback to another disk when external SSD disappears.
+        if not self.storage_verified:
+            raise PermissionError("Trusted configured storage/mount verification required.")
         if not self.database.parent.is_dir():
             raise FileNotFoundError("Configured history storage is unavailable.")
         db = sqlite3.connect(self.database)
@@ -65,7 +70,7 @@ class FlightHistory:
         if len(items) > MAX_RECORDS_PER_BATCH:
             raise ValueError("History batch is too large.")
         now = time.time() if at_utc is None else at_utc
-        with self._open() as db:
+        with closing(self._open()) as db, db:
             cutoff = now - self.policy.retention_days * 86400
             db.execute("DELETE FROM observations WHERE observed_utc < ?", (cutoff,))
             current_bytes = self.database.stat().st_size
@@ -96,7 +101,7 @@ class FlightHistory:
             raise ValueError("Invalid history query limit.")
         if not self.policy.enabled or not self.database.is_file():
             return []
-        with self._open() as db:
+        with closing(self._open()) as db:
             rows = db.execute(
                 """SELECT payload FROM observations
                    WHERE owner_id=? AND observed_utc>=?
