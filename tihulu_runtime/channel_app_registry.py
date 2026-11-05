@@ -98,6 +98,19 @@ class SharedChannelWorkspace:
                                    page_size=page_size),backend=backend,
                                    user_triggered=user_triggered)
 
+    def scan_discrete_group(self, *, owner_id: str, app: str,
+                            group_id: str, receiver: Receiver,
+                            backend: ReceiverBackend | None = None,
+                            user_triggered: bool = False) -> tuple[ScanRecord,...]:
+        """DAB Band III uses published nonuniform channel centers."""
+        if not owner_id:
+            raise PermissionError("Authenticated owner required")
+        points = self.library.channel_group_points(group_id)
+        if app not in ("radio","all"):
+            raise ValueError("Discrete radio group cannot be used by TV")
+        return self.explorer.scan(receiver, points, backend=backend,
+                                  user_triggered=user_triggered)
+
     def tune_saved(self, *, owner_id: str, channel_key: str, receiver: Receiver,
                    offset_hz: int = 0,
                    backend: ReceiverBackend | None = None,
