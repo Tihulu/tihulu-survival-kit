@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,29 +29,29 @@ small{color:#56656e}
 </head>
 <body>
 <main class="shell">
-<header><div><div class="muted">TIHULU SURVIVAL KIT · PROTOTİP</div><h1>Window & Task Manager</h1></div><span class="status">Demo — gerçek servis bağlantısı yok</span></header>
-<p class="banner"><strong>Önizleme.</strong> Bu sayfada yaptığın değişiklikler yalnızca tarayıcıdaki örnek durumu değiştirir. Raspberry Pi'deki servisleri, kayıtları veya dosyaları yönetmez. Gerçek RAM/CPU tüketimi henüz ölçülmedi.</p>
+<header><div><div class="muted">TIHULU SURVIVAL KIT · PROTOTYPE</div><h1>Window & Task Manager</h1></div><span class="status">Demo — no real service integration</span></header>
+<p class="banner"><strong>Preview only.</strong> Changes on this page affect the example state in your browser. They do not control Raspberry Pi services, recordings, or files. Actual RAM/CPU usage has not been measured.</p>
 <section class="panel" aria-labelledby="apps-title">
-<h2 id="apps-title">Uygulamalar</h2><p class="muted">İstediğin uygulamaları seçerek aç/kapat. Diğer cihazlarda açık sekmeler ve devam eden sunucu işleri ayrı izlenir.</p>
+<h2 id="apps-title">Applications</h2><p class="muted">Select and open or close application views. Tabs on other devices and ongoing server-owned jobs are tracked separately.</p>
 <div class="actions">
-<button type="button" id="open">Seçilenleri aç</button>
-<button type="button" class="alt" id="close">Seçilenleri kapat</button>
-<button type="button" class="alt" id="pause">İsteğe bağlı arka planı duraklat</button>
+<button type="button" id="open">Open selected</button>
+<button type="button" class="alt" id="close">Close selected</button>
+<button type="button" class="alt" id="pause">Pause optional background tasks</button>
 </div>
 <div id="apps" class="grid" style="margin-top:14px"></div>
 </section>
 <section class="panel" aria-labelledby="tasks-title">
-<h2 id="tasks-title">Devam eden işler</h2>
-<p class="muted">TV kaydı, dosya aktarımı ve uzun AI görevleri sekmeler kapansa bile sunucudaki iş olarak kalır. Gerçek uygulamada durdurma ancak sunucudan onay gelince tamamlanmış sayılacak.</p>
+<h2 id="tasks-title">Ongoing jobs</h2>
+<p class="muted">TV recording, file transfers, and long-running AI tasks remain server-owned even if the tabs close. A real job must not be marked stopped until its executor acknowledges cancellation.</p>
 <div id="jobs"></div>
 </section>
-<section class="panel" aria-live="polite"><h2>İşlem sonucu</h2><div id="feedback">Bir işlem seç.</div></section>
+<section class="panel" aria-live="polite"><h2>Operation result</h2><div id="feedback">Choose an action.</div></section>
 </main>
 <script>
 "use strict";
 const apps=[
 {id:"news",name:"News & Politics",views:0,hard:true,background:false,startup:false},
-{id:"tv",name:"TV & Teletekst",views:0,hard:true,background:false,startup:false},
+{id:"tv",name:"TV & Teletext",views:0,hard:true,background:false,startup:false},
 {id:"radio",name:"Radio & Data Networks",views:0,hard:true,background:false,startup:false},
 {id:"ai",name:"Offline AI",views:0,hard:true,background:false,startup:false},
 {id:"translator",name:"Translator / OCR / ASR",views:0,hard:true,background:false,startup:false},
@@ -61,9 +61,9 @@ const apps=[
 {id:"maps",name:"Offline Maps",views:0,hard:true,background:false,startup:false}
 ];
 const jobs=[
-{id:"record1",app:"tv",label:"Örnek TV kaydı",kind:"recording",state:"running"},
-{id:"ai1",app:"ai",label:"Örnek AI dosya incelemesi",kind:"ai",state:"running"},
-{id:"file1",app:"files",label:"Örnek dosya aktarımı",kind:"transfer",state:"running"}
+{id:"record1",app:"tv",label:"Sample TV recording",kind:"recording",state:"running"},
+{id:"ai1",app:"ai",label:"Sample AI document analysis",kind:"ai",state:"running"},
+{id:"file1",app:"files",label:"Sample file transfer",kind:"transfer",state:"running"}
 ];
 let paused=false;
 const appBox=document.getElementById("apps");
@@ -77,22 +77,22 @@ function redraw(){
   const item=document.createElement("div");item.className="app";
   const head=document.createElement("div");head.className="apphead";
   const choice=document.createElement("label");const cb=document.createElement("input");
-  cb.type="checkbox";cb.className="selection";cb.value=a.id;cb.setAttribute("aria-label",a.name+" seç");
+  cb.type="checkbox";cb.className="selection";cb.value=a.id;cb.setAttribute("aria-label",a.name+" select");
   const label=document.createElement("span");label.textContent=a.name;choice.append(cb,label);
   const stat=document.createElement("span");
   const live=a.views>0||hasJob(a.id);
   stat.className="status"+(live?" live":"");
-  stat.textContent=a.views>0?"Açık • "+a.views+" sekme":hasJob(a.id)?"Arka planda görev var":"Kapalı";
+  stat.textContent=a.views>0?"Open • "+a.views+" tabs":hasJob(a.id)?"Background job active":"Closed";
   head.append(choice,stat);
   const opts=document.createElement("div");opts.className="options";
-  for(const [key,text] of [["hard","Kullanıma izin"],["background","Arka plan"],["startup","Açılışta"]]){
+  for(const [key,text] of [["hard","Hard enabled"],["background","Background"],["startup","Start at boot"]]){
     const l=document.createElement("label");const toggle=document.createElement("input");
     toggle.type="checkbox";toggle.checked=a[key];toggle.setAttribute("aria-label",a.name+" "+text);
-    toggle.addEventListener("change",()=>{if(key==="hard"&&!toggle.checked&&(a.views||hasJob(a.id))){toggle.checked=true;say("Etkin görev varken Hard OFF uygulanamaz. Önce güvenli durdurma gerekir.");return;}
-       a[key]=toggle.checked;say(a.name+": "+text+" = "+(a[key]?"Açık":"Kapalı")+" (yalnızca demo)");});
+    toggle.addEventListener("change",()=>{if(key==="hard"&&!toggle.checked&&(a.views||hasJob(a.id))){toggle.checked=true;say("Cannot set Hard OFF while a task is active. Stop it safely first.");return;}
+       a[key]=toggle.checked;say(a.name+": "+text+" = "+(a[key]?"On":"Closed")+" (demo only)");});
     l.append(toggle,document.createTextNode(text));opts.append(l);
   }
-  const note=document.createElement("small");note.textContent="RAM ölçümü: henüz mevcut değil";
+  const note=document.createElement("small");note.textContent="RAM usage: not measured";
   item.append(head,opts,note);appBox.append(item);
  }
  jobsBox.replaceChildren();
@@ -101,30 +101,30 @@ function redraw(){
   const info=document.createElement("div");
   const line=document.createElement("strong");line.textContent=job.label;
   const state=document.createElement("div");state.className="muted";
-  state.textContent=job.kind==="recording"?"Kayıt güvenli şekilde korunuyor • ":"";
-  state.textContent+=job.state==="running"?"Örnek görev çalışıyor":"İptal istendi — sunucu onayı bekleniyor";
+  state.textContent=job.kind==="recording"?"Recording task protected • ":"";
+  state.textContent+=job.state==="running"?"Sample job running":"Cancellation requested — waiting for executor acknowledgment";
   info.append(line,state);wrapper.append(info);
-  const b=document.createElement("button");b.type="button";b.textContent="Durdurmayı iste";
+  const b=document.createElement("button");b.type="button";b.textContent="Request stop";
   b.disabled=job.state!=="running";
   b.addEventListener("click",()=>{
-   if(job.kind==="recording"&&!window.confirm("Bu yalnızca DEMO'dur. Gerçekte kayıt önce güvenli biçimde tamamlanmalıdır. İptal isteği simüle edilsin mi?"))return;
-   job.state="cancel_requested";say(job.label+": İptal istendi (demo). Gerçek çalışan iş durdurulmadı.");redraw();
+   if(job.kind==="recording"&&!window.confirm("DEMO ONLY: A real recording must be finalized safely. Simulate a cancellation request?"))return;
+   job.state="cancel_requested";say(job.label+": Cancellation requested (demo). No real process was stopped.");redraw();
   });wrapper.append(b);jobsBox.append(wrapper);
  }
 }
 function selected(){return Array.from(document.querySelectorAll(".selection:checked"),e=>e.value)}
 document.getElementById("open").addEventListener("click",()=>{
-const ids=selected();if(!ids.length){say("Önce uygulama seç.");return}
+const ids=selected();if(!ids.length){say("Select one or more applications first.");return}
 for(const id of ids){const a=apps.find(x=>x.id===id);if(a.hard){a.views++;} }
-say("Seçilen, Hard ON uygulamaların görünümü açıldı (demo). Gerçek servise komut gönderilmedi.");redraw()
+say("Selected Hard ON application views were opened in the demo. No real service command was issued.");redraw()
 });
 document.getElementById("close").addEventListener("click",()=>{
-const ids=selected();if(!ids.length){say("Önce uygulama seç.");return}
+const ids=selected();if(!ids.length){say("Select one or more applications first.");return}
 let protectedJobs=0;
 for(const id of ids){const a=apps.find(x=>x.id===id);a.views=0;if(hasJob(id))protectedJobs++;}
-say("Seçilen uygulama görünümleri kapandı (demo). "+(protectedJobs?protectedJobs+" uygulamada devam eden görev korundu.":"Çalışan örnek görev etkilenmedi."));redraw()
+say("Selected application views were closed (demo). "+(protectedJobs?protectedJobs+" app(s) retain their ongoing jobs.":"No active sample jobs were affected."));redraw()
 });
-document.getElementById("pause").addEventListener("click",()=>{paused=!paused;document.getElementById("pause").textContent=paused?"Arka plan duraklatmasını kaldır":"İsteğe bağlı arka planı duraklat";say(paused?"İsteğe bağlı yeni arka plan işi duraklatıldı (demo). Aktif işler sürüyor.":"Arka plan duraklatması kaldırıldı (demo).");});
+document.getElementById("pause").addEventListener("click",()=>{paused=!paused;document.getElementById("pause").textContent=paused?"Resume optional background tasks":"Pause optional background tasks";say(paused?"New optional background work paused (demo). Active jobs continue.":"Optional background pause cleared (demo).");});
 redraw();
 </script>
 </body>
