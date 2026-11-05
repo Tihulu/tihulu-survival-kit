@@ -176,15 +176,28 @@ class SdrTunerBroker:
                 raise PermissionError("Not listener owner")
             del cap.listeners[listener_id]
 
-    def release(self, receiver_id: str, *, owner_id: str, job_id: str,
-                recording_stop_confirmed: bool = False) -> None:
+    def release_after(self, receiver_id: str, *, owner_id: str, job_id: str,
+                      stop_worker: Callable[[], None],
+                      recording_stop_confirmed: bool = False) -> None:
+        """Keep the reservation locked through worker termination.
+
+        An acknowledged recorder flush is the trusted caller's prerequisite
+        for recording_stop_confirmed=True. Never kill worker before the gate.
+        """
         with self._mutex:
             cap = self._owned(receiver_id, owner_id, job_id)
             if cap.recording and not recording_stop_confirmed:
                 raise SdrBusy("Protected recording: explicit safe stop required")
             if cap.listeners:
                 raise SdrBusy("Shared listeners still attached")
+            stop_worker()
             del self._captures[receiver_id]
+
+    def release(self, receiver_id: str, *, owner_id: str, job_id: str,
+                recording_stop_confirmed: bool = False) -> None:
+        self.release_after(receiver_id, owner_id=owner_id, job_id=job_id,
+                           stop_worker=lambda: None,
+                           recording_stop_confirmed=recording_stop_confirmed)
 
     def snapshot(self, receiver_id: str) -> dict:
         with self._mutex:
@@ -287,11 +300,20 @@ class RtlFmStream:
             raise RuntimeError("rtl_fm exited; SDR may be busy or unavailable")
         return data
 
-    def stop(self) -> None:
+    def stop(self, *, recording_stop_confirmed: bool = False) -> None:
+        """Stop only after recording and listener gates pass atomically.
+
+        The recorder must flush and acknowledge its original master BEFORE
+        a trusted caller supplies recording_stop_confirmed=True. This class
+        cannot itself validate a filesystem/durable recording ACK.
+        """
         if self._process is None:
             return
         process, binding = self._process, self._binding
-        try:
+        if binding is None:
+            raise RuntimeError("Missing trusted stream-to-reservation binding")
+
+        def stop_worker() -> None:
             if process.poll() is None:
                 process.terminate()
                 try:
@@ -299,14 +321,17 @@ class RtlFmStream:
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait(timeout=2)
-        finally:
             if process.stdout is not None:
                 process.stdout.close()
-            self._process = None
-            self._binding = None
-            if binding is not None:
-                rid, owner, job = binding
-                self.broker.release(rid, owner_id=owner, job_id=job)
+
+        rid, owner, job = binding
+        # Broker checks recording/listener protection while holding its lock
+        # before invoking stop_worker. No process termination on denied stop.
+        self.broker.release_after(
+            rid, owner_id=owner, job_id=job, stop_worker=stop_worker,
+            recording_stop_confirmed=recording_stop_confirmed)
+        self._process = None
+        self._binding = None
 
 
 if __name__ == "__main__":
