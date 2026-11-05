@@ -97,13 +97,21 @@ class AppManager:
             return [v.id for v in stale]
 
     def start_job(self, app_id: str, *, owner_id: str, label: str,
-                  kind: str = "normal", mode: str = "foreground") -> ServerJob:
+                  kind: str = "normal", mode: str = "foreground",
+                  require_quiet: bool = False) -> ServerJob:
         if kind not in ("normal", "recording", "file_transfer", "long_ai",
                         "import", "navigation"):
             raise ValueError("Unknown job kind")
         if not owner_id or not label:
             raise ValueError("User and job label required")
         with self._lock:
+            if require_quiet:
+                for existing in self._jobs.values():
+                    if existing.state not in ("running", "cancel_requested"):
+                        continue
+                    if (existing.kind in ("recording", "long_ai") or
+                            existing.app_id in ("emergency_monitor", "emergency_center")):
+                        raise Busy("Protected or heavy AI job already active")
             job_id = secrets.token_urlsafe(18)
             self.services.acquire(app_id, task_id="job:" + job_id,
                                   owner_id=owner_id, mode=mode)
