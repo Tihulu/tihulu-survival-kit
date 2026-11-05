@@ -10,6 +10,7 @@ def default_catalog() -> list[Module]:
     # idle_seconds are tentative policy defaults, not measured Pi memory numbers.
     configs = [
         ("news", (), 0),
+        ("local_bbs", (), 0),
         ("kiwix", (), 5),
         ("kolibri", (), 5),
         ("maps", (), 5),

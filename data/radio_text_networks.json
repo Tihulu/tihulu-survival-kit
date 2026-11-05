@@ -6,7 +6,11 @@
     "wintv_solohd_01589": {
       "user_status": "purchased",
       "delivery_verified": false,
-      "supported_receivers": ["dvb_t", "dvb_t2", "dvb_c"],
+      "supported_receivers": [
+        "dvb_t",
+        "dvb_t2",
+        "dvb_c"
+      ],
       "receive_only": true,
       "hardware_note": "One tuner; channel locks and mux sharing required. Does not receive FM/DAB/LoRa/AX25 RF."
     },
@@ -24,6 +28,11 @@
       "user_status": "not_purchased",
       "receive_only": false,
       "note": "Separate transceiver/TNC and applicable radio authorization required."
+    },
+    "local_hotspot": {
+      "user_status": "planned_core_not_deployed",
+      "receive_only": false,
+      "note": "Pi-managed authenticated Tihulu Kit Wi-Fi LAN, not a DVB TV tuner; limited to permitted local users."
     }
   },
   "services": [
@@ -176,6 +185,16 @@
       "mode": "web_only",
       "status": "online community; NOT a received DVB teletext or radio chat",
       "source_url": "https://teletextart.co.uk/teletext-links"
+    },
+    {
+      "id": "tihulu_local_bbs",
+      "country": "ALL",
+      "name": "Tihulu Local BBS / Forum (planned)",
+      "data_type": "local_wifi_bbs_forum",
+      "hardware": "local_hotspot",
+      "mode": "local_two_way",
+      "status": "planned only; no app, accounts, server or content deployed",
+      "source_url": "https://github.com/Tihulu/tihulu-survival-kit"
     }
   ],
   "defaults": {
