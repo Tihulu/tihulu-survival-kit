@@ -13,11 +13,16 @@ button:hover{border-color:#90a3b5}button:disabled{opacity:.5;cursor:not-allowed}
 label{display:grid;gap:5px;font-size:.82rem;color:var(--muted)}
 h1{font-size:1.23rem;margin:0}h2{font-size:.95rem;margin:0 0 9px}p{margin:5px 0}
 small,.muted{font-size:.82rem;color:var(--muted)}.chip{padding:4px 8px;border:1px solid var(--line);border-radius:99px;font-size:.73rem;color:var(--muted)}
-.shell{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+.shell{display:grid;grid-template-rows:auto minmax(0,1fr);height:100dvh;min-height:0}
 header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#171d26;border-bottom:1px solid var(--line);padding:12px 15px}
 header .brand{display:flex;align-items:center;gap:10px}header .brand strong{font-size:1.3rem}
 header .session{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,350px);min-height:0;height:calc(100dvh - 68px)}
+.map-modes{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.map-modes a{font-size:.85rem;padding:9px 10px;border:1px solid var(--line);border-radius:9px;text-decoration:none;color:var(--ink);background:var(--raised);min-height:43px}
+.map-modes a.active{border-color:#69b4eb;color:#c5edff}
+.map-modes a:focus-visible{outline:3px solid var(--focus)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,350px);min-height:0;height:auto}
 .maparea{position:relative;min-height:300px;overflow:hidden;background:#10202f}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}canvas.dragging{cursor:grabbing}
 .toolbar{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
@@ -42,7 +47,7 @@ nav.mobile{display:none}button.primary{background:#236854;border-color:#337e67}
 @media(max-width:1050px){.layout{grid-template-columns:minmax(0,1fr) 310px}}
 @media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr) 250px}.toolbar button{font-size:.74rem}}
 @media(max-width:700px){
- .shell{grid-template-rows:auto 1fr auto}.layout{display:block;height:calc(100dvh - 112px);position:relative}
+ .shell{grid-template-rows:auto minmax(0,1fr) auto}.layout{display:block;height:auto;position:relative}
  header{padding:9px 12px}.header-extras{display:none}
  .maparea{position:absolute;inset:0;height:auto}.toolbar{top:8px;left:7px;right:7px}
  .toolbar button{padding:7px;font-size:.75rem}.mapfooter{bottom:10px}
@@ -65,6 +70,7 @@ nav.mobile{display:none}button.primary{background:#236854;border-color:#337e67}
 <div class="shell">
 <header>
  <div class="brand"><span aria-hidden="true">✈</span><div><h1>Flight Radar Center</h1><div class="muted">Survival Kit / Radio &amp; SDR Center</div></div></div>
+ <nav class="map-modes" aria-label="Flight Radar map versions"><a href="/flight-radar/map" id="fullMapLink">Full tar1090 map</a><a class="active" href="/flight-radar/light-map" aria-current="page">Lightweight map</a></nav>
  <div class="session"><span id="live" class="chip" role="status">Not connected</span><span class="chip header-extras">Real ADS-B / Mode S only</span><button id="connect" class="primary">Start session</button><button id="stop" disabled>Close session</button></div>
 </header>
 <div class="layout">
@@ -72,10 +78,10 @@ nav.mobile{display:none}button.primary{background:#236854;border-color:#337e67}
    <canvas id="sky" aria-label="Geographic coordinate map with reported aircraft only"></canvas>
    <div class="toolbar" role="group" aria-label="Map controls">
     <button id="focusNearest">Focus nearest</button><button id="focusReceiver">Receiver</button>
-    <button id="fitAll">Fit all</button><button id="follow" aria-pressed="false">Follow selected</button>
+    <button id="showGermany" type="button">Show Germany</button><button id="fitAll">Fit all</button><button id="follow" aria-pressed="false">Follow selected</button>
     <button id="zoomIn">+</button><button id="zoomOut">−</button>
    </div>
-   <div class="mapfooter"><div class="hint" id="mapHint">Waiting for fresh aircraft positions. No location is assumed.</div><div class="hint">Offline coordinate grid · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></div></div>
+   <div class="mapfooter"><div class="hint" id="mapHint">Germany fallback viewport. No receiver location is assumed.</div><div class="hint">Offline coordinate grid · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></div></div>
  </section>
  <aside id="sheet" data-sheet="half" aria-label="Aircraft and receiver control panel">
    <div class="handle" aria-hidden="true" style="display:none"></div>

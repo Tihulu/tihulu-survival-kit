@@ -402,7 +402,7 @@ class ApiTests(CenterTests):
             chunks[0].decode("utf-8") if chunks else "")
 
     def test_html_same_origin_preview(self):
-        status,page=self.call("/flight-radar")
+        status,page=self.call("/flight-radar/light-map")
         self.assertEqual(status,200)
         self.assertIn("Flight Radar Center",page)
 

@@ -3,18 +3,22 @@ on:
   pull_request:
     paths:
       - "tihulu_runtime/flight_radar_*.py"
+      - "tihulu_runtime/tar1090_gateway.py"
       - "tihulu_runtime/sdr_resource_broker.py"
       - "tihulu_runtime/channel_explorer.py"
       - "tihulu_runtime/channel_app_registry.py"
       - "tihulu_runtime/catalog.py"
       - "tests/test_flight_radar.py"
+      - "tests/test_flight_radar_tar1090.py"
       - "prototype/flight_radar.*"
       - ".github/workflows/flight-radar-tests.yml"
   push:
     paths:
       - "tihulu_runtime/flight_radar_*.py"
+      - "tihulu_runtime/tar1090_gateway.py"
       - "tihulu_runtime/sdr_resource_broker.py"
       - "tests/test_flight_radar.py"
+      - "tests/test_flight_radar_tar1090.py"
       - "prototype/flight_radar.*"
   workflow_dispatch:
 jobs:
@@ -30,6 +34,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Test Python Flight Radar source contracts and Stage4 integration (mock-only)
         run: python -m unittest tests.test_flight_radar -v
+      - name: Native tar1090 full-map gateway security and routing (fixtures only)
+        run: python -m unittest tests.test_flight_radar_tar1090 -v
       - name: Full Python integration regression (mock-only)
         run: python -m unittest discover -s tests -v
       - name: Check responsive browser JavaScript syntax
@@ -42,6 +48,8 @@ jobs:
           assert '<html lang="en">' in p
           assert "Flight Radar Center" in p
           assert "Start session" in p
-          assert "No location is assumed" in p
+          assert "Germany fallback viewport" in p
+          assert "Full tar1090 map" in p
+          assert "Lightweight map" in p
           print("Flight Radar page contract passed")
           PY

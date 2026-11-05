@@ -9,11 +9,12 @@ systemd unit or shell command. Real USB/readsb lifecycle is not implemented.
 from __future__ import annotations
 
 from pathlib import Path
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, parse_qsl, urlencode
 import json
 
 from .flight_radar_center import FlightRadarCenter
 from .flight_radar_sources import MODES
+from .tar1090_gateway import Tar1090Gateway, Tar1090Paths, Tar1090Unavailable, PREFIX
 
 MAX_REQUEST = 4096
 ASSETS = {
@@ -21,7 +22,8 @@ ASSETS = {
     "/flight-radar/": ("flight_radar.html", "text/html; charset=utf-8"),
     "/flight-radar/app.js": ("flight_radar.js", "text/javascript; charset=utf-8"),
 }
-STATUS = {200: "OK", 201: "Created", 204: "No Content", 400: "Bad Request",
+STATUS = {200: "OK", 201: "Created", 204: "No Content",
+          302: "Found", 400: "Bad Request",
           401: "Unauthorized", 403: "Forbidden", 404: "Not Found",
           405: "Method Not Allowed", 409: "Conflict", 413: "Content Too Large",
           422: "Unprocessable Content", 500: "Server Error",
@@ -33,7 +35,8 @@ class FlightRadarWSGI:
 
     def __init__(self, center: FlightRadarCenter, *,
                  authorize, validate_csrf, allowed_hosts: frozenset[str],
-                 issue_csrf=None, assets_dir: Path | None = None):
+                 issue_csrf=None, assets_dir: Path | None = None,
+                 tar1090: Tar1090Gateway | None = None):
         if not callable(authorize) or not callable(validate_csrf) or not allowed_hosts:
             raise ValueError("Authenticated gateway and explicit host allowlist required.")
         self.center = center
@@ -42,6 +45,10 @@ class FlightRadarWSGI:
         self.issue_csrf = issue_csrf
         self.allowed_hosts = allowed_hosts
         self.assets_dir = assets_dir or Path(__file__).resolve().parents[1] / "prototype"
+        # Trusted conventional paths: discovery != actual installation proof.
+        self.tar1090 = tar1090 or Tar1090Gateway(Tar1090Paths(
+            html=Path("/usr/local/share/tar1090/html"),
+            data=Path("/run/readsb"), chunks=Path("/run/tar1090")))
 
     def __call__(self, environ: dict, start_response):
         try:
@@ -67,6 +74,33 @@ class FlightRadarWSGI:
                     return self._send(start_response, 403, {"error": "CSRF or origin check failed."})
                 if can_control is not True:
                     return self._send(start_response, 403, {"error": "Receiver control not permitted."})
+            if method == "GET" and path in ("/flight-radar", "/flight-radar/"):
+                if self.tar1090.installed():
+                    return self._redirect(start_response, "/flight-radar/map",
+                                          environ.get("QUERY_STRING", ""))
+                return self._redirect(start_response, "/flight-radar/light-map",
+                                      "full_map_unavailable=1")
+            if method == "GET" and path == "/flight-radar/tar1090":
+                return self._redirect(start_response, PREFIX,
+                                      environ.get("QUERY_STRING", ""))
+            if method == "GET" and path == "/flight-radar/map":
+                if self.tar1090.installed():
+                    query = environ.get("QUERY_STRING", "")
+                    if not query:
+                        # Only observed, fresh, positioned readsb aircraft.
+                        # Upstream ?icao is documented; noIsolation keeps the
+                        # full table/map instead of hiding other contacts.
+                        icao = self.tar1090.initial_aircraft_focus()
+                        if icao:
+                            query = "icao=" + icao + "&noIsolation"
+                    return self._redirect(start_response, PREFIX, query)
+                return self._redirect(start_response, "/flight-radar/light-map",
+                                      "full_map_unavailable=1")
+            if method == "GET" and path == "/flight-radar/light-map":
+                return self._send_static(start_response, "flight_radar.html",
+                                         "text/html; charset=utf-8")
+            if method == "GET" and path.startswith(PREFIX):
+                return self._tar_asset(start_response, path)
             if method == "GET" and path in ASSETS:
                 filename, kind = ASSETS[path]
                 return self._send_static(start_response, filename, kind)
@@ -84,7 +118,11 @@ class FlightRadarWSGI:
                         "csrf_token": self.issue_csrf(environ),
                         "receiver_controls_ready": False})
                 if endpoint == "status":
-                    return self._send(start_response, 200, self.center.status(owner_id=owner_id))
+                    status = self.center.status(owner_id=owner_id)
+                    status["full_tar1090_assets_installed"] = self.tar1090.installed()
+                    status["default_map"] = ("full" if self.tar1090.installed()
+                                             else "light_missing_full_dependency")
+                    return self._send(start_response, 200, status)
                 if endpoint == "sources":
                     return self._send(start_response, 200, {
                         "modes": ["antenna", "internet", "hybrid", "automatic"],
@@ -147,6 +185,46 @@ class FlightRadarWSGI:
                 return self._send(start_response, 409, {"error": "Receiver or service is unavailable.",
                                                        "reason": str(exc)[:120]})
             return self._send(start_response, 503, {"error": "Flight Radar service is unavailable."})
+
+    @staticmethod
+    def _redirect(start_response, target: str, raw_query: str = ""):
+        # Preserve upstream tar1090 query flags (?pTracks, icao, zoom, etc)
+        # without trusting CRLF, absolute URLs or unlimited parameters.
+        if len(raw_query) > 2048 or any(c in raw_query for c in "\r\n\\"):
+            raw_query = ""
+        try:
+            pairs = parse_qsl(raw_query, keep_blank_values=True,
+                              max_num_fields=32, strict_parsing=False)
+            query = urlencode(pairs)
+        except ValueError:
+            query = ""
+        location = target + (("?" + query) if query else "")
+        start_response("302 Found", [
+            ("Location", location), ("Cache-Control", "no-store"),
+            ("Content-Length", "0")])
+        return [b""]
+
+    def _tar_asset(self, start_response, path: str):
+        try:
+            asset = self.tar1090.asset(path)
+        except Tar1090Unavailable:
+            return self._send(start_response, 503, {
+                "error": "Full tar1090 map or its required file is unavailable.",
+                "full_map_available": self.tar1090.installed(),
+                "lightweight_map": "/flight-radar/light-map"})
+        # Same-origin native tar1090; no unapproved third-party requests.
+        csp = ("default-src 'self'; script-src 'self' 'unsafe-inline'; "
+               "style-src 'self' 'unsafe-inline'; "
+               "img-src 'self' data:; connect-src 'self'; "
+               "font-src 'self' data:; media-src 'self'; "
+               "object-src 'none'; frame-ancestors 'self'; "
+               "form-action 'self'")
+        headers = [("Content-Type", asset.content_type),
+                   ("Content-Length", str(len(asset.body))),
+                   ("Content-Security-Policy", csp),
+                   *asset.headers]
+        start_response("200 OK", headers)
+        return [asset.body]
 
     @staticmethod
     def _send(start_response, code: int, result: dict):
