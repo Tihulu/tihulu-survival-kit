@@ -38,6 +38,7 @@ class TargetSession:
 class PairedRemote:
     owner: str
     target_id: str
+    medium: str
     expires_at: float
 
 
@@ -114,8 +115,8 @@ class LanRemoteBroker:
             match.pairing_code = ""
             token = self._token()
             self._remotes[token] = PairedRemote(
-                match.owner, match.target_id, min(self.clock() + SESSION_TTL,
-                                                   match.expires_at))
+                match.owner, match.target_id, match.medium,
+                min(self.clock() + SESSION_TTL, match.expires_at))
             return {"remote_token": token, "target_id": match.target_id,
                     "medium": match.medium, "session_seconds": SESSION_TTL}
 
