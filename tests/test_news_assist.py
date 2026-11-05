@@ -203,6 +203,32 @@ class AssistTests(unittest.TestCase):
                              explicit_user_action=True, ai=self.ai)
         self.assertEqual(self.worker.starts, [])
 
+    def test_translation_only_does_not_force_ai_language_pair(self):
+        class MinimalTranslator(FakeTranslator):
+            def supports(self, src, dest):
+                return (src, dest) == ("de", "tr")
+        limited = MinimalTranslator()
+        result = self.svc.process(
+            NewsAssistRequest(item_ids=("a",), translate_to=("tr",)),
+            self.texts, self.prefs, owner_id="owner",
+            explicit_user_action=True, translator=limited)
+        self.assertIn("tr", result.translated["a"])
+        self.assertEqual(limited.calls, [("de", "tr")])
+        self.assertEqual(self.worker.starts, ["translator"])
+
+    def test_translator_shared_with_another_app_is_not_unloaded(self):
+        self.service.acquire("translator", task_id="browser:translate",
+                             owner_id="owner")
+        result = self.run_assist(
+            NewsAssistRequest(item_ids=("a",), translate_to=("tr",)))
+        self.assertIn("tr", result.translated["a"])
+        self.service.sweep_idle()
+        self.assertIn("translator", self.worker.running)
+        self.assertEqual(self.worker.starts.count("translator"), 1)
+        self.service.release("browser:translate", owner_id="owner")
+        self.service.sweep_idle()
+        self.assertNotIn("translator", self.worker.running)
+
     def test_source_selection_duplicates_rejected(self):
         with self.assertRaises(ValueError):
             self.run_assist(NewsAssistRequest(item_ids=("a", "a"),
