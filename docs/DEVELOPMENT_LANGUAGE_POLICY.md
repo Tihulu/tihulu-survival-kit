@@ -1,31 +1,28 @@
-# Repository Language Policy
+# Development Communication and Localization Policy
 
-**Effective:** November 5, 2026.
+This repository's canonical guidance is [AGENTS.md](../AGENTS.md), committed on `main` and shared with the private planning repository.
 
-## Engineering and GitHub communication
+## English for GitHub collaboration, not for every file
 
-**English is the default language for all development communication in this repository.** This applies to:
+Use **English by default** for GitHub issues, pull requests, commit messages, reviews, design discussions, developer notes, and other engineering communication. ChatGPT conversations with the project owner may remain in **Turkish**.
 
-- Commit messages, branches and PR titles/descriptions, PR reviews and comments, issues, milestones, and GitHub Actions workflow names/log messages authored by the project.
-- Code comments, docstrings, test names and assertions, new architecture documents, hardware integration notes, checklists, and technical guides.
-- Example configuration labels and the developer-facing UI prototype, unless an example is explicitly demonstrating localization.
+**This is a flexible convention, not an English-only repository policy.** Turkish, German, English, and additional languages are welcome for:
 
-The project owner and assistant may continue discussing work in **Turkish in ChatGPT**. GitHub-facing summaries of those discussions should be written in clear English, without changing technical meaning.
+- Application UI translations, locale resources, strings, sample content, and localized interface prototypes.
+- Language-specific documentation and help pages (for example, `docs/tr/`, `docs/de/`, and `docs/en/`).
+- Translation-oriented comments, screenshots, test fixtures, accessibility materials, and examples.
+- Existing documentation, including Turkish guides already present on `main`.
 
-## User-facing product languages
+Technical documentation and code comments normally use English when they address collaborators across languages, but **they do not need to be translated or renamed when the purpose is explicitly localized**. No English-only CI check, forced file renaming, or deletion of historical Turkish/German material.
 
-The Tihulu application is intended to support **English, Turkish, and German** (and potentially more) through a proper localization system. User-visible application strings are different from developer communication. Do not hard-code translated UI copy into service logic; use language keys and locale files when the production UI is implemented.
+## Future multilingual README
 
-## Future README structure
+The planned README structure may use:
 
-The current public README and existing Turkish guides are **legacy documentation** and are not being removed merely to change the development language. A separate, reviewed documentation milestone will create and maintain:
-
-- `README.md` — English canonical landing page
+- `README.md` — English default
 - `README.tr.md` — Turkish
 - `README.de.md` — German
 
-Each README should link to the others with a visible language switcher and accurately describe the **actual** release/deployment status. Do not assert that a feature is implemented merely because an English technical plan exists.
+These are future documentation targets, not a claim that all three are already available. Preserve accurate implementation and hardware-test status in every language.
 
-## Existing material and translations
-
-When editing new Stage 4 implementation docs, prefer English filenames without a language suffix. Existing Turkish documentation in `main` remains available until the multilingual-documentation milestone; no silent translation of all legacy documents and no accidental feature-scope changes.
+The same language preference applies to the private `Tihulu/tihulu-survival-kit-plan` repository.
