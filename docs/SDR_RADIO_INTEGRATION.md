@@ -329,3 +329,84 @@ provide a proven safe multi-block scan interface through our existing
 read-only WelleLocalReader; the future trusted process supervisor must
 handle each band block and decoder lifecycle, never publicly expose a
 welle-cli server or abuse read-only endpoints as a tuning API.
+
+## Phase 4: bounded real welle-cli invocation (NO web listener)
+
+**Source-verified behavior, 2026-11-05:**
+The upstream welle.io README / welle-cli man page describe the
+`-c CHANNEL`, `-F rtl_sdr`, `-p NAME` and `-T` options. The upstream
+`src/welle-cli/welle-cli.cpp` waits for DAB synchronization, then emits
+a `Service list` containing true service IDs, UTF-8 labels and DAB/
+DAB+ audio components (where compiled with ALSA). The upstream
+`src/various/Socket.cpp` **binds -w webserver to INADDR_ANY** and the
+`src/input/rtl_sdr.cpp` driver opens the **first working** indexed
+receiver. Avoid uncontained `-w`; a connection to 127.0.0.1 is not
+proof that the decoder is private.
+
+Upstream source:
+- https://github.com/AlbrechtL/welle.io/blob/master/src/welle-cli/welle-cli.cpp
+- https://github.com/AlbrechtL/welle.io/blob/master/src/input/rtl_sdr.cpp
+- https://github.com/AlbrechtL/welle.io/blob/master/src/various/Socket.cpp
+
+**Implemented in public branch:** `tihulu_runtime/welle_cli_probe.py`.
+This is a real subprocess implementation but **no real SDR was used** to
+validate it. It provides a `ReceiverBackend.probe` for the previously
+implemented `DabAutoScanner.run(...)` and `ManagedSdrScan` single
+foreground radio service lease / cooperating hardware lock:
+
+- Only the exact 5A..12D / opt-in 13A..13F approved channel grid can
+  be probed. Builds an argument list without a shell or arbitrary
+  commands; starts `welle-cli -c <channel> -F rtl_sdr -T -p
+  TIHULU_SCAN_DO_NOT_PLAY_ANY_RADIO_SERVICE_0123456789`. The long
+  nonmatching `-p` selector lists services without playing audio.
+  Never sends `-w` or `-D` (which writes dump files), `-d`,
+  `-f`, or `-C`. Sends `.` to stdin to let the tool quit cleanly
+  after it prints the service list.
+- Bounded 4..40-second per-block dwell, stdout/stderr size 128 KiB,
+  no unbounded `communicate()`, plus SIGTERM/SIGKILL process-group
+  cleanup on timeout/error. No decoder launched by browsing the UI
+  or reading presets. Cancellation from DAB scanner is checked between
+  channel probes; the bound can delay cancellation within a block.
+- A genuine upstream-style labelled service list with DAB/DAB+
+  audio component yields `service_decoded` and user-selectable
+  service IDs; FIC `New Service`/ensemble label without labelled
+  services yields `signal_locked` ONLY. The absence of a decoded
+  service within dwell is a `no_signal` scan classification, **not
+  proof that the RF spectrum is silent**. Audio, RDS, picture, SNR,
+  quality percentage and physical Pi RF reception are NOT claimed.
+  Decoder backend errors produce `scan_failed`.
+- Default identity gate is missing = FAIL CLOSED. The new
+  `UniqueRtlReceiverGate` checks the canonical receiver sysfs
+  `0bda:2838` USB path AND `librtlsdr` reports exactly one
+  device before upstream `-F rtl_sdr` can choose that first unit.
+  This count-only check neither opens a tuner nor proves reception.
+  A second RTL device, missing library, mismatched sysfs identity,
+  noncooperating outside process or device unplug needs separate
+  handling. The future trusted authenticated Pi service must own
+  an allowlisted package-managed welle-cli binary and this gate;
+  never expose the gate to untrusted client inputs.
+- Actual webserver-based DAB playback / Expert RF telemetry remains
+  a **separate** feature needing verified network namespace or
+  equally strong 127.0.0.1 isolation. The existing
+  `WelleLocalReader` intentionally only READS an already-isolated
+  service and is not used by this no-web auto scanner.
+
+**Synthetic CI:** `tests/test_welle_cli_probe.py` runs real child
+Python processes pretending to be welle-cli, with actual Linux
+subprocess/timeout/kill tests, fake sysfs + librtlsdr count, and
+an end-to-end `DabAutoScanner -> ManagedSdrScan -> WelleCliDabProbe ->
+ChannelStore` path. These tests do not decode real DAB RF.
+Dedicated SDR CI run:
+https://github.com/Tihulu/tihulu-survival-kit/actions/runs/42109454946
+Python 3.11 and 3.12 both PASS **79 synthetic tests each**
+(15 SDR radio + 20 SDR/Stage4 + 16 DAB auto scan +
+18 no-web welle CLI + 10 local DAB reader), plus Radio Center
+JavaScript syntax. Global Stage4-5 CI remains independently red on
+unrelated AI admission state.
+
+**Next acceptance:** Pi5 direct USB reception on 5C/9A/11D with
+real installed welle-cli built with RTLSDR+ALSA, reliable per-block
+decoder dwell and UTF-8 service labels, power/thermal/USB coexistence,
+actual Task Center owner job status and trusted cancellable gateway.
+Do not enable UI's "Start RF Scan" until these conditions and real
+authenticated application wiring are satisfied.
