@@ -9,6 +9,14 @@
 >
 > İlk açılış, Wi-Fi SSID, şifre, adresler ve sorun giderme için önce **[Başlangıç: Önce Bunları Bilin](docs/START_HERE_TR.md)** ve ardından **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** sayfalarını okuyun.
 
+## Engineering development status (November 5, 2026)
+
+**Main branch:** Planning documentation, user guides and [development/language guidelines](AGENTS.md). No installable Tihulu Core image, production portal, or validated Raspberry Pi appliance is available yet.
+
+**Experimental code:** [Draft PR #1 — On-Demand Window & Task Manager](https://github.com/Tihulu/tihulu-survival-kit/pull/1) contains a Python service/job policy prototype, an English standalone browser demo, unit tests and a candidate TV/radio text-network directory. Those are **not installed services**; automated unit-test success is not Pi hardware validation. See [Development Status](docs/DEVELOPMENT_STATUS.md) for pending modules, tuner and news-feed requirements.
+
+**Language:** GitHub engineering communication is English by preference; Turkish, German and English localized application or documentation content is welcome. Full multilingual README editions are planned separately.
+
 ## İlk bilinmesi gerekenler / First-boot essentials
 
 | Konu | Planlanan değer / açıklama |
