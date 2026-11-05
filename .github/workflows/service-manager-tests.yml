@@ -1,0 +1,25 @@
+name: Stage 4 on-demand service manager
+on:
+  push:
+    paths:
+      - "tihulu_runtime/**"
+      - "tests/test_service_manager.py"
+      - ".github/workflows/service-manager-tests.yml"
+  pull_request:
+    paths:
+      - "tihulu_runtime/**"
+      - "tests/test_service_manager.py"
+      - ".github/workflows/service-manager-tests.yml"
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test stdlib policy engine (no hardware)
+        run: python -m unittest discover -s tests -v
