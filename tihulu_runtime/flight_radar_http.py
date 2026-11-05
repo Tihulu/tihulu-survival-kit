@@ -33,12 +33,13 @@ class FlightRadarWSGI:
 
     def __init__(self, center: FlightRadarCenter, *,
                  authorize, validate_csrf, allowed_hosts: frozenset[str],
-                 assets_dir: Path | None = None):
+                 issue_csrf=None, assets_dir: Path | None = None):
         if not callable(authorize) or not callable(validate_csrf) or not allowed_hosts:
             raise ValueError("Authenticated gateway and explicit host allowlist required.")
         self.center = center
         self.authorize = authorize
         self.validate_csrf = validate_csrf
+        self.issue_csrf = issue_csrf
         self.allowed_hosts = allowed_hosts
         self.assets_dir = assets_dir or Path(__file__).resolve().parents[1] / "prototype"
 
@@ -75,6 +76,13 @@ class FlightRadarWSGI:
             if method == "GET":
                 params = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=False)
                 sid = params.get("session", [""])[0]
+                if endpoint == "bootstrap":
+                    if not callable(self.issue_csrf) or can_control is not True:
+                        return self._send(start_response, 403, {
+                            "error": "Authenticated control and CSRF integration unavailable."})
+                    return self._send(start_response, 200, {
+                        "csrf_token": self.issue_csrf(environ),
+                        "receiver_controls_ready": False})
                 if endpoint == "status":
                     return self._send(start_response, 200, self.center.status(owner_id=owner_id))
                 if endpoint == "sources":
