@@ -2,6 +2,9 @@
 """Regional channel candidates and phone-remote policy: no real RF hardware."""
 import tempfile
 import unittest
+import json
+import hashlib
+from io import BytesIO
 from pathlib import Path
 
 from tihulu_runtime.channel_explorer import (
@@ -58,6 +61,53 @@ class TestRegionChannelCatalog(unittest.TestCase):
             self.catalog.install_pack("any-pack",user_triggered=False)
         with self.assertRaises(KeyError):
             self.catalog.install_pack("not-offered",user_triggered=True)
+
+    def test_pinned_remote_pack_can_add_city_and_frequency_without_rf_claim(self):
+        url=("https://raw.githubusercontent.com/Tihulu/tihulu-survival-kit/"
+             + "a"*40 + "/data/channel_packs/tr_ankara.json")
+        payload=json.dumps({
+            "schema_version":1,"status":"published_candidates_not_received",
+            "frequencies":[{"id":"tr_ankara_manual_seed","country":"TR",
+                 "region":"Ankara","kind":"fm","frequency_hz":99000000,
+                 "label":"Test-sourced Ankara FM candidate",
+                 "source":"https://example.org/published-frequency"}],
+            "city_candidates":[{"country":"TR","region":"Ankara","city":"Ankara",
+                                "preset_ids":["tr_ankara_manual_seed"]}]
+        }).encode()
+        digest=hashlib.sha256(payload).hexdigest()
+        self.catalog.download_policy["packs"]=[{
+            "id":"ankara","url":url,"sha256":digest}]
+        class FakeResponse(BytesIO):
+            def geturl(self):
+                return url
+        def fake_open(u,timeout):
+            self.assertEqual(u,url)
+            self.assertLessEqual(timeout,10)
+            return FakeResponse(payload)
+        with self.assertRaises(PermissionError):
+            self.catalog.install_pack("ankara",user_triggered=False,opener=fake_open)
+        self.assertEqual(self.catalog.candidates("TR","Ankara","Ankara"),())
+        count=self.catalog.install_pack("ankara",user_triggered=True,
+                                        opener=fake_open)
+        self.assertEqual(count,1)
+        [p]=self.catalog.candidates("TR","Ankara","Ankara")
+        self.assertEqual(p.frequency_hz,99000000)
+        self.assertEqual(p.id,"tr_ankara_manual_seed")
+        self.assertTrue(p.source.startswith("https://"))
+
+    def test_bad_remote_pack_is_rejected_without_mutation(self):
+        url=("https://raw.githubusercontent.com/Tihulu/tihulu-survival-kit/"
+             + "b"*40 + "/data/channel_packs/unsafe.json")
+        payload=b'{"schema_version":1}'
+        self.catalog.download_policy["packs"]=[{
+            "id":"bad","url":url,"sha256":"0"*64}]
+        class Response(BytesIO):
+            def geturl(self):
+                return url
+        with self.assertRaisesRegex(ValueError, "digest mismatch"):
+            self.catalog.install_pack("bad",user_triggered=True,
+                                       opener=lambda u,timeout:Response(payload))
+        self.assertEqual(self.catalog.candidates("TR","Ankara","Ankara"),())
 
 
 class TestLineups(unittest.TestCase):
