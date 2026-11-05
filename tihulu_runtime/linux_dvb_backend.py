@@ -90,8 +90,14 @@ class LinuxDvbV5Backend:
         return tuple(services)
 
     def probe(self, receiver: Receiver, point: TunePoint) -> ProbeReading:
+        # dvbv5-scan takes control of the frontend: it is not a shared-mux
+        # service reader and must never run against an active recording.
+        if receiver.recording_active:
+            raise RuntimeError("Refusing dvbv5-scan while a recording is active")
         if receiver.kind != "dvb_tuner" or point.mode not in ("dvb_t","dvb_t2"):
             raise ValueError("DVB backend cannot scan general radio/SDR modes")
+        if not receiver.supports(point.mode, point.tuned_hz):
+            raise RuntimeError("Receiver unavailable or outside supported mode/band")
         scan_file_content = self.scan_input(point)
         frontend = Path(
             f"/dev/dvb/adapter{self.adapter_index}/frontend{self.frontend_index}")
