@@ -64,6 +64,18 @@ class ExplorerTests(unittest.TestCase):
                        step_hz=8000000,owner_requested=True)
         found=self.x.scan(p,self.state,Unknown())
         self.assertEqual(found[0].service_name,"Unknown signal")
+    def test_manual_tune_requires_owner_and_mode_without_false_signal(self):
+        self.x.tune_manual(mode="dvb_t2",frequency_hz=514000000,
+                           bandwidth_hz=8000000,state=self.state,
+                           receiver=self.r,owner_requested=True)
+        self.assertEqual(self.r.tunes,[514000000])
+        self.assertFalse(self.x.discovered())
+        with self.assertRaises(ScanDenied):
+            self.x.tune_manual(mode="dvb_t2",frequency_hz=522000000,
+                               bandwidth_hz=8000000,state=self.state,
+                               receiver=self.r,owner_requested=False)
+        self.assertEqual(self.r.tunes,[514000000])
+
     def test_no_transmission(self):
         p=ScanPlan("dvb_t2",(514000000,),owner_requested=True,transmit=True)
         with self.assertRaises(ScanDenied):self.x.scan(p,self.state,self.r)
