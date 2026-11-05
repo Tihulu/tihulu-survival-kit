@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10141a">
+<title>Tihulu Survival Kit — Flight Radar</title>
+<style>
+:root{color-scheme:dark;--bg:#10141a;--panel:#1a2029;--raised:#252d39;--line:#3a4654;--ink:#f1f4f8;--muted:#b4c0cd;--focus:#91cafa;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--ink)}
+button,select,input{font:inherit;color:inherit}button,select{background:var(--raised);border:1px solid var(--line);border-radius:9px;padding:9px 10px;cursor:pointer;min-height:43px}
+button:hover{border-color:#90a3b5}button:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+label{display:grid;gap:5px;font-size:.82rem;color:var(--muted)}
+h1{font-size:1.23rem;margin:0}h2{font-size:.95rem;margin:0 0 9px}p{margin:5px 0}
+small,.muted{font-size:.82rem;color:var(--muted)}.chip{padding:4px 8px;border:1px solid var(--line);border-radius:99px;font-size:.73rem;color:var(--muted)}
+.shell{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#171d26;border-bottom:1px solid var(--line);padding:12px 15px}
+header .brand{display:flex;align-items:center;gap:10px}header .brand strong{font-size:1.3rem}
+header .session{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,350px);min-height:0;height:calc(100dvh - 68px)}
+.maparea{position:relative;min-height:300px;overflow:hidden;background:#10202f}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}canvas.dragging{cursor:grabbing}
+.toolbar{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.toolbar button{pointer-events:auto;background:#161f2cf2;font-size:.81rem;padding:7px 9px}
+.mapfooter{position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-end;pointer-events:none}
+.mapfooter .hint{background:#101823dc;color:#e5ebf2;padding:8px;border:1px solid #41566a;border-radius:9px;font-size:.75rem;max-width:75%}
+.mapfooter .hint a{color:#9ed5fa;pointer-events:auto}
+aside{display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--line);background:#161c24}
+.card{border-bottom:1px solid var(--line);padding:12px 14px}
+.flex{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.flex>*{min-width:0}.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.controls button:last-child{grid-column:span 2}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px;min-width:0}
+.stat b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.7rem;color:var(--muted)}
+.airlist{overflow:auto;flex:1;min-height:120px}.airlist button{display:grid;grid-template-columns:1fr auto;text-align:left;gap:4px;width:100%;border:0;border-radius:0;border-bottom:1px solid #303b48;background:transparent;padding:12px 14px;min-height:56px}
+.airlist button[aria-selected="true"]{background:#293a4b}.airlist button:hover{background:#242f3b}
+.empty{padding:18px;color:var(--muted)}.detail{min-height:92px}.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.detailgrid div{background:#232b36;padding:7px;border-radius:7px;overflow-wrap:anywhere;font-size:.81rem}
+.detailgrid strong{display:block;font-size:.7rem;color:#b9c5d2;margin-bottom:2px}
+nav.mobile{display:none}button.primary{background:#236854;border-color:#337e67}
+#notice{color:#ffdd9d;font-size:.82rem}#live{font-weight:700}
+@media(max-width:1050px){.layout{grid-template-columns:minmax(0,1fr) 310px}}
+@media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr) 250px}.toolbar button{font-size:.74rem}}
+@media(max-width:700px){
+ .shell{grid-template-rows:auto 1fr auto}.layout{display:block;height:calc(100dvh - 112px);position:relative}
+ header{padding:9px 12px}.header-extras{display:none}
+ .maparea{position:absolute;inset:0;height:auto}.toolbar{top:8px;left:7px;right:7px}
+ .toolbar button{padding:7px;font-size:.75rem}.mapfooter{bottom:10px}
+ aside{position:absolute;bottom:0;left:0;right:0;height:min(67%,430px);max-height:calc(100% - 130px);border:1px solid #5c6878;border-radius:17px 17px 0 0;box-shadow:0 -14px 40px #0009;z-index:5;transition:transform .2s}
+ aside[data-sheet="closed"]{transform:translateY(calc(100% - 48px))}
+ aside[data-sheet="half"]{transform:translateY(45%)}
+ aside[data-sheet="open"]{transform:translateY(0)}
+ .handle{display:block!important;width:60px;height:5px;border-radius:50px;background:#738195;margin:9px auto 10px}
+ .card{padding:9px 12px}.airlist{min-height:70px}
+ nav.mobile{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:#1a212b;min-height:48px;z-index:6}
+ nav.mobile button{border:0;background:transparent;border-radius:0;min-height:48px}
+}
+@media(max-width:390px){header h1{font-size:1rem}.toolbar button{min-height:40px}.mapfooter .hint{max-width:94%}}
+@media(orientation:landscape) and (max-height:500px) and (max-width:940px){aside{max-height:80%;height:78%}.toolbar button{min-height:34px}}
+@media(prefers-reduced-motion:reduce){aside{transition:none}}
+@media(pointer:coarse){button,select{min-height:44px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+ <div class="brand"><span aria-hidden="true">✈</span><div><h1>Flight Radar Center</h1><div class="muted">Survival Kit / Radio &amp; SDR Center</div></div></div>
+ <div class="session"><span id="live" class="chip" role="status">Not connected</span><span class="chip header-extras">Real ADS-B / Mode S only</span><button id="connect" class="primary">Start session</button><button id="stop" disabled>Close session</button></div>
+</header>
+<div class="layout">
+ <section class="maparea" aria-label="Aircraft position map">
+   <canvas id="sky" aria-label="Geographic coordinate map with reported aircraft only"></canvas>
+   <div class="toolbar" role="group" aria-label="Map controls">
+    <button id="focusNearest">Focus nearest</button><button id="focusReceiver">Receiver</button>
+    <button id="fitAll">Fit all</button><button id="follow" aria-pressed="false">Follow selected</button>
+    <button id="zoomIn">+</button><button id="zoomOut">−</button>
+   </div>
+   <div class="mapfooter"><div class="hint" id="mapHint">Waiting for fresh aircraft positions. No location is assumed.</div><div class="hint">Offline coordinate grid · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></div></div>
+ </section>
+ <aside id="sheet" data-sheet="half" aria-label="Aircraft and receiver control panel">
+   <div class="handle" aria-hidden="true" style="display:none"></div>
+   <div class="card"><div class="flex" style="justify-content:space-between"><h2>Sources &amp; Receiver</h2><span class="chip" id="status">Idle</span></div>
+    <div class="controls">
+     <label>Data source<select id="mode"><option value="antenna">Antenna only</option><option value="internet">Internet only</option><option value="hybrid">Hybrid</option><option value="automatic">Automatic</option></select></label>
+     <label>Online access<select id="online"><option value="off">Off (default)</option><option value="on">Allow verified providers</option></select></label>
+     <button id="receiverLocation" type="button">Set receiver coordinates</button>
+     <button id="deviceLocation" type="button">Use device location</button>
+     <button id="receiverControl" type="button" disabled>Hardware controls unavailable</button>
+    </div>
+    <div style="margin-top:8px" id="notice" role="status">An existing authenticated portal and installed receiver worker are required to start.</div>
+   </div>
+   <div class="card"><h2>Live statistics</h2><div class="stats">
+    <div class="stat"><b id="count">—</b><span>Aircraft</span></div>
+    <div class="stat"><b id="positioned">—</b><span>With position</span></div>
+    <div class="stat"><b id="sourceState">—</b><span>Sources online</span></div>
+   </div></div>
+   <div class="card"><div class="flex"><label style="flex:1">Search aircraft<input id="search" style="background:#222d38;border:1px solid #455466;padding:9px;border-radius:7px;width:100%" placeholder="Callsign or ICAO"></label><label>Sort<select id="sort"><option value="recent">Newest</option><option value="nearest">Nearest</option><option value="altitude">Altitude</option><option value="callsign">Callsign</option></select></label></div></div>
+   <div id="airlist" class="airlist" role="listbox" aria-label="Current aircraft"><div class="empty">No live data yet.</div></div>
+   <div class="card detail" id="details"><p class="muted">Select a reported aircraft to inspect its source, age and measurements.</p></div>
+ </aside>
+</div>
+<nav class="mobile" aria-label="Mobile views"><button id="mobileMap">Map</button><button id="mobileAircraft">Aircraft</button><button id="mobileSettings">Settings</button></nav>
+</div>
+<script defer src="/flight-radar/app.js"></script>
+</body></html>
