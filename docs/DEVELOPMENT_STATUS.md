@@ -38,6 +38,16 @@ Draft PR #1 includes `tihulu_runtime/news_assist.py`: a dependency-injected, **e
 
 The English `prototype/news_inputs.html` displays a multi-select UI for independent transports, individual source candidates, output languages and AI actions. Its task preview never claims to perform actual translation or analysis. The original text and source attribution, cache rules, owner permissions and the protected recording state remain essential future production requirements.
 
+## Channel & Signal Explorer, TV/Radio scan prototype (November 5, 2026)
+
+The experimental [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) now also contains a common **TV / Radio / Text-Data Explorer** backend and source-backed frequency starter catalog: `channel_explorer.py`, `channel_app_registry.py`, `linux_dvb_backend.py`, `text_data_browser.py`, `data/channel_frequency_presets.json`, `data/text_data_portals.json`, static HTML previews and unit tests.
+
+Supported by code: manual tune/fine-adjust **validation**, preset- and step-band scanning plans, bounded scan chunks, receiver-capability checks, classification of decoded services versus mere signal energy, protection for declared active recordings, user-scoped SQLite saved channels and favorites, DVB TV/audio-only Radio category sharing, Teletext page/subpage validation, and a directory of external HTTPS sites/packet BBS resources.
+
+The Linux DVB adapter has a limited **actual subprocess backend** for a single user-selected DVB-T/T2 frequency, calling `dvbv5-scan -F` only after checking the real `/dev/dvb/adapterN/frontendM` char device and verifying backend permission. **This adapter has not been run against the owner's tuner or a Raspberry Pi**; Linux DVB-C symbol-rate/config support, true demultiplexed Teletext, FM/DAB/SSB SDR scanning, full multi-user tuner brokers, and backend-connected UI remain incomplete. Tests use constructed data, not actual measured RF results. The channel/source lists are initial published candidates only.
+
+No websites, BBS chats or RF messages are automatically logged into, scraped or posted by Tihulu. The independent Text/Data Browser demo provides user-clickable external website links; real embedded browsing and local Pi BBS require separate development. Translator/AI uses only the planned shared workers, with no local model installed.
+
 ## Upcoming user-requested functional scopes
 
 ### 1. Region & Broadcast Manager

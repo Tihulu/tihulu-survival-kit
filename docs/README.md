@@ -10,6 +10,7 @@
 - [Live Camera OCR & Permissions](LIVE_OCR_AND_PERMISSIONS.md) — camera consent, local processing, language packs and privacy.
 - [Features & System Architecture](FEATURES_AND_ARCHITECTURE.md) — planned modules, boundaries, resources and validation.
 - [Engineering Development Status](DEVELOPMENT_STATUS.md) — real repository status, experimental PRs and missing integrations.
+- [Channel & Signal Explorer (experimental branch)](https://github.com/Tihulu/tihulu-survival-kit/blob/feature/on-demand-service-manager-2026-11-05/docs/CHANNEL_SIGNAL_EXPLORER.md) — published frequencies, manual/band scans, TV/Radio saved channels and Text/Data Browser constraints.
 
 ## Language versions
 

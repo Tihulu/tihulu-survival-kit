@@ -107,6 +107,12 @@ Raspberry Pi 5 has finite **8 GB physical RAM**. Tentative model classes:
 - ASR and Translator may run on demand for radio/TV subtitles and then unload when unused. A recording, active job, hotspot or system-auth service must not be killed by an unrelated window closing or model memory pressure.
 - A proposed **4 GiB zram and 8 GiB NVMe swapfile** would provide compressed/swap-backed **virtual memory**, **not 12 or 20 GB of physical RAM**; swapping introduces delay and storage wear considerations. These numbers remain a proposed configuration, not a benchmarked requirement.
 
+## Shared frequency discovery across TV, Radio and Text/Data apps
+
+The planned **Channel & Signal Explorer** provides multi-select published presets, owner-triggered DVB/SDR band scanning in bounded chunks, manual frequency and supported fine-tuning, categorized signal/decoded-service results, and a shared owner-scoped channel/favorites list. All findings must be attributed to an **actual connected receiver and timestamped backend**; published frequency catalog records and unclassified RF energy are not evidence of decoded programming. The purchased Hauppauge DVB-T2/C tuner is not an FM/DAB/HF/ham SDR. TV recordings must not be interrupted by retuning a different multiplex.
+
+The **Text/Data Browser** separates one-way DVB Teletext navigation from ordinary interactive HTTPS Teletext-themed sites and authenticated packet BBS/forum services. Existing Tihulu Translator/Local AI workers process selected, authorized source text on demand and preserve originals. A website cannot be promised to embed if its security headers block framing; a real browser or external tab is required. Radio communication, if ever enabled, must use separate legal transmitter hardware. Current implementation is **experimental public draft-branch code**, not a delivered Pi interface.
+
 ## Region-aware TV, text and political feeds
 
 - Initial Region Manager supports **16 German federal states** and **81 Turkish provinces**, with country/region selection separate from UI language and real broadcaster availability.

@@ -117,6 +117,21 @@ Common Translator/ASR/AI workers should share one backend instance with task lea
 
 An experimental [task/service management prototype](https://github.com/Tihulu/tihulu-survival-kit/pull/1) and its tests exist in a draft branch.
 
+## Channel & Signal Explorer — scan, tune, save and browse
+
+A separate **Channel & Signal Explorer** is planned alongside TV Center, Radio Center, News and the Text/Data Browser. It is not limited to political news.
+
+- **Three discovery modes:** Choose any number of published region-specific frequency presets, **enter a frequency manually** with a bounded fine-tune offset when supported, or run a user-initiated **step-by-step band sweep** in bounded chunks. Band scans can find unidentified RF energy, but this is **not proof** of a decoded programme or legal content availability.
+- **Verified published examples:** WDR DVB-T2 Köln/Bonn **UHF 26 (514 MHz)**, regional WDR DAB+ **11D (222.064 MHz)** and **9A (202.928 MHz)**, Germany national DAB **5C (178.352 MHz)**, WDR 2 Kölnturm FM **98.6 MHz**, TRT Radio 1 İzmir Merkez FM **94.7 MHz**, and public LK0NOD CB packet nodes at **27.235/26.925 MHz**. These are **published frequencies, not observed local reception**. More official frequency data and verified regional updates will be needed.
+- **Separate hardware capabilities:** The reported-purchased WinTV-soloHD 01589 can tune **DVB-T/T2/C**, not ordinary FM, DAB, AM, HF or amateur radio demodulation. Those radio modes require a **separate supported SDR/receiver, matched antenna, software decoder and appropriate permissions**. A generic TV antenna is not an RF transmitter.
+- **Saved channels and favorites:** User-scoped library shared across TV, Radio and Text/Data. A detected DVB multiplex can contain TV services and audio-only DVB radio services. Manually saved, unverified channels and unidentified peaks remain clearly labelled rather than treated as broadcast stations. Saved channels and original recordings are not deleted by the News Center's 24-hour cache.
+- **Recording safety:** No scan may silently retune the sole physical tuner away from an ongoing recording. Same-multiplex sharing is permitted only if the backend proves safe demultiplexing and tuner ownership.
+- **Teletext & Text Network Browser:** Open actually decoded broadcast Teletext pages **100–899** and subpages, browse page links, preserve source/channel/time and optionally send selected text to the **shared Translator and Local AI**. Internet Teletext-style communities and websites, such as Teletext Art and LK0NOD's forum/browser terminal, should open in an ordinary secure browser where users can interact under **each website's own login and rules**. Broadcast Teletext is **one-way**, so it cannot send chat replies; RF packet chat requires appropriate transmitting equipment.
+
+The draft branch includes a **published-frequency catalog, bounded scanning/fine-tuning engine, shared TV/Radio channel-list SQLite logic, an optional untested Linux `dvbv5-scan` DVB-T/T2 adapter, Teletext navigation rules and standalone HTML demonstrations**. These do **not** mean that real RF services, a full browser, DVB-C symbol-rate support, radio SDR decoding or working LLMs are installed. The experimental scanner requires actual hardware and user authorization; no Pi RF test has been performed.
+
+See the [Channel & Signal Explorer technical guide](https://github.com/Tihulu/tihulu-survival-kit/blob/feature/on-demand-service-manager-2026-11-05/docs/CHANNEL_SIGNAL_EXPLORER.md), [TV Center demo](https://github.com/Tihulu/tihulu-survival-kit/blob/feature/on-demand-service-manager-2026-11-05/prototype/tv_center.html), [Radio Center demo](https://github.com/Tihulu/tihulu-survival-kit/blob/feature/on-demand-service-manager-2026-11-05/prototype/radio_center.html), and [shared Explorer demo](https://github.com/Tihulu/tihulu-survival-kit/blob/feature/on-demand-service-manager-2026-11-05/prototype/channel_explorer.html).
+
 ## Regional television, Teletext and radio messaging
 
 The proposed **Region Manager** starts with all **16 German federal states** and **81 Turkish provinces**. Country, region, language, frequency and saved channel profiles are independent. A channel's official website or directory presence does **not** prove terrestrial DVB reception or an authorized embeddable live stream.
