@@ -86,7 +86,14 @@ class LanRemoteBroker:
             if sum(v.owner == owner for v in self._targets.values()) >= 8:
                 raise ValueError("Maximum eight concurrent display sessions")
             identifier = secrets.token_urlsafe(18)
-            code = f"{secrets.randbelow(100_000_000):08d}"
+            active_codes = {v.pairing_code for v in self._targets.values()
+                            if v.pairing_expires_at > self.clock()}
+            for _ in range(12):
+                code = f"{secrets.randbelow(100_000_000):08d}"
+                if code not in active_codes:
+                    break
+            else:
+                raise RuntimeError("Could not allocate distinct pairing code")
             session = TargetSession(owner, identifier, medium, self._token(),
                                     self.clock() + SESSION_TTL,
                                     code, self.clock() + PAIR_TTL)
