@@ -23,6 +23,7 @@ MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 MODES = frozenset({"antenna", "internet", "hybrid", "automatic"})
 ADSB_LOL = "https://api.adsb.lol"
 OPENSKY = "https://opensky-network.org"
+ADSB_FI = "https://opendata.adsb.fi"
 
 
 class SourceUnavailable(RuntimeError):
@@ -37,6 +38,7 @@ class _NoRedirect(HTTPRedirectHandler):
 def _fetch_json(url: str, headers: dict[str, str]) -> dict:
     """Static HTTPS provider URL only; never accept arbitrary client URLs."""
     if not (url.startswith(ADSB_LOL + "/v2/lat/") or
+            url.startswith(ADSB_FI + "/api/v3/lat/") or
             url.startswith(OPENSKY + "/api/states/all?")):
         raise SourceUnavailable("Provider URL is not allowlisted.")
     try:
@@ -91,9 +93,12 @@ class ProviderConfig:
     enabled: bool = False
     min_interval_seconds: int = 60
     oauth_bearer: str | None = field(default=None, repr=False, compare=False)  # trusted secrets only
+    # Trusted installation records, not unverified HTTP request checkboxes.
+    operational_agreement_verified: bool = False
+    personal_noncommercial_verified: bool = False
 
     def __post_init__(self) -> None:
-        if self.id not in ("adsb.lol", "opensky"):
+        if self.id not in ("adsb.lol", "adsb.fi", "opensky"):
             raise ValueError("Unsupported aircraft provider.")
         if (real(self.latitude, -90, 90) is None or
                 real(self.longitude, -180, 180) is None):
@@ -159,6 +164,10 @@ class AircraftSourceManager:
     def _online(self, policy: ProviderConfig, now: float) -> tuple[Aircraft, ...]:
         if not policy.enabled:
             raise SourceUnavailable("Online provider not enabled by owner.")
+        if policy.id == "opensky" and policy.operational_agreement_verified is not True:
+            raise SourceUnavailable("OpenSky operational API agreement has not been verified.")
+        if policy.id == "adsb.fi" and policy.personal_noncommercial_verified is not True:
+            raise SourceUnavailable("ADSB.fi personal/non-commercial eligibility is not verified.")
         prev = self._last.get(policy.id)
         if prev is not None and self.monotonic() - prev < policy.min_interval_seconds:
             # Cache used only when the individual aircraft remains genuinely fresh.
@@ -172,6 +181,10 @@ class AircraftSourceManager:
         lat, lon = policy.latitude, policy.longitude
         if policy.id == "adsb.lol":
             url = f"{ADSB_LOL}/v2/lat/{lat:.6f}/lon/{lon:.6f}/dist/{policy.radius_nm}"
+            data = self.fetcher(url, {})
+        elif policy.id == "adsb.fi":
+            # Public v3 geographic API; deprecated v2 geo route not used.
+            url = f"{ADSB_FI}/api/v3/lat/{lat:.6f}/lon/{lon:.6f}/dist/{policy.radius_nm}"
             data = self.fetcher(url, {})
         else:
             # Bounding box is conservative and deliberately not global.
@@ -228,6 +241,15 @@ class AircraftSourceManager:
             return {
                 "mode": mode, "utc": now, "source_status": status,
                 "online_enabled": bool(online_allowed and enabled),
+                "provider_attributions": [
+                    {"provider": p.id,
+                     "url": "https://www.adsb.lol/docs/open-data/api" if p.id == "adsb.lol"
+                            else "https://adsb.fi" if p.id == "adsb.fi"
+                            else "https://opensky-network.org/about/terms-of-use",
+                     "license": "ODbL-1.0" if p.id == "adsb.lol"
+                            else "personal-non-commercial" if p.id == "adsb.fi"
+                            else "written-operational-agreement-required"}
+                    for p in enabled if online_allowed],
                 "aircraft": [a.as_dict(now) for a in results],
                 "count": len(results),
                 "positioned": sum(a.located(now) for a in results),
