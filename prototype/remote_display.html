@@ -1,0 +1,23 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tihulu — Demo TV/Radio Screen</title>
+<style>
+body{margin:0;background:#07161f;color:#fff;font:18px system-ui}main{max-width:1100px;margin:auto;padding:20px}
+#screen{min-height:52vh;display:grid;align-content:center;justify-items:center;border:1px solid #345666;border-radius:18px;background:#102a38;text-align:center;padding:24px}
+h1{font-size:2.4rem}#now{font-size:1.6rem}#detail{color:#9cb7bd}
+a{color:#9fdbe9}#warning{background:#40341b;padding:12px 17px;border-radius:8px}
+</style></head><body><main><p id="warning">Bu yalnızca aynı tarayıcı / aynı origin BroadcastChannel ekran önizlemesidir. DVB tuner, gerçek video/radyo oynatımı veya telefon–Pi uzaktan bağlantısı yoktur.</p>
+<div id="screen"><div>TIHULU · MEDIA DISPLAY DEMO</div><h1 id="now">Yayın yok</h1><p id="detail">Kumandadaki bir kanalı seç.</p><p id="state">Ses, altyazı, çeviri ve AI bağlanmadı.</p></div>
+<p><a href="remote_control.html" target="_blank" rel="noopener">Kumandayı aç</a> · <a href="region_channel_setup.html">Kanal listesi</a></p>
+</main><script>
+"use strict";
+const bus="BroadcastChannel" in window?new BroadcastChannel("tihulu-remote-demo"):null;
+if(bus)bus.onmessage=event=>{
+ const d=event.data;if(!d||d.kind!=="tihulu-remote-demo")return;
+ if(d.channel&&["select_channel","next_channel","previous_channel"].includes(d.command)){
+  document.getElementById("now").textContent=d.channel.label;
+  document.getElementById("detail").textContent=d.medium+" · "+(d.channel.frequencyHz/1e6)+" MHz · not tuned";
+ }
+ document.getElementById("state").textContent="Last simulated command: "+d.command+"; no RF/media action.";
+ bus.postMessage({kind:"tihulu-display-demo-ack",command:d.command});
+};
+</script></body></html>
