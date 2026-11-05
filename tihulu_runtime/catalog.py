@@ -22,6 +22,9 @@ def default_catalog() -> list[Module]:
         ("tts", (), 5),
         ("browser_renderer", (), 5),
         ("radio", (), 0),
+        # Receive-only ADS-B headless worker: not installed until validated.
+        # Foreground allowed when Hard ON; Background and Startup default OFF.
+        ("flight_radar", (), 20),
         ("tv", (), 0),
         ("radio_subtitles", ("radio", "asr"), 0),
         ("radio_translation", ("radio_subtitles", "translator"), 0),
