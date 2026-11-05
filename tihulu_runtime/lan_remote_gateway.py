@@ -319,7 +319,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
 
 def build_server(host: str, port: int, gateway: RegionalLanGateway,
                  *, cert: str | None = None, key: str | None = None) -> ThreadingHTTPServer:
-    if not (1 <= port <= 65535):
+    if not (0 <= port <= 65535) or (port == 0 and host not in ("127.0.0.1","localhost","::1")):
         raise ValueError("Invalid listening port")
     if (host not in ("127.0.0.1","localhost","::1") and not (cert and key)):
         raise ValueError("Non-loopback LAN exposure requires TLS certificate and key")
