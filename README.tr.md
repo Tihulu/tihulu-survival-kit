@@ -9,7 +9,7 @@
 > [!IMPORTANT]
 > **ÖNCE OKUYUN — Proje şu anda planlama/geliştirme hazırlığı aşamasında (5 Kasım 2026).** Henüz yayımlanmış, çalışan bir **Tihulu Core imajı, kurulum sihirbazı, web portalı veya doğrulanmış donanım kurulumu yoktur.** Bu README ve rehberler hedeflenen ürünü ve kurulumu açıklar; var olmayan kurulum komutları veya “çalışıyor” iddiaları içermez.
 >
-> İlk açılış, Wi-Fi SSID, şifre, adresler ve sorun giderme için önce **[Başlangıç: Önce Bunları Bilin](docs/START_HERE_TR.md)** ve ardından **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** sayfalarını okuyun.
+> İlk açılış, Wi-Fi SSID, şifre, adresler ve sorun giderme için önce **[Başlangıç: Önce Bunları Bilin](docs/tr/START_HERE.md)** ve ardından **[Kurulum Rehberi](docs/tr/INSTALLATION.md)** sayfalarını okuyun.
 
 ## Engineering development status (November 5, 2026)
 
@@ -79,7 +79,7 @@ Bu sistem bir **kamusal acil uyarı servisi, resmî afet uygulaması ya da profe
 5. **Hızlı Kurulum**, **Adım adım (Next/Next)** ya da **Gelişmiş** modundan birini kullanın. Bir özet ekranında mevcut, indirilecek ve sonradan kurulacak uygulama/veri/model paketlerini görün; büyük indirmelere ayrıca izin verin.
 6. Güvenli Core tamamlandığında Home/Guide'a geçin; eksik olan gerçek Wikipedia, harita/rota ağı, kurs, Translator/OCR ve AI paketleri **Software & Update Center** üzerinden sonradan kurulabilir.
 
-**Ayrıntılı kurulum:** [docs/INSTALLATION_TR.md](docs/INSTALLATION_TR.md)
+**Ayrıntılı kurulum:** [docs/tr/INSTALLATION.md](docs/tr/INSTALLATION.md)
 
 ## Bağlantı seçenekleri / Access paths
 
@@ -103,7 +103,7 @@ Bu sistem bir **kamusal acil uyarı servisi, resmî afet uygulaması ya da profe
 
 Modeme veya ikinci USB Wi-Fi ile bağlanınca aynı ağdaki bilgisayar/telefonların **Tihulu Kit hotspot'una katılması gerekmez**. Pi'yi doğrudan PC Ethernet'e bağlamak da modem olmadan yerel portal erişimini hedefler. Windows ICS/macOS Internet Sharing/Linux NetworkManager ile PC'den Pi'ye internet paylaşımı **ayrı, kullanıcı kontrolündeki bir işlemdir**; kablo otomatik internet vermez.
 
-**[Tam ağ ve adres rehberi](docs/NETWORK_ACCESS_TR.md)**
+**[Tam ağ ve adres rehberi](docs/tr/NETWORK_ACCESS.md)**
 
 ## Özellik kapsamı / Planned features
 
@@ -121,7 +121,7 @@ Modeme veya ikinci USB Wi-Fi ile bağlanınca aynı ağdaki bilgisayar/telefonla
 | **Sistem araçları** | FlatNotes, CyberChef adayları; Service/Startup/Energy, RAM/swap/Storage Manager; ortak Update Center |
 | **Kurulum/Guide** | Hızlı/Next/Advanced, yerel dil/region seçimleri, telefon üzerinden kullanım, şifre/ağ rehberi, imaj oluşturma |
 
-Bunlar **uygulandı** listesi değil, **hedeflenen özelliklerdir**. Daha kapsamlı tablo, bağımlılıklar ve veri güvenliği: **[Özellikler ve Sistem Mimarisi](docs/FEATURES_AND_ARCHITECTURE_TR.md)**.
+Bunlar **uygulandı** listesi değil, **hedeflenen özelliklerdir**. Daha kapsamlı tablo, bağımlılıklar ve veri güvenliği: **[Özellikler ve Sistem Mimarisi](docs/tr/FEATURES_AND_ARCHITECTURE.md)**.
 
 ## Telefon kamerasıyla canlı OCR / Live camera OCR
 
@@ -136,7 +136,7 @@ Yeni planlanan **Canlı OCR** akışı:
 - **Mobil:** `Dosya Seç`, galeriden seçim, fotoğraf çek veya canlı kamera; **masaüstü:** drag-and-drop ve dosya seçici; ayrıca desteklenen izinli webcam.
 - OCR, Translator ve LLM **Hard ON ve kuruluysa** kullanıcı eylemiyle açılıp iş bitince RAM'i bırakır; **Hard OFF** için “Yalnızca bu işlem / Kalıcı aç / Açma” uyarısı.
 
-**[Canlı OCR ve tüm cihaz izinleri rehberi](docs/LIVE_OCR_AND_PERMISSIONS_TR.md)**
+**[Canlı OCR ve tüm cihaz izinleri rehberi](docs/tr/LIVE_OCR_AND_PERMISSIONS.md)**
 
 ## Offline, güvenlik ve veri koruma / Security & privacy
 
@@ -160,11 +160,11 @@ Test koşulları: **Pi 5 8GB RAM/ısı/batarya**, Ethernet modem ve doğrudan PC
 
 | Belge | İçerik |
 |---|---|
-| **[Önce Bunları Bilin](docs/START_HERE_TR.md)** | İlk açılış; `Tihulu Kit`, şifre, `tihulu.lan`, `tihulu.local`, acil sorun giderme |
-| **[Kurulum Rehberi](docs/INSTALLATION_TR.md)** | Donanım, NVMe imaj, Raspberry Pi Imager, Hızlı/Standart/Gelişmiş, internet/eksik paketler |
-| **[Ağ ve Erişim](docs/NETWORK_ACCESS_TR.md)** | Hotspot, Ethernet modem, ikinci USB Wi-Fi, doğrudan PC, ICS, mDNS, SSL, IP |
-| **[Canlı Kamera OCR ve İzinler](docs/LIVE_OCR_AND_PERMISSIONS_TR.md)** | Kamera canlı OCR, dosya seçme, drag-drop, saklama/izin, Translator/AI, HTTPS |
-| **[Özellikler ve Mimari](docs/FEATURES_AND_ARCHITECTURE_TR.md)** | Tüm planlanan modüller, teknik kısıtlar, kaynaklar, güvenlik ve geliştirme testi |
+| **[Önce Bunları Bilin](docs/tr/START_HERE.md)** | İlk açılış; `Tihulu Kit`, şifre, `tihulu.lan`, `tihulu.local`, acil sorun giderme |
+| **[Kurulum Rehberi](docs/tr/INSTALLATION.md)** | Donanım, NVMe imaj, Raspberry Pi Imager, Hızlı/Standart/Gelişmiş, internet/eksik paketler |
+| **[Ağ ve Erişim](docs/tr/NETWORK_ACCESS.md)** | Hotspot, Ethernet modem, ikinci USB Wi-Fi, doğrudan PC, ICS, mDNS, SSL, IP |
+| **[Canlı Kamera OCR ve İzinler](docs/tr/LIVE_OCR_AND_PERMISSIONS.md)** | Kamera canlı OCR, dosya seçme, drag-drop, saklama/izin, Translator/AI, HTTPS |
+| **[Özellikler ve Mimari](docs/tr/FEATURES_AND_ARCHITECTURE.md)** | Tüm planlanan modüller, teknik kısıtlar, kaynaklar, güvenlik ve geliştirme testi |
 
 ## Katkı ve kaynak hakları / Contributions & licensing
 

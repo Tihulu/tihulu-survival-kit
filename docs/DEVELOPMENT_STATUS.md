@@ -8,7 +8,7 @@ This is a public summary of the planned product and demonstrable repository stat
 
 | Item | Status | Where to look |
 |---|---|---|
-| Public README and first-boot/network guides | Documentation on `main` | [README](../README.md) and [docs](./) |
+| Public English README and main guides | Documentation on `main` | [README](../README.md) and [Documentation Index](README.md) |
 | Stage 4 optional-service policy and shared worker leases | Experimental Python source and unit tests | [Draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) |
 | Per-device logical app views, server-owned jobs, cancellation-request semantics | Experimental library and tests | Draft PR #1, `tihulu_runtime/app_manager.py` |
 | Running Applications / Task Manager visual interface | **Standalone demo**, not a device controller | Draft PR #1, `prototype/task_manager.html` |
@@ -62,3 +62,7 @@ Use English by default for code review, issues, PRs, commit messages, technical 
 Actual Raspberry Pi 5 ARM64 tests: secure boot and NVMe integrity, real local HTTPS/auth, tuner firmware and RF lock, source/public broadcast legality, decoded Teletext pages, cache expiry, user privacy, systemd process control, multi-device concurrency, true cancellation and safe audio/video recording flush, sustained memory/power/thermals, platform API terms, and offline recovery.
 
 **Release status must remain "planned" or "experimental" until these gates pass.**
+
+## Documentation language
+
+The [main README](../README.md), [documentation index](README.md), and core guides (Getting Started, Installation, Network Access, Live OCR and System Architecture) are now **in English**. The original Turkish editions are preserved under [docs/tr/](tr/) and [README.tr.md](../README.tr.md). Legacy `*_TR.md` links display English compatibility notices and link to the moved translations. This is a documentation update, **not a new implementation/release claim**.

@@ -38,7 +38,7 @@ See [Engineering Development Status](docs/DEVELOPMENT_STATUS.md). Automated prot
 
 The same authenticated Tihulu interface is intended to work across the Pi's own hotspot, a home router connected via Ethernet or **secondary USB Wi-Fi**, and a properly configured direct Ethernet cable to a PC. Windows ICS, macOS Internet Sharing or Linux NetworkManager can optionally share connectivity from a computer; a cable alone does not enable this. The router LAN will not automatically resolve `tihulu.lan`, and the hotspot fallback IP should not be mistaken for a router LAN address.
 
-Existing detailed guides are presently in Turkish: [First-start information](docs/START_HERE_TR.md), [Network and access](docs/NETWORK_ACCESS_TR.md).
+The main guides are now available in English: [First-start information](docs/START_HERE.md), [Network and access](docs/NETWORK_ACCESS.md).
 
 ## Hardware and energy targets
 
@@ -68,7 +68,7 @@ When Tihulu Core is implemented, the intended installation experience is:
 5. Use **Quick Setup**, a conventional Next/Back flow, or **Advanced Settings** with real download sizes and permission prompts.
 6. Install missing Wikipedia ZIM archives, courses, maps, AI/translation models or optional modules later through the planned Update Center.
 
-There is **no functional installer, image, or verified download checksum** currently offered here. Future releases must be published under [GitHub Releases](https://github.com/Tihulu/tihulu-survival-kit/releases). Detailed preliminary [Installation Guide (Turkish)](docs/INSTALLATION_TR.md).
+There is **no functional installer, image, or verified download checksum** currently offered here. Future releases must be published under [GitHub Releases](https://github.com/Tihulu/tihulu-survival-kit/releases). Detailed preliminary [Installation Guide (English)](docs/INSTALLATION.md).
 
 ## Planned applications
 
@@ -130,14 +130,14 @@ See the [Development Status](docs/DEVELOPMENT_STATUS.md) for open work. Passing 
 | Document | Language |
 |---|---|
 | [Engineering Development Status](docs/DEVELOPMENT_STATUS.md) | English |
-| [First-start essentials](docs/START_HERE_TR.md) | Turkish |
-| [Installation guide](docs/INSTALLATION_TR.md) | Turkish |
-| [Network access guide](docs/NETWORK_ACCESS_TR.md) | Turkish |
-| [Live OCR and device permissions](docs/LIVE_OCR_AND_PERMISSIONS_TR.md) | Turkish |
-| [Features and system architecture](docs/FEATURES_AND_ARCHITECTURE_TR.md) | Turkish |
+| [First-start essentials](docs/START_HERE.md) | English |
+| [Installation guide](docs/INSTALLATION.md) | English |
+| [Network access guide](docs/NETWORK_ACCESS.md) | English |
+| [Live OCR and device permissions](docs/LIVE_OCR_AND_PERMISSIONS.md) | English |
+| [Features and system architecture](docs/FEATURES_AND_ARCHITECTURE.md) | English |
 | [Development collaboration policy](AGENTS.md) | English by default for GitHub engineering, localized files welcome |
 
-The **English README is now the primary landing page**. The full earlier Turkish README is preserved as [README.tr.md](README.tr.md). A future German translation will be linked only once prepared.
+**English is the primary documentation language.** All linked main guides are in English. The original Turkish README and guide translations are preserved as [README.tr.md](README.tr.md) and [docs/tr](docs/tr/). A future German translation will be linked only once prepared.
 
 ## Contributions and licensing
 
