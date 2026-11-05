@@ -130,7 +130,7 @@ class CpuSmokeJobCoordinator:
                     job.id, outcome=final, trusted_backend=True)
                 return SmokeJobAttempt("finished", admission, job.id,
                                        smoke, final,
-                                       cancel_safe_during_execution=True)
+                                       cancel_safe_during_execution=(smoke.status == "cancelled"))
             except Exception:
                 self.apps.executor_ack_finished(
                     job.id, outcome="failed", trusted_backend=True)
