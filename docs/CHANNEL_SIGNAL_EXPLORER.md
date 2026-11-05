@@ -72,3 +72,8 @@ No invented terrestrial TRT DVB-T2 frequency is included for Izmir. Country, loc
 8. Report measured Pi5 RAM/CPU/thermals/duty cycle, passive listening privacy, source content rights and regional antenna limitations. Do not merge this draft as a released TV/Radio app without these checks.
 
 **Project license:** Original Tihulu work under [AGPL-3.0-only](https://github.com/Tihulu/tihulu-survival-kit/blob/main/LICENSE); broadcaster programme material, websites, data and embedded third-party software have their own terms.
+
+
+## Regional channel setup and browser-remote experiment — 2026-11-05
+
+[Regional setup, persisted owner lineups and mobile remote design](REGION_CHANNEL_LINEUPS_AND_REMOTE.md) adds a compact city seed catalog, explicitly selected channels, custom user frequency edits and list reordering. [The setup wizard prototype](../prototype/region_channel_setup.html) stores preferences only in the local demo browser; [the remote preview](../prototype/remote_control.html) communicates with [the demo display](../prototype/remote_display.html) only across same-origin browsing contexts, not across separate devices. The SQLite owner-scoped backend and trusted remote command policy are available as experimental Python modules but are **not connected to a production network API**. No actual TV, FM/DAB signal, city-wide broadcaster catalog, tuner control, cross-device pairing, subtitle decoder, Translator or AI model has been verified or integrated. The published starter frequencies are candidates, not reception reports.
