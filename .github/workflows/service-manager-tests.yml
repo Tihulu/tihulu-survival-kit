@@ -3,12 +3,16 @@ on:
   push:
     paths:
       - "tihulu_runtime/**"
-      - "tests/test_service_manager.py"
+      - "tests/**"
+      - "data/radio_text_networks.json"
+      - "prototype/task_manager.html"
       - ".github/workflows/service-manager-tests.yml"
   pull_request:
     paths:
       - "tihulu_runtime/**"
-      - "tests/test_service_manager.py"
+      - "tests/**"
+      - "data/radio_text_networks.json"
+      - "prototype/task_manager.html"
       - ".github/workflows/service-manager-tests.yml"
 jobs:
   unittest:
@@ -21,5 +25,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Test stdlib policy engine (no hardware)
+      - name: Validate service policy, shared sessions and radio data catalog (no hardware)
         run: python -m unittest discover -s tests -v

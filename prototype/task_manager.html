@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tihulu — Window & Task Manager (Prototype)</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1c2b33;background:#f5f7f7}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1100px;margin:auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(1.4rem,3vw,2rem);margin:.3rem 0}h2{font-size:1.13rem}p{line-height:1.5}
+.muted{color:#54646b;font-size:.9rem}.banner{padding:13px;border-radius:12px;background:#eaf2f5;border:1px solid #bdd6df}
+.panel{background:#fff;border:1px solid #d9e1e3;border-radius:16px;padding:16px;margin-top:16px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.actions button{background:#124e63;color:white;border:0;padding:10px 13px;border-radius:9px;cursor:pointer;font-weight:600}
+.actions button.alt{background:#edf2f3;color:#243941;border:1px solid #c5d3d7}
+.actions button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #20a7c2;outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:11px}
+.app{border:1px solid #d8e2e5;border-radius:11px;padding:13px;display:grid;gap:7px}
+.apphead{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.apphead label{font-weight:700}.status{display:inline-block;border-radius:20px;background:#e5eeef;padding:4px 9px;font-size:.8rem}
+.status.live{background:#daf1df;color:#125825}.options{display:flex;flex-wrap:wrap;gap:12px;font-size:.84rem}
+.options label{display:flex;align-items:center;gap:4px}
+.job{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:13px 0;border-top:1px solid #e4eaea;flex-wrap:wrap}
+.job strong{font-size:.95rem}.job button{background:#edf2f3;border:1px solid #bccbd0;border-radius:8px;padding:8px;cursor:pointer}
+small{color:#56656e}
+#feedback{min-height:42px;padding:12px;background:#f4f6f7;border-radius:10px}
+@media(max-width:550px){.shell{padding:12px}.panel{padding:12px}.actions button{flex:1}.job{align-items:stretch}.job button{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header><div><div class="muted">TIHULU SURVIVAL KIT · PROTOTİP</div><h1>Window & Task Manager</h1></div><span class="status">Demo — gerçek servis bağlantısı yok</span></header>
+<p class="banner"><strong>Önizleme.</strong> Bu sayfada yaptığın değişiklikler yalnızca tarayıcıdaki örnek durumu değiştirir. Raspberry Pi'deki servisleri, kayıtları veya dosyaları yönetmez. Gerçek RAM/CPU tüketimi henüz ölçülmedi.</p>
+<section class="panel" aria-labelledby="apps-title">
+<h2 id="apps-title">Uygulamalar</h2><p class="muted">İstediğin uygulamaları seçerek aç/kapat. Diğer cihazlarda açık sekmeler ve devam eden sunucu işleri ayrı izlenir.</p>
+<div class="actions">
+<button type="button" id="open">Seçilenleri aç</button>
+<button type="button" class="alt" id="close">Seçilenleri kapat</button>
+<button type="button" class="alt" id="pause">İsteğe bağlı arka planı duraklat</button>
+</div>
+<div id="apps" class="grid" style="margin-top:14px"></div>
+</section>
+<section class="panel" aria-labelledby="tasks-title">
+<h2 id="tasks-title">Devam eden işler</h2>
+<p class="muted">TV kaydı, dosya aktarımı ve uzun AI görevleri sekmeler kapansa bile sunucudaki iş olarak kalır. Gerçek uygulamada durdurma ancak sunucudan onay gelince tamamlanmış sayılacak.</p>
+<div id="jobs"></div>
+</section>
+<section class="panel" aria-live="polite"><h2>İşlem sonucu</h2><div id="feedback">Bir işlem seç.</div></section>
+</main>
+<script>
+"use strict";
+const apps=[
+{id:"news",name:"News & Politics",views:0,hard:true,background:false,startup:false},
+{id:"tv",name:"TV & Teletekst",views:0,hard:true,background:false,startup:false},
+{id:"radio",name:"Radio & Data Networks",views:0,hard:true,background:false,startup:false},
+{id:"ai",name:"Offline AI",views:0,hard:true,background:false,startup:false},
+{id:"translator",name:"Translator / OCR / ASR",views:0,hard:true,background:false,startup:false},
+{id:"wiki",name:"Wikipedia / Kiwix",views:0,hard:true,background:false,startup:false},
+{id:"course",name:"Courses / Kolibri",views:0,hard:true,background:false,startup:false},
+{id:"files",name:"Files",views:0,hard:true,background:false,startup:false},
+{id:"maps",name:"Offline Maps",views:0,hard:true,background:false,startup:false}
+];
+const jobs=[
+{id:"record1",app:"tv",label:"Örnek TV kaydı",kind:"recording",state:"running"},
+{id:"ai1",app:"ai",label:"Örnek AI dosya incelemesi",kind:"ai",state:"running"},
+{id:"file1",app:"files",label:"Örnek dosya aktarımı",kind:"transfer",state:"running"}
+];
+let paused=false;
+const appBox=document.getElementById("apps");
+const jobsBox=document.getElementById("jobs");
+const feedback=document.getElementById("feedback");
+function hasJob(id){return jobs.some(j=>j.app===id&&(j.state==="running"||j.state==="cancel_requested"))}
+function say(s){feedback.textContent=s}
+function redraw(){
+ appBox.replaceChildren();
+ for(const a of apps){
+  const item=document.createElement("div");item.className="app";
+  const head=document.createElement("div");head.className="apphead";
+  const choice=document.createElement("label");const cb=document.createElement("input");
+  cb.type="checkbox";cb.className="selection";cb.value=a.id;cb.setAttribute("aria-label",a.name+" seç");
+  const label=document.createElement("span");label.textContent=a.name;choice.append(cb,label);
+  const stat=document.createElement("span");
+  const live=a.views>0||hasJob(a.id);
+  stat.className="status"+(live?" live":"");
+  stat.textContent=a.views>0?"Açık • "+a.views+" sekme":hasJob(a.id)?"Arka planda görev var":"Kapalı";
+  head.append(choice,stat);
+  const opts=document.createElement("div");opts.className="options";
+  for(const [key,text] of [["hard","Kullanıma izin"],["background","Arka plan"],["startup","Açılışta"]]){
+    const l=document.createElement("label");const toggle=document.createElement("input");
+    toggle.type="checkbox";toggle.checked=a[key];toggle.setAttribute("aria-label",a.name+" "+text);
+    toggle.addEventListener("change",()=>{if(key==="hard"&&!toggle.checked&&(a.views||hasJob(a.id))){toggle.checked=true;say("Etkin görev varken Hard OFF uygulanamaz. Önce güvenli durdurma gerekir.");return;}
+       a[key]=toggle.checked;say(a.name+": "+text+" = "+(a[key]?"Açık":"Kapalı")+" (yalnızca demo)");});
+    l.append(toggle,document.createTextNode(text));opts.append(l);
+  }
+  const note=document.createElement("small");note.textContent="RAM ölçümü: henüz mevcut değil";
+  item.append(head,opts,note);appBox.append(item);
+ }
+ jobsBox.replaceChildren();
+ for(const job of jobs){
+  const wrapper=document.createElement("div");wrapper.className="job";
+  const info=document.createElement("div");
+  const line=document.createElement("strong");line.textContent=job.label;
+  const state=document.createElement("div");state.className="muted";
+  state.textContent=job.kind==="recording"?"Kayıt güvenli şekilde korunuyor • ":"";
+  state.textContent+=job.state==="running"?"Örnek görev çalışıyor":"İptal istendi — sunucu onayı bekleniyor";
+  info.append(line,state);wrapper.append(info);
+  const b=document.createElement("button");b.type="button";b.textContent="Durdurmayı iste";
+  b.disabled=job.state!=="running";
+  b.addEventListener("click",()=>{
+   if(job.kind==="recording"&&!window.confirm("Bu yalnızca DEMO'dur. Gerçekte kayıt önce güvenli biçimde tamamlanmalıdır. İptal isteği simüle edilsin mi?"))return;
+   job.state="cancel_requested";say(job.label+": İptal istendi (demo). Gerçek çalışan iş durdurulmadı.");redraw();
+  });wrapper.append(b);jobsBox.append(wrapper);
+ }
+}
+function selected(){return Array.from(document.querySelectorAll(".selection:checked"),e=>e.value)}
+document.getElementById("open").addEventListener("click",()=>{
+const ids=selected();if(!ids.length){say("Önce uygulama seç.");return}
+for(const id of ids){const a=apps.find(x=>x.id===id);if(a.hard){a.views++;} }
+say("Seçilen, Hard ON uygulamaların görünümü açıldı (demo). Gerçek servise komut gönderilmedi.");redraw()
+});
+document.getElementById("close").addEventListener("click",()=>{
+const ids=selected();if(!ids.length){say("Önce uygulama seç.");return}
+let protectedJobs=0;
+for(const id of ids){const a=apps.find(x=>x.id===id);a.views=0;if(hasJob(id))protectedJobs++;}
+say("Seçilen uygulama görünümleri kapandı (demo). "+(protectedJobs?protectedJobs+" uygulamada devam eden görev korundu.":"Çalışan örnek görev etkilenmedi."));redraw()
+});
+document.getElementById("pause").addEventListener("click",()=>{paused=!paused;document.getElementById("pause").textContent=paused?"Arka plan duraklatmasını kaldır":"İsteğe bağlı arka planı duraklat";say(paused?"İsteğe bağlı yeni arka plan işi duraklatıldı (demo). Aktif işler sürüyor.":"Arka plan duraklatması kaldırıldı (demo).");});
+redraw();
+</script>
+</body>
+</html>
