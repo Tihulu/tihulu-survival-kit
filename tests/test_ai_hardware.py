@@ -76,5 +76,17 @@ class HardwareTests(unittest.TestCase):
             self.assertIsNone(snap.hailo_initialized)
 
 
+    def test_nvme_root_warning_before_hailo_is_installed(self):
+        snapshot = HardwareSnapshot("aarch64", "Pi 5", 8 << 30,
+                                    (), False, False, ())
+        plan = proposal(snapshot, pcie_nvme_boot=True)
+        self.assertFalse(plan["npu_detected"])
+        self.assertTrue(plan["pcie_conflict_warning"])
+        self.assertIn("candidate", plan["storage_alternative"])
+        self.assertFalse(plan["cpu_fallback_model_verified"])
+        self.assertFalse(plan["cpu_fallback_both_boot_layouts_verified"])
+        self.assertFalse(plan["installation_performed"])
+
+
 if __name__ == '__main__':
     unittest.main()
