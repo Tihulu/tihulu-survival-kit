@@ -278,3 +278,54 @@ actual trusted USB device-index mapping and noncooperating-device handling;
 sandboxed DAB decoder process, real RDS/spectrum/constellation and
 web authentication; protected NVMe master recorder/flush ACK;
 Pi 5 8GB CPU/RAM/USB power test and independent DVB-T2 coexistence.
+
+## Phase 3: welle.io-style opt-in DAB automatic scanning
+
+User request: Radio Center needs automatic DAB/DAB+ discovery comparable
+to welle.io's channel scan, NOT just manual tuning or static frequency seeds.
+
+Public implementation:
+- tihulu_runtime/dab_auto_scan.py: DabAutoScanner builds a regional
+  quick candidate scan (DE/NRW/Köln: national 5C, NRW 9A, WDR 11D),
+  or a full Band III 5A..12D 32-block frequency scan. Optional 13A..13F
+  provides 6 extra, user-selected blocks, without claiming any local
+  broadcasting service at those frequencies. The catalog is the
+  **existing** FrequencyLibrary, preserving provenance.
+- data/channel_frequency_presets.json: only the 6 published upper-raster
+  block centres were added to a new discrete group with explicit
+  published-frequency-seed_NOT_received semantics. Nothing says Turkey
+  or any city actually receives DAB. If a selected region lacks published
+  quick candidates, choose Full Scan manually.
+- ManagedSdrScan.scan(..., on_progress, should_cancel): holds one Stage4
+  *foreground* lease and one cooperating-process SDR lock for the entire
+  plan, even though probes are run one at a time. Each probe yields
+  progress; cancellation checked *between* frequencies. Decoder backend
+  is responsible for a bounded per-channel dwell / abort time and actual
+  RF/service verification. No automatic background/startup scan.
+- Actual discoveries are classified by ChannelExplorer as no_signal,
+  energy_only, signal_locked, service_decoded, scan_failed. Only
+  service_decoded with actual decoder service metadata becomes a station
+  choice. The save_selected method persists only user-picked decoded
+  service IDs to existing owner-scoped ChannelStore; existing favorites
+  are not destroyed or silently overwritten. Browsing region presets
+  never populates received channels.
+- prototype/radio_center.html: accessible "Otomatik DAB+ Tarama" setup
+  with quick/full/upper-band choices and dormant progress/status UI.
+  **The real RF start and cancel buttons remain disabled in this UI
+  preview** because authenticated worker bridge, bounded real welle-cli
+  probe and hardware index mapping are not implemented yet. No fake
+  percentages or fake received stations are shown.
+
+Test cases: tests/test_dab_auto_scan.py checks plan sizes/known frequencies,
+DE vs TR provenance, opt-in only, incremental progress, cancel before/during,
+same physical SDR lock vs FM, Hard OFF grant, invalid DAB capability/plan
+rejection, decoded-only user-selected DB save, and cleanup on UI callback
+failure. Tests use a fake probe, not actual welle-cli or real RF.
+
+Upstream welle.io project:
+https://github.com/AlbrechtL/welle.io documents its GUI channel scan and
+welle-cli single-multiplex webserver. The latter does **not** directly
+provide a proven safe multi-block scan interface through our existing
+read-only WelleLocalReader; the future trusted process supervisor must
+handle each band block and decoder lifecycle, never publicly expose a
+welle-cli server or abuse read-only endpoints as a tuning API.
