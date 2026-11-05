@@ -10,6 +10,7 @@ from .channel_explorer import (
     DVB_MODES, ChannelExplorer, ChannelStore, DetectedService,
     FrequencyLibrary, Receiver, ReceiverBackend, ScanRecord, TunePoint,
 )
+from .region_channel_manager import ChannelLineupStore
 
 TV_FILTER=frozenset({"tv","teletext","data"})
 RADIO_MODES=frozenset({"fm","dab","am","hf","nfm","usb","lsb"})
@@ -28,10 +29,35 @@ class SharedChannelWorkspace:
     """TV and Radio use the *same* frequency plans, tuner locks and saved list."""
 
     def __init__(self, library: FrequencyLibrary, store: ChannelStore,
-                 explorer: ChannelExplorer | None = None):
+                 explorer: ChannelExplorer | None = None,
+                 lineups: ChannelLineupStore | None = None):
         self.library=library
         self.store=store
         self.explorer=explorer or ChannelExplorer()
+        self.lineups=lineups
+
+    def regional_candidates(self, *, country: str, region: str, city: str):
+        """City candidate seeds are shared, but never marked as received."""
+        if self.lineups is None:
+            raise RuntimeError("Regional lineup store not installed")
+        return self.lineups.catalog.candidates(country,region,city)
+
+    def regional_saved(self, *, owner_id: str, profile_id: str,
+                       app: str = "all") -> list[dict]:
+        """TV and Radio query the same owner-scoped ordered lineup."""
+        if self.lineups is None:
+            raise RuntimeError("Regional lineup store not installed")
+        return self.lineups.items(owner_id=owner_id,profile_id=profile_id,
+                                  media=app)
+
+    def tune_regional(self, *, owner_id: str, profile_id: str, item_id: str,
+                      receiver: Receiver, backend: ReceiverBackend | None = None,
+                      user_triggered: bool = False) -> ScanRecord:
+        if self.lineups is None:
+            raise RuntimeError("Regional lineup store not installed")
+        return self.lineups.tune_item(owner_id=owner_id,profile_id=profile_id,
+                item_id=item_id,receiver=receiver,backend=backend,
+                explorer=self.explorer,user_triggered=user_triggered)
 
     @staticmethod
     def _accept(app: str, mode: str, service_kind: str = "") -> bool:
