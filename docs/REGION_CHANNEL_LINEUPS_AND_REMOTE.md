@@ -71,3 +71,10 @@ Run `python3 -m unittest discover -s tests -v`, and inspect the exact branch-hea
 **Still missing:** installed receiver discovery, a production setup wizard with account-aware state sync, verified city-wide frequency imports, verified optional pack persistence, authenticated LAN API and pairing, streaming renderer and WebSocket relay, real video/radio playback, DVB Teletext/subtitle/EPG decoders, shared Translator/LLM inference, end-to-end mobile tests, RAM/power measurements and regional live broadcast validation.
 
 Keep draft PR #1 separate from `main`. Do not claim hardware validation or release sign-off.
+
+
+## New local gateway continuation — November 5, 2026
+
+The next experimental increment has a **real optional stdlib HTTP(S) API** for shared SQLite channel profiles and a limited server-side browser-command relay, rather than relying solely on same-origin `BroadcastChannel` events. See [LAN Remote Gateway Experiment](LAN_REMOTE_GATEWAY_EXPERIMENT.md). The server is opt-in; it listens on loopback by default and refuses non-loopback binds without explicit TLS certificate and key. A phone and computer can both use its browser UI when the Pi HTTPS host is reachable and properly trusted, but this has **not** been physically cross-device tested. Command status `display_received` means that a browser saw the request; it never claims real DVB tuning, playback, radio decoding, recorded media safety, subtitles or local AI. Device-side player and RF integration remain mandatory.
+
+With example port 8443, the URL would be `https://tihulu.lan:8443/` (not automatically `https://tihulu.lan/` without a trusted reverse proxy on the standard HTTPS port). Neither `.lan` local DNS nor `.local` mDNS is provisioned by this server. The owner token and certificate keys are never embedded in the repository, UI source, browser URL or channel list.
