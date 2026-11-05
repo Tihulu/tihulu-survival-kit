@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import unittest
 from tihulu_runtime.linux_dvb_backend import LinuxDvbV5Backend
-from tihulu_runtime.channel_explorer import TunePoint
+from tihulu_runtime.channel_explorer import Receiver, TunePoint
 
 class LinuxDvbBackendTests(unittest.TestCase):
     def test_generates_explicit_single_dvbt2_frequency(self):
@@ -39,6 +39,20 @@ FREQUENCY = 530000000
         self.assertEqual(result[0].content_kind,"tv")
         self.assertEqual(result[1].content_kind,"radio")
         self.assertNotIn("Other Multiplex",[x.label for x in result])
+
+    def test_live_recording_blocks_direct_scanner_invocation(self):
+        receiver=Receiver("dvb0","dvb_tuner",frozenset({"dvb_t2"}),
+                          470000000,690000000,connected=True,
+                          locked_frequency_hz=514000000,
+                          recording_active=True,share_locked_mux=True)
+        with self.assertRaisesRegex(RuntimeError, "recording is active"):
+            LinuxDvbV5Backend().probe(receiver,TunePoint("dvb_t2",514000000))
+
+    def test_missing_receiver_cannot_run_scanner(self):
+        receiver=Receiver("dvb0","dvb_tuner",frozenset({"dvb_t2"}),
+                          470000000,690000000,connected=False)
+        with self.assertRaisesRegex(RuntimeError, "Receiver unavailable"):
+            LinuxDvbV5Backend().probe(receiver,TunePoint("dvb_t2",514000000))
 
     def test_rejects_excessive_input_or_fake_device_parameter(self):
         with self.assertRaises(ValueError):
