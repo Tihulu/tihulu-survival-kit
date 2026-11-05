@@ -109,6 +109,11 @@ class RichMapTests(unittest.TestCase):
         code, headers, body = self.request("/flight-radar/map", query="pTracks=8")
         self.assertEqual(code, 302)
         self.assertEqual(headers["Location"], "/flight-radar/tar1090/?pTracks=8")
+        code, headers, _ = self.request("/flight-radar/tar1090",
+                                        query="pTracks")
+        self.assertEqual(code, 302)
+        self.assertEqual(headers["Location"],
+                         "/flight-radar/tar1090/?pTracks=")
         code, headers, body = self.request("/flight-radar/tar1090/")
         self.assertEqual(code, 200)
         self.assertIn(b"upstream fixture", body)
@@ -164,6 +169,10 @@ class RichMapTests(unittest.TestCase):
     def test_missing_installation_explicit_light_map_fallback(self):
         (self.html / "script.js").unlink()
         self.assertFalse(self.gateway.installed())
+        code, headers, _ = self.request("/flight-radar")
+        self.assertEqual(code, 302)
+        self.assertEqual(headers["Location"],
+                         "/flight-radar/light-map?full_map_unavailable=1")
         code, headers, _ = self.request("/flight-radar/map")
         self.assertEqual(code, 302)
         self.assertEqual(headers["Location"],
