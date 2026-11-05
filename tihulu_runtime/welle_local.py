@@ -2,7 +2,11 @@
 """Bounded read-only access to an EXISTING localhost welle-cli receiver.
 
 This adapter does not launch the decoder or configure its TCP listener.
-The trusted runtime must isolate welle-cli from the LAN before using it.
+The trusted runtime must isolate welle-cli from the LAN before using it:
+upstream welle-cli -w listens on INADDR_ANY, not only 127.0.0.1.
+Using a 127.0.0.1 client DOES NOT make the server private. Never
+launch an uncontained -w web server for routine DAB scans; use the
+no-network welle_cli_probe backend instead.
 No writable /channel endpoint, automatic scan, or live RF claim.
 """
 from __future__ import annotations
