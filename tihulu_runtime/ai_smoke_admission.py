@@ -81,9 +81,13 @@ def evaluate_smoke_admission(observation: HostObservation, *,
     `power_source_verified` is NOT watt measurement: it needs a separate
     hardware/PSU confirmation adapter. Do not label energy 'measured'.
     """
-    jobs = trusted_job_counts or {}
-    protected = jobs.get("protected", 0)
-    other_ai = jobs.get("long_ai", 0)
+    # A missing or incomplete scheduler snapshot is never proof that no
+    # protected recording/AI task exists. Do not silently assume zero.
+    jobs_valid = (isinstance(trusted_job_counts, dict) and
+                  {"protected", "long_ai"}.issubset(trusted_job_counts))
+    jobs = trusted_job_counts if jobs_valid else {}
+    protected = jobs.get("protected", -1)
+    other_ai = jobs.get("long_ai", -1)
     measured_memory = (observation.memory_total_bytes is not None and
                        observation.memory_available_bytes is not None)
     measured_temperature = observation.cpu_temp_millic is not None

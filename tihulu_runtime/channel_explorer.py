@@ -7,10 +7,12 @@ No receiver is opened by simply loading the frequency preset catalog.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from threading import RLock
 from typing import Protocol
+from .sdr_resource_broker import SDRResourceBroker
 import hashlib
 import json
 import sqlite3
@@ -203,7 +205,8 @@ class ChannelExplorer:
     A backend must be installed and pass through actual receiver capabilities.
     """
 
-    def __init__(self):
+    def __init__(self, shared_broker: SDRResourceBroker | None = None):
+        self.shared_broker = shared_broker
         self._receiver_locks: dict[str, RLock] = {}
         self._guard = RLock()
 
@@ -211,15 +214,31 @@ class ChannelExplorer:
         with self._guard:
             return self._receiver_locks.setdefault(receiver_id, RLock())
 
+    @contextmanager
+    def _claimed_receiver(self, receiver_id: str, owner_id: str | None):
+        if self.shared_broker is None:
+            yield
+            return
+        if not owner_id:
+            raise PermissionError("Trusted authenticated owner required for shared SDR broker.")
+        lease = self.shared_broker.acquire(
+            receiver_id, app_id="channel_explorer", owner_id=owner_id,
+            purpose="bounded_scan", explicit_permission=True)
+        try:
+            yield
+        finally:
+            self.shared_broker.release(lease.token, owner_id=owner_id)
+
     def scan(self, receiver: Receiver, points: tuple[TunePoint, ...], *,
              user_triggered: bool = False,
-             backend: ReceiverBackend | None = None) -> tuple[ScanRecord, ...]:
+             backend: ReceiverBackend | None = None,
+             trusted_owner_id: str | None = None) -> tuple[ScanRecord, ...]:
         if not user_triggered:
             raise PermissionError("An explicit authorized scan action is required")
         if len(points) > 256:
             raise ValueError("Maximum 256 frequencies per scan chunk")
         results: list[ScanRecord] = []
-        with self._lock(receiver.receiver_id):
+        with self._lock(receiver.receiver_id), self._claimed_receiver(receiver.receiver_id, trusted_owner_id):
             for point in points:
                 if point.mode not in MODES:
                     raise ValueError("Invalid reception mode")
@@ -291,10 +310,12 @@ class ChannelExplorer:
     def manual_tune(self, receiver: Receiver, *, mode: str, frequency_hz: int,
                     fine_offset_hz: int = 0, bandwidth_hz: int | None = None,
                     user_triggered: bool = False,
-                    backend: ReceiverBackend | None = None) -> ScanRecord:
+                    backend: ReceiverBackend | None = None,
+                    trusted_owner_id: str | None = None) -> ScanRecord:
         return self.scan(receiver, (TunePoint(mode, frequency_hz, bandwidth_hz,
                                                fine_offset_hz),),
-                         user_triggered=user_triggered, backend=backend)[0]
+                         user_triggered=user_triggered, backend=backend,
+                         trusted_owner_id=trusted_owner_id)[0]
 
     @staticmethod
     def sort_discovered(records: tuple[ScanRecord, ...]) -> list[ScanRecord]:
