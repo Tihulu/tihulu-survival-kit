@@ -7,8 +7,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
-from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
+import ipaddress
 import json
+import socket
 
 
 class RemoteAIError(RuntimeError):
@@ -44,6 +46,18 @@ class RemoteEndpoint:
             raise ValueError("Invalid port")
 
 
+def _private_host(host: str) -> None:
+    """Refuse public remote addresses; HTTPS/ACL still required against DNS rebinding."""
+    addresses = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    cgnat = ipaddress.ip_network("100.64.0.0/10")
+    if not addresses:
+        raise RemoteAIError("Remote host has no resolved private address")
+    for item in addresses:
+        address = ipaddress.ip_address(item[4][0].split("%")[0])
+        if not (address.is_private or address.is_loopback or address in cgnat):
+            raise RemoteAIError("Remote host resolves outside private LAN/tailnet")
+
+
 class RemoteAIClient:
     """Non-streaming API client. Uses OS-trusted HTTPS and rejects redirects."""
 
@@ -52,9 +66,10 @@ class RemoteAIClient:
             raise ValueError("Invalid request timeout")
         self.endpoint = endpoint
         self.timeout = timeout
-        self._opener = build_opener(_NoRedirect())
+        self._opener = build_opener(ProxyHandler({}), _NoRedirect())
 
     def _request(self, path: str, payload: dict | None = None) -> dict:
+        _private_host(urlsplit(self.endpoint.base_url).hostname or "")
         body = json.dumps(payload).encode("utf-8") if payload is not None else None
         headers = {"Accept": "application/json"}
         if body is not None:
@@ -74,6 +89,15 @@ class RemoteAIClient:
                 return data
         except (OSError, ValueError) as exc:
             raise RemoteAIError("Remote model API unavailable or returned invalid JSON") from exc
+
+    def list_installable_hailo_models(self) -> tuple[str, ...]:
+        """Only models in /hailo/v1/list are Hailo-Ollama pull candidates."""
+        if self.endpoint.flavor != "hailo_ollama":
+            raise RemoteAIError("Only Hailo-Ollama provides this catalogue")
+        names = self._request("/hailo/v1/list").get("models", ())
+        if not isinstance(names, list):
+            raise RemoteAIError("Hailo catalogue response invalid")
+        return tuple(name for name in names if isinstance(name, str))
 
     def list_models(self) -> tuple[str, ...]:
         if self.endpoint.flavor in ("ollama", "hailo_ollama"):
