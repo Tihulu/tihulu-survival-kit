@@ -56,7 +56,7 @@ jobs:
           for name in ("prototype/local_ai_sources.html",
                        "prototype/ai_mode_profiles.html"):
               source = Path(name).read_text(encoding="utf-8")
-              scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>",
+              scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>",
                                    source, flags=re.I | re.S)
               if not scripts:
                   raise SystemExit(f"No inline script in {name}")
