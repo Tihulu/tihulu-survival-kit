@@ -1,5 +1,14 @@
 # Tihulu Survival Kit
 
+## Stage 8 Radio Center: DAB+ automatic channel scan — main-project backlog
+
+The welle.io-style **Automatic DAB+ Scan** is now part of the **existing Tihulu Survival Kit Stage8 Radio/Channel Explorer implementation plan**: [public implementation epic #3](https://github.com/Tihulu/tihulu-survival-kit/issues/3) and [engineering roadmap](docs/radio/DAB_AUTO_SCAN_STAGE8_ROADMAP.md), with stable work items **SDR-DAB-01…12** and a full flow through Radio Center, Hardware Manager, Stage4 Service/Task Center and existing channel favorites.
+
+**Quick:** selected region's published DAB candidate frequencies (DE/NRW/Köln: 5C, 9A, 11D). **Full:** Band III 5A–12D (32 blocks); optional upper Band III 13A–13F (38 total). Only real decoder-labelled DAB/DAB+ audio services become select-to-save candidates. The Nooelec SDR receiver is separate from the Hauppauge DVB-T2 TV tuner; background scanning remains OFF, and FM/recording must not be interrupted.
+
+**Status:** experimental no-web welle-cli subprocess adapter, synthetic one-SDR lock/cancellation/discovery tests and a **static scan setup HTML preview**. The Pi5 ARM64 radio, authenticated browser/Task Center job gateway, durable server job tracking, audio playback and original recording have **not** been integrated or field-tested. This is NOT a released installer or working Pi radio app. Latest isolated [SDR tests](https://github.com/Tihulu/tihulu-survival-kit/actions/runs/42109969330) passed 79 synthetic cases per Python 3.11/3.12; overall project CI remains red on a separate AI job-state test. The feature does NOT itself approve the whole Stage8 design or authorize merging into `main`.
+
+
 **Türkçe:** Raspberry Pi 5 için tasarlanan taşınabilir, **internet olmadan da kullanılabilen** bilgi, eğitim, harita, afet hazırlığı, yerel yapay zekâ ve radyo platformu.
 
 **English:** A planned portable, offline-first knowledge, learning, mapping, emergency-information, local AI and receive-only radio hub for Raspberry Pi 5 — accessible from phones, tablets and computers through a local browser.
