@@ -4,6 +4,7 @@
 No SDR, Pi, real welle-cli instance, or RF reception is exercised here.
 """
 import unittest
+import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -113,8 +114,9 @@ class TestDabAutoScan(unittest.TestCase):
     def test_other_regions_do_not_inherit_nrw_candidate_list(self):
         with self.assertRaises(ValueError):
             self.scanner.plan(country="TR", region="İzmir", scope="quick")
-        with self.assertRaises(ValueError):
-            self.scanner.plan(country="DE", region="Berlin", scope="quick")
+        berlin = self.scanner.plan(country="DE", region="Berlin", scope="quick")
+        # German nationwide 5C remains a candidate outside NRW, not 9A/11D.
+        self.assertEqual([b.channel for b in berlin.blocks], ["5C"])
         self.assertEqual(len(self.scanner.plan(country="TR", region="İzmir",
                                                 scope="full").blocks), 32)
 
@@ -170,7 +172,7 @@ class TestDabAutoScan(unittest.TestCase):
     def test_fm_receiver_lock_rejects_all_band_dab_auto_scan(self):
         class Process:
             def __init__(self):
-                self.stdout = None
+                self.stdout = io.BytesIO(b"\x00\x01")
                 self.terminated = False
             def poll(self):
                 return None
