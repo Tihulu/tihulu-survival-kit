@@ -37,7 +37,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
 <label for="region">Bölge</label>
 <select id="region"><option value="de">Almanya → NRW → Köln</option><option value="tr">Türkiye → İzmir</option></select>
 <div id="stationList" aria-live="polite"></div>
-<div class="row"><button disabled>Otomatik tarama</button><button disabled>Manuel frekans</button><button disabled>Favoriler</button></div>
+<div class="row"><button id="dabScanShow" type="button">📡 Otomatik DAB+ Tarama</button><button disabled>Manuel frekans</button><button disabled>Favoriler</button></div>
 </div>
 <div class="card"><h2>Şimdi dinleniyor</h2>
 <div class="muted tiny">Alıcı devre dışı · istasyon çözülmedi</div><div class="readout">— MHz</div>
@@ -47,6 +47,26 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
 <div class="row"><button disabled>▶ Dinle</button><button disabled>⏺ Kaydet</button><button disabled>Ses</button></div>
 <p class="muted tiny">Kayıt, kontrol ve akış izinleri gerçek backend bağlanınca etkinleştirilecek. Dinlemek için AI gerekmez.</p>
 </div></div>
+</section>
+<section id="dabScanSetup" class="card" hidden aria-labelledby="dabScanTitle">
+<div class="row between"><h2 id="dabScanTitle">📡 Otomatik DAB+ Kanal Tarama</h2><button id="dabScanClose" type="button">Kapat</button></div>
+<p class="muted tiny">welle.io tarzı, kullanıcı isteğiyle çalışan Band III kanal taraması. Bu sayfa hâlâ <strong>UI önizlemesidir</strong>; gerçek SDR/decoder bağlantısı olmadığı için RF taraması başlamaz.</p>
+<div class="row">
+<label for="dabScope">Tarama kapsamı</label>
+<select id="dabScope"><option value="quick">Hızlı — bölgenin yayımlanmış DAB adayları</option><option value="full">Tam — Band III 5A–12D (32 blok)</option></select>
+<label><input type="checkbox" id="dabUpper" disabled> 13A–13F ek blokları da tara (+6)</label>
+</div>
+<div id="dabPlan" class="muted" role="status" aria-live="polite"></div>
+<div class="row" style="margin-top:12px">
+<progress id="dabScanProgress" max="32" value="0" aria-label="DAB kanal tarama ilerlemesi"></progress>
+<span id="dabScanStatus" class="muted tiny">Tarama başlamadı · 0/32</span>
+</div>
+<div class="row" style="margin-top:12px">
+<button disabled title="Gerçek welle-cli dekoderi ve doğrulanmış Pi5 USB alıcı adaptörü henüz bağlı değil">▶ Taramayı Başlat (backend bekleniyor)</button>
+<button disabled>■ İptal</button>
+<button disabled>Seçilen servisleri kaydet</button>
+</div>
+<p class="muted tiny">Gerçek backend bağlandığında blok/servis ilerlemesi, sinyal durumu, kayıtlılarla birleştirme ve iptal sunulacak. Yalnızca decoder tarafından bulunan servisler kaydedilebilir; favoriler korunur. Arka plan taraması varsayılan KAPALI.</p>
 </section>
 <section id="expert" hidden>
 <div class="card"><h2>Alıcı kontrolleri</h2><p class="muted tiny">Tek SDR: aynı anda yalnızca tek merkez frekansı. Gain, PPM ve DAB kanal seçimi gerçek backend olmadan kapalı.</p>
@@ -79,6 +99,31 @@ const candidates={
 };
 function list(){const target=document.getElementById("stationList");target.replaceChildren();for(const [name,freq] of candidates[document.getElementById("region").value]){const item=document.createElement("div");item.className="station";
 const nameNode=document.createElement("span");nameNode.textContent=name;const value=document.createElement("span");value.className="freq muted";value.textContent=freq;item.append(nameNode,value);target.append(item)}}
-document.getElementById("region").addEventListener("change",list);list();
+document.getElementById("region").addEventListener("change",()=>{list();if(!dabScanSetup.hidden)dabPreview()});list();
+const dabScanSetup=document.getElementById("dabScanSetup");
+const dabScope=document.getElementById("dabScope"),dabUpper=document.getElementById("dabUpper");
+function dabPreview(){
+  const isFull=dabScope.value==="full",isDe=document.getElementById("region").value==="de";
+  dabUpper.disabled=!isFull;
+  if(!isFull)dabUpper.checked=false;
+  const total=isFull?(dabUpper.checked?38:32):(isDe?3:0);
+  const plan=document.getElementById("dabPlan");
+  plan.textContent=!isFull&&!isDe
+    ?"İzmir hızlı DAB aday listesi henüz yok; ülke genelinde DAB yayını alındığı varsayılmaz. Tam taramayı seçebilirsin."
+    :isFull?"Planlanan frekanslar: 5A–12D"+(dabUpper.checked?" ve 13A–13F":"")+". Yayında oldukları veya alınabildikleri doğrulanmadı."
+    :"NRW yayımlanmış adayları: 5C (178,352 MHz), 9A (202,928 MHz), 11D (222,064 MHz). Alınmış kanal değiller.";
+  document.getElementById("dabScanProgress").max=Math.max(1,total);
+  document.getElementById("dabScanProgress").value=0;
+  document.getElementById("dabScanStatus").textContent="Tarama başlamadı · 0/"+total+" blok";
+}
+document.getElementById("dabScanShow").addEventListener("click",()=>{
+  dabScanSetup.hidden=false;
+  dabPreview();
+  dabScanSetup.scrollIntoView({block:"nearest",behavior:"smooth"});
+});
+document.getElementById("dabScanClose").addEventListener("click",()=>{dabScanSetup.hidden=true});
+dabScope.addEventListener("change",dabPreview);
+dabUpper.addEventListener("change",dabPreview);
+
 document.querySelectorAll(".panel-actions button").forEach(btn=>btn.addEventListener("click",()=>{const card=btn.closest("article"),parent=card.parentElement;if(btn.classList.contains("up")&&card.previousElementSibling)parent.insertBefore(card,card.previousElementSibling);else if(btn.classList.contains("down")&&card.nextElementSibling)parent.insertBefore(card.nextElementSibling,card);btn.focus()}));
 </script></body></html>
