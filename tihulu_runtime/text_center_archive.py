@@ -18,7 +18,8 @@ from typing import Iterator
 MAX_PAGE_ITEMS = 60
 MAX_ARTICLE_ITEMS = 30
 MAX_EVENTS = 40
-SOURCE_PATTERN = re.compile(r"[\w.:-]{1,90}\Z", re.ASCII)
+SOURCE_PATTERN = re.compile(r"[^\x00-\x1f\x7f]{1,90}\Z")
+ARTICLE_ID = re.compile(r"[a-f0-9]{32}\Z", re.ASCII)
 
 # Verify the exact contract needed to interpret independent imported data.
 REQUIRED_COLUMNS = {
@@ -128,7 +129,7 @@ class TextCenterArchive:
         self._require_owner(owner_id)
         with self._read() as db:
             rows = db.execute(
-                "SELECT id, source_name, source_url, title, body, url,"
+                "SELECT id, source_name, source_url, title, substr(body,1,1800) AS excerpt, url,"
                 " published_at, observed_at, medium FROM articles"
                 " ORDER BY observed_at DESC LIMIT ?",
                 (MAX_ARTICLE_ITEMS,)).fetchall()
@@ -143,10 +144,24 @@ class TextCenterArchive:
         self._require_owner(owner_id)
         with self._read() as db:
             rows = db.execute(
-                "SELECT source_id, title, body, received_at, station,"
+                "SELECT source_id, title, substr(body,1,1800) AS excerpt, received_at, station,"
                 " language, frequency_hz, medium, provenance FROM events"
                 " ORDER BY received_at DESC LIMIT ?",
                 (MAX_EVENTS,)).fetchall()
             return [dict(row) | {"cache_state": "imported_not_live",
                                  "verified_official_alert": False}
                     for row in rows]
+
+    def article(self, *, owner_id: str, article_id: str) -> dict | None:
+        """Fetch the full original saved Internet article by its source ID."""
+        self._require_owner(owner_id)
+        if not isinstance(article_id, str) or not ARTICLE_ID.fullmatch(article_id):
+            raise ValueError("Invalid cached article ID")
+        with self._read() as db:
+            row = db.execute(
+                "SELECT id, source_name, source_url, title, body, url,"
+                " published_at, observed_at, medium"
+                " FROM articles WHERE id=?", (article_id,)).fetchone()
+            return (dict(row) | {"cache_state": "cached_internet",
+                                 "live": False, "verified_official_alert": False}
+                    if row else None)
