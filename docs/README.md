@@ -21,3 +21,12 @@ GitHub development communication is normally English; locale-specific UI/documen
 ## Implementation notes
 
 The main branch contains documentation, while the experimental [draft PR #1](https://github.com/Tihulu/tihulu-survival-kit/pull/1) contains Python policy and logical job-manager prototypes, tests and candidate data catalogs. No Pi image, verified DVB/SDR device compatibility, secure production portal, live political news feeds or working OCR service has been released.
+
+## SSH, security and post-install hardware
+
+- [SSH & Terminal Access](SSH_ACCESS.md) — planned Linux user `tihulu-kit`, conditional Wi-Fi/LAN SSH commands, owner-only local credential setup, password/SSH-key changes and troubleshooting.
+- [AI HAT+ 2 after installation](AI_HARDWARE_UPGRADES.md) — detect added/removed NPU hardware after a safe power-off and reboot, show verified driver/model readiness and offer consented CPU/NPU/remote mode changes.
+- Turkish: [SSH erişimi](tr/SSH_ACCESS.md) · [Sonradan AI HAT yükseltme](tr/AI_HARDWARE_UPGRADES.md).
+- German: [SSH-Zugang](de/SSH_ACCESS.md) · [AI-Hardware nachrüsten](de/AI_HARDWARE_UPGRADES.md).
+
+These are **planned Guide chapters**, not proof of a shipped interactive Guide or implemented hardware detection. Personal OS passwords are not published.
