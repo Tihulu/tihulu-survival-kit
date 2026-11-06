@@ -123,3 +123,15 @@ Web/platform referansları:
 - [Kurulum](INSTALLATION.md) — Tihulu Core/Builder ve Next/Next
 - [Canlı OCR ve cihaz izinleri](LIVE_OCR_AND_PERMISSIONS.md)
 - [README](../../README.tr.md)
+
+## SSH ile komut satırı erişimi (plan)
+
+Kurulumda güvenli biçimde oluşturulduysa planlanan Linux/SSH hesabı **`tihulu-kit`** olacaktır. SSH şifresi kişisel cihazda ayrı olarak belirlenir; hotspot veya web yönetici şifresi değildir. SSH hizmeti etkinleştirilmeden bağlantı çalışmaz.
+
+```sh
+ssh tihulu-kit@tihulu.lan        # Pi'nin kendi hotspot'u; DNS çalışıyorsa
+ssh tihulu-kit@10.10.10.10       # Yalnızca Pi hotspot yedek IP
+ssh tihulu-kit@tihulu.local      # Ev LAN; mDNS/Avahi çalışıyorsa
+```
+
+Router/doğrudan PC Ethernet için `ssh tihulu-kit@<pi-gercek-ip>` komutunda gerçek Pi IP'sini yaz. Ortak şifre GitHub'a kaydedilmez. SSH'yi açma, şifre/anahtar değiştirme, sunucu anahtarı doğrulama ve sorun giderme için [SSH ve Terminal Rehberi](SSH_ACCESS.md). Telefonla günlük kullanım SSH gerektirmez.

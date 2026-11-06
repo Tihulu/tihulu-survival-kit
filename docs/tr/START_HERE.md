@@ -64,3 +64,10 @@ Tihulu Core kurulup ilk açılış yapılandırması tamamlandığında planlana
 - [Canlı kamera OCR ve cihaz izinleri](LIVE_OCR_AND_PERMISSIONS.md)
 - [Uygulamalar, içerik ve sistem mimarisi](FEATURES_AND_ARCHITECTURE.md)
 - [Ana README](../../README.tr.md)
+
+## SSH ve sonradan AI HAT yükseltmesi (plan)
+
+- Planlanan Linux/SSH kullanıcı adı: `tihulu-kit`. **SSH şifresi** cihaz kurulurken yerel olarak atanan kişisel paroladır; Wi-Fi ve web yönetici parolasından ayrıdır. Herkese açık GitHub dosyalarında veya ortak imajlarda şifre yayımlanmaz.
+- SSH etkinleştirilip ilgili ağ gerçekten kurulduktan sonra Pi hotspot'undan `ssh tihulu-kit@tihulu.lan` veya `ssh tihulu-kit@10.10.10.10`; mDNS destekli ev ağından `ssh tihulu-kit@tihulu.local`; diğer ağlardan Pi'nin **gerçek IP adresi** kullanılabilir.
+- SSH hesabının açılması, şifre/anahtar değiştirme ve sorun giderme: [SSH ve Terminal Erişimi](SSH_ACCESS.md). Günlük Tihulu kullanımında SSH gerekli değildir.
+- **Kurulumdan sonra AI HAT+ 2 takılırsa**, Pi güvenli biçimde kapatılıp yeni donanımla açılacak; başarılı boot sonrasında otomatik algılama, kullanıcıya bildirilen eksik sürücü/model seçenekleri ve CPU/NPU mod değiştirme planlanıyor. NVMe/PCIe boot çakışması çözülmeden yükseltme yapılmamalı. [AI HAT yükseltme rehberi](AI_HARDWARE_UPGRADES.md).
