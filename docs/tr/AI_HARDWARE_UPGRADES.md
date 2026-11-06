@@ -22,3 +22,9 @@ Donanım değişikliğinde tüm ilk kurulum sihirbazı yeniden başlatılmayacak
 ## Test zorunluluğu
 
 Gerçek Raspberry Pi 5 üzerinde HAT takmadan ve taktıktan sonra boot; NVMe/PCIe uyumluluğu; gerçek Hailo model yükleme; kullanıcının onayıyla güncelleme ve reboot; HAT çıkarılınca CPU fallback; kayıtların ve SSD verilerinin korunması; telefon arayüzü, çevrimdışı mod ve güvenli kurtarma ayrıca doğrulanmalı. Simülasyon testi gerçek donanım testi değildir.
+
+## Resmî Raspberry Pi işletim sistemi ve sürücü şartları
+
+[Resmî Raspberry Pi AI yazılım kılavuzu](https://www.raspberrypi.com/documentation/computers/ai.html), belgelenen Hailo kurulumu için **64-bit Raspberry Pi OS Trixie** belirtmektedir. **Hailo-10H AI HAT+ 2** için uygun paket `hailo-h10-all` (ayrıca `dkms`) olup eski nesil Hailo'nun `hailo-all` paketiyle **aynı anda kurulamıyor**. Kullanıcı izniyle yapılan uyumlu kurulum ve gerekli yeniden açılıştan sonra `hailortcli fw-control identify` donanım/runtime doğrulamasına yardımcı olur; gerçek model yükleme ve inference başarısı ayrıca test edilmelidir.
+
+Bu bilgiler Pi açılırken **otomatik apt/firmware/işletim sistemi güncellemesi yapılacağı** anlamına gelmez. İşletim sistemi ve NVMe/PCIe boot uyumluluğu kontrol edilmeden güncelleme veya HAT değişimi yapılmaz. [Resmî AI HAT donanım sayfası](https://www.raspberrypi.com/documentation/accessories/ai-hat-plus.html).
