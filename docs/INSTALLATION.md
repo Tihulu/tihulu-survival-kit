@@ -145,3 +145,9 @@ Details: [Live Camera OCR and Device Permissions](LIVE_OCR_AND_PERMISSIONS.md).
 - [Features and Architecture](FEATURES_AND_ARCHITECTURE.md)
 - [Main README](../README.md)
 - [Turkish translation](tr/INSTALLATION.md)
+
+## Owner-added SSH and AI hardware setup (planned)
+
+During a future **personalized image build / secure first-owner setup**, the owner may request creation of the Linux account **`tihulu-kit`** and enter a **device-specific SSH password privately** or configure an SSH public key. The chosen password must never be embedded in a reusable image, public repository, build manifest or log. SSH service enablement is a separate explicit security choice, with LAN/AP restriction and later owner-managed credential changes.
+
+After initial deployment, a newly attached **AI HAT+ 2** will be re-detected at successful boot and should open a **hardware changed** review: actual Hailo readiness, compatible optional Update Center drivers/runtimes/models and CPU/NPU/private Remote mode selection. This must not reinstall Pi OS or silently alter stored data. See [SSH Guide](SSH_ACCESS.md) and [AI HAT after installation](AI_HARDWARE_UPGRADES.md). These are design targets until physical Pi validation.
