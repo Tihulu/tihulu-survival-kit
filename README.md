@@ -200,3 +200,28 @@ The Stage5 experimental branch now has `tihulu_runtime/ai_cpu_smoke.py`, **17 lo
 ## Checkpoint 070 — Stage4 measured-resource admission and supervised cancellation
 
 In experimental Draft PR #1, Base CPU smoke now has separate **backend-only Stage4 orchestration**: [host admission](tihulu_runtime/ai_smoke_admission.py) reads real Linux MemAvailable and thermal_zone0, refuses missing/stale metrics, requires trusted model peak RAM headroom (768 MiB reserve), CPU below 75°C, separately verified power source, no protected recording/Emergency or other long-AI task, and installed Hard-ON `local_ai`. [Job coordinator](tihulu_runtime/ai_smoke_job.py) uses server-owned foreground AppManager lease, owner cancellation Event and only executor-acknowledged final states. [CPU runner](tihulu_runtime/ai_cpu_smoke.py) gained an optional Linux process-group cancellation route (8 KiB output cap, timeout, SIGTERM/SIGKILL and child termination confirmation); existing manual `ai_setup --run-base-cpu-smoke` still lacks live cancellation/real resource monitoring. [Technical guide](docs/ai/STAGE4_CPU_SMOKE_ADMISSION.md) and [new tests](tests/test_ai_smoke_admission.py) specify trust boundaries. **32 new admission/mock tests + 5 new subprocess tests are committed, but not yet verified passing in CI**. No actual Pi/PSU energy meter, cgroup, model inference, global cross-process recording preemption or production web endpoint, and no `main` merge or Stage5 whole approval.
+
+
+## Text & Data Center Wave 1 — source-preserving integration (draft)
+
+**Source:** [TIHULU-TEXT-CENTER](https://github.com/Tihulu/TIHULU-TEXT-CENTER) exact reviewed main 0107a9bf5cd374943afcd9e89d49d6f8fcc94191. This additive integration branch does **not** replace the independent application, full native Flight Radar tar1090 PRIMARY, radio/TV/news/emergency, or any existing stage.
+
+The new [Text Center integration guide](docs/TEXT_CENTER_INTEGRATION_WAVE1.md) explains the complete English-language Modern/Classic Teletext, numbered pages 100–860, RSS/Atom/JSON Feed, FM RDS, DAB, DVB Teletext, HF/weather/NAVTEX/APRS, Gemini/Gopher, per-user BBS, optional separately compliant Meshtastic/LoRa, offline Wiki/AI and region/SSD scope. Full feature support is **planned**, not falsely described as deployed or received.
+
+**Code delivered now:** optional passive source-capability catalogue and device discovery, shared trusted SDR broker + mandatory cross-process reservation contract, owner-authenticated GET-only WSGI API under /text-center/api/, and synthetic tests. It **does not start live FM capture** until real cross-process hardware reservation and device-mapped decoder backend are supplied. No raw standalone port 8787 is exposed. The original responsive Text Center UI is **not yet mounted** in the Pi portal, and genuine DAB/DVB/HF/Meshtastic decoders and multi-owner BBS remain future wave gates.
+
+**Test:** Python 3.11/3.12 GitHub synthetic unit suite passed for this draft; not Raspberry Pi physical signal, mobile browser parity or deployable secure HTTPS proof. No merge to main without review.
+
+
+### Text Center Wave1B — cross-process receiver lock and source-layout preview
+
+The same draft [PR #8](https://github.com/Tihulu/tihulu-survival-kit/pull/8) now contains a Linux \`flock\` cross-process guard with conservative external USB-process audit. Separate Python processes that **cooperate** with this lock cannot claim the same receiver concurrently; independent, uncooperative SDR programs can still race it, so genuine physical receiver protection remains a Pi5 release blocker.
+
+A new Kit-only **read-only Modern/Classic Text Center preview** mounts the *installed independent source HTML/CSS*, with strict same-origin authentication and GET-only API; full original interaction and sound/RF/feed/BBS write services are **not yet integrated**. This preview uses no original standalone \`app.js\` without real owner ACLs or CSRF. [Wave1B guide](docs/TEXT_CENTER_WAVE1_B_SHARED_SDR_AND_PORTAL_PREVIEW.md) records the tested files, source HEAD update and missing work. GitHub Actions checks the mock Python regression suite and new JavaScript syntax on Python 3.11/3.12; **no Pi hardware, mobile rendering or original source distribution is claimed**.
+
+
+### Text Center Wave1C — original owner archive read-only
+
+The same unmerged public [Draft PR #8](https://github.com/Tihulu/tihulu-survival-kit/pull/8) now supports **read-only access to a locally existing single-owner independent Text Center SQLite archive**, provided it is explicitly configured by a trusted owner backend. Existing archived Teletext/Journaline pages and subpages, source-attributed radio text events and cached RSS/Atom/JSON Feed articles can be read within the original source-based Modern/Classic portal preview, with original source, frequency and timestamps. **No local database is created or migrated; no feed refresh, SDR scan, RF reception or BBS write is enabled.** Wrong owner is denied (403) before query parsing, missing archive yields 503, no public standalone port is forwarded, and archived text never becomes a claimed live broadcast or verified official warning.
+
+New [Wave1C technical guide](docs/TEXT_CENTER_WAVE1C_OWNER_READONLY_ARCHIVE.md), server-side SQLite/HTTP tests and browser read-only UI were added. [GitHub Actions run 42150958398](https://github.com/Tihulu/tihulu-survival-kit/actions/runs/42150958398) passed 396 mock/synthetic tests each on Python 3.11 and 3.12, plus JavaScript syntax. Real Tihulu Portal HTTPS mounting, your Pi5/Nooelec/WinTV hardware, original owner DB and mobile browser parity remain separate required tests before deployment.

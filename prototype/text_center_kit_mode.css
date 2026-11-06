@@ -1,0 +1,32 @@
+/* Text Center Kit preview display preference. Original installed source CSS remains authoritative. */
+.kit-classic-teletext .teletext-frame {
+  background:#020308 !important;
+  border-color:#a3a6ba !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+.kit-classic-teletext .teletext-content,
+.kit-classic-teletext .teletext-top,
+.kit-classic-teletext .teletext-bottom {
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace !important;
+  letter-spacing:.02em;
+  text-shadow:none !important;
+}
+.kit-classic-teletext .teletext-content h3 {
+  color:#ffe46d !important;
+  font-weight:800 !important;
+}
+.kit-classic-teletext .teletext-content p {
+  color:#f2f3f8 !important;
+  white-space:pre-wrap;
+  line-height:1.6;
+}
+.kit-classic-teletext .teletext-top {color:#82e1ff !important}
+.kit-classic-teletext .teletext-bottom {color:#80dfb6 !important}
+#kit-visual-mode {margin:0 0 12px 0;min-height:36px}
+#kit-visual-mode:focus-visible {outline:2px solid #9fffd6;outline-offset:2px}
+button:disabled {opacity:.55;cursor:not-allowed}
+@media (max-width:680px){
+  #kit-visual-mode {display:block;width:100%;min-height:42px}
+  .kit-classic-teletext .teletext-content {overflow-wrap:anywhere}
+}
