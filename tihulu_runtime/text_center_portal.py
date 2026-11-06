@@ -88,9 +88,14 @@ class TextCenterPortalWSGI:
             original = original.replace(key, value, 1)
         if '<div class="message" id="notification"' not in original:
             raise ValueError("Missing Text Center status anchor")
+        if original.count("</head>") != 1:
+            raise ValueError("Missing source document head")
+        original = original.replace(
+            "</head>",
+            '<link rel="stylesheet" href="/text-center/assets/kit-mode.css">'
+            "</head>", 1)
         original = original.replace(
             '<div class="message" id="notification"',
-            '<link rel="stylesheet" href="/text-center/assets/kit-mode.css">'
             '<button type="button" id="kit-visual-mode" class="action ghost" '
             'aria-pressed="false" title="Toggle Modern/Classic Teletext">'
             'CLASSIC TELETEXT</button>'
