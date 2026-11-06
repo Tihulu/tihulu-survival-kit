@@ -89,6 +89,9 @@ class TextCenterWSGI:
         if path.startswith("/text-center/api/archive/"):
             if self.archive is None:
                 return send(503, {"error": "Owner archive not configured"})
+            # Reject wrong-owner access before interpreting IDs/query details.
+            if owner_id != self.archive.owner_id:
+                return send(403, {"error": "Archive owner permission denied"})
             name = path.removeprefix("/text-center/api/archive/")
             if name not in ("status", "pages", "page", "articles", "article", "events"):
                 return send(404, {"error": "Unknown archive route"})
@@ -97,6 +100,16 @@ class TextCenterWSGI:
                 return send(400, {"error": "Invalid archive query"})
             try:
                 q = parse_qs(raw_query, keep_blank_values=True, max_num_fields=4)
+                accepted = {
+                    "status": frozenset(),
+                    "pages": frozenset(),
+                    "page": frozenset({"source_id", "number", "subpage"}),
+                    "articles": frozenset(),
+                    "article": frozenset({"id"}),
+                    "events": frozenset(),
+                }
+                if not set(q).issubset(accepted[name]):
+                    raise ValueError("Unknown archive query parameter")
                 def one(key, default=None):
                     values = q.get(key)
                     if values is None:
