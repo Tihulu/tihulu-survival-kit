@@ -56,3 +56,7 @@ Komut sonrasında istenen parola, cihazda yerel olarak atanmış **Linux/SSH par
 5. **AI HAT sonrası Pi açılmıyor:** Bu SSH hatası değildir; güç kapalıyken doğrulanmış NVMe/PCIe boot düzenine dön. [AI HAT yükseltme rehberi](AI_HARDWARE_UPGRADES.md).
 
 Bkz. [Ağ ve Erişim](NETWORK_ACCESS.md), [Başlangıç](START_HERE.md), [Kurulum](INSTALLATION.md).
+
+## Resmî Raspberry Pi OS SSH varsayılanı
+
+[Resmî Raspberry Pi SSH belgelerine](https://www.raspberrypi.com/documentation/computers/remote-access.html) göre standart Raspberry Pi OS üzerinde SSH **varsayılan olarak kapalıdır**. [Raspberry Pi Imager](https://www.raspberrypi.com/documentation/computers/getting-started.html) içinde **Remote Access → Enable SSH** üzerinden kişisel hesap şifresiyle veya SSH açık anahtarıyla erişim ayarlanabilir. Gelecekte Tihulu'nun kişiselleştirilmiş imajı `tihulu-kit` hesabını gerçekten oluşturmalı ve SSH'yi ayrıca yetkilendirmelidir. Yalnızca rehberde kullanıcı adının yazması SSH'nin açıldığı anlamına gelmez.
