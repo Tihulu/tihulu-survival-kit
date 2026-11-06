@@ -66,3 +66,10 @@ Addresses above are **design targets**, not active addresses today. The final sc
 - [Features & System Architecture](FEATURES_AND_ARCHITECTURE.md)
 - [Main README](../README.md)
 - [Turkish version of this guide](tr/START_HERE.md)
+
+## SSH & post-install hardware (planned)
+
+- Planned **Linux/SSH account name**: `tihulu-kit` after a personal setup has actually created it. The Linux SSH password is **separate from the Tihulu web owner account and Wi-Fi hotspot secret**, and is set privately for each device; it is never published as a common default.
+- If SSH has been explicitly enabled and the network resolves, connect with `ssh tihulu-kit@tihulu.lan` on the Pi hotspot, `ssh tihulu-kit@tihulu.local` on a compatible home LAN, or use the Pi's real interface IP. The hotspot-only fallback is `ssh tihulu-kit@10.10.10.10`.
+- To change SSH login/password/keys, see the proposed owner-only `Settings > Security > SSH` and [full SSH Guide](SSH_ACCESS.md). The normal Tihulu Home/first-run experience must **not require SSH**.
+- An AI HAT+ 2 added **after** initial setup should be checked at the next successful boot; only owner-consented, verified NPU driver/model updates and AI mode changes occur. Do not physically replace an NVMe boot HAT unless the boot/storage conflict is resolved first. [Hardware upgrade Guide](AI_HARDWARE_UPGRADES.md).
