@@ -1,186 +1,294 @@
 /* SPDX-License-Identifier: AGPL-3.0-only
- * Read-only Kit gateway adapter for an owner-installed Text Center HTML/CSS.
- * This script intentionally does NOT run the standalone RF/BBS/feed POST UI.
- * All server-derived content uses textContent, never innerHTML.
+ * Authenticated Text Center Kit preview. Original standalone HTML/CSS only;
+ * never run the standalone app.js with its unsafe standalone POST endpoints.
+ * Read-only owner-bound existing SQLite if configured; no network fetch/RF.
+ * Untrusted source text enters the DOM with textContent, never innerHTML.
  */
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
   const API = "/text-center/api/";
-  let currentPage = 100;
   let catalogue = {};
-  let capabilities = [];
-  const NO_RF = "No receiver opened • No RF or verified official alert";
-  const status = (message) => {
-    const target = $("notification");
-    target.textContent = message;
-    target.hidden = false;
+  let archiveAvailable = false;
+  let sourcePages = [];
+  const NO_RF = "IMPORTED / CACHED • NOT LIVE RF • NOT AN OFFICIAL ALERT";
+  const notice = (value) => {
+    $("notification").textContent = value;
+    $("notification").hidden = false;
   };
-  const make = (tag, className, text) => {
-    const item = document.createElement(tag);
-    if (className) item.className = className;
-    if (text != null) item.textContent = String(text);
-    return item;
+  const make = (tag, cls, value) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (value != null) node.textContent = String(value);
+    return node;
   };
-  const fetchJSON = async (name) => {
-    const result = await fetch(API + name, {
-      credentials: "same-origin", cache: "no-store",
-      headers: { "Accept": "application/json" }
+  const api = async (endpoint) => {
+    const result = await fetch(API + endpoint, {
+      method: "GET", credentials: "same-origin", cache: "no-store",
+      headers: { Accept: "application/json" }
     });
-    if (!result.ok) throw new Error("Text Center " + name + ": HTTP " + result.status);
+    if (!result.ok) throw new Error("Text Center " + endpoint + ": HTTP " + result.status);
     return result.json();
   };
-  const safeMode = (value) => value === "classic" ? "classic" : "modern";
-  const modeKey = "tihulu:text-center:view-mode";
+  const card = (title, content, meta) => {
+    const item = make("article", "notice-card");
+    item.appendChild(make("h3", "", title));
+    item.appendChild(make("p", "", content));
+    if (meta) item.appendChild(make("small", "subtle", meta));
+    return item;
+  };
+  const action = (label, callback) => {
+    const item = make("button", "action ghost", label);
+    item.type = "button";
+    item.addEventListener("click", callback);
+    return item;
+  };
   const setMode = (mode) => {
-    const classic = safeMode(mode) === "classic";
+    const classic = mode === "classic";
     document.body.classList.toggle("kit-classic-teletext", classic);
-    const button = $("kit-visual-mode");
-    button.textContent = classic ? "MODERN VIEW" : "CLASSIC TELETEXT";
-    button.setAttribute("aria-pressed", String(classic));
-    try { localStorage.setItem(modeKey, classic ? "classic" : "modern"); }
-    catch (_) { /* private browsing may disable local storage */ }
+    $("kit-visual-mode").textContent = classic ? "MODERN VIEW" : "CLASSIC TELETEXT";
+    $("kit-visual-mode").setAttribute("aria-pressed", String(classic));
+    try { localStorage.setItem("tihulu:text-center:view-mode", classic ? "classic" : "modern"); }
+    catch (_) { /* Local storage may be disabled; UI still works. */ }
   };
-  const noticeCard = (title, body, meta) => {
-    const article = make("article", "notice-card");
-    article.appendChild(make("h3", "", title));
-    article.appendChild(make("p", "", body));
-    if (meta) article.appendChild(make("small", "subtle", meta));
-    return article;
-  };
-  const updateHeader = (page, subpage, name) => {
+  const prepare = (page, subpage, title) => {
     $("page-number").value = String(page);
     $("subpage-number").value = String(subpage);
-    $("view-title").textContent = "PAGE " + page + " — " + name.toUpperCase();
-    $("teletext-page").textContent =
-      "P" + page + " / " + String(subpage).padStart(2, "0");
-    $("view-source").textContent = "OFFLINE / BRIDGE STATUS ONLY";
+    $("view-title").textContent = "PAGE " + page + " — " + title.toUpperCase();
+    $("teletext-page").textContent = "P" + page + " / " + String(subpage).padStart(2, "0");
+    $("view-source").textContent = "LOCAL / READ-ONLY";
     $("view-stamp").textContent = "";
-    $("teletext-kicker").textContent = "TEXT CENTER • INTEGRATION PREVIEW";
-    $("teletext-title").textContent = name.toUpperCase();
-    $("teletext-body").textContent =
-      "Read-only index. Imported pages and live source integrations are not yet connected.";
-    $("section-kicker").textContent = "READ-ONLY / NO RF";
-    $("section-title").textContent = name;
+    $("teletext-kicker").textContent = "TEXT CENTER / SOURCE-ATTRIBUTED ARCHIVE";
+    $("teletext-title").textContent = title.toUpperCase();
+    $("teletext-body").textContent = "No live broadcast receiver is connected to this view.";
+    $("section-kicker").textContent = "LOCAL / READ-ONLY";
+    $("section-title").textContent = title;
     $("section-count").textContent = "";
-    document.querySelectorAll("[data-page]").forEach((button) => {
-      button.classList.toggle("active", Number(button.dataset.page) === page);
+    $("content").replaceChildren();
+    document.querySelectorAll("[data-page]").forEach((el) => {
+      el.classList.toggle("active", Number(el.dataset.page) === page);
     });
   };
-  const showPage = async (page, subpage = 0) => {
+  const add = (node) => $("content").appendChild(node);
+  const missing = (message) => add(card("Local archive unavailable", message,
+    "SOURCE NOT CONNECTED • NOTHING FABRICATED"));
+  const originalPage = async (page, subpage, sourceId) => {
+    const query = new URLSearchParams({
+      number: String(page), subpage: String(subpage), source_id: sourceId
+    });
+    prepare(page, subpage, "Imported page");
+    try {
+      const entry = await api("archive/page?" + query.toString());
+      $("teletext-title").textContent = entry.title;
+      $("teletext-body").textContent = entry.body;
+      $("view-title").textContent = "P" + page + "/" + subpage + " — " + entry.title;
+      $("view-source").textContent = "IMPORTED / " + entry.medium + " / " + entry.station;
+      $("view-stamp").textContent = entry.received_at;
+      $("section-title").textContent = "Original received page • archived";
+      add(card("Source provenance",
+        "Station: " + entry.station + " · " + entry.frequency_hz +
+        " Hz · Source: " + entry.source_id + " · Received: " + entry.received_at +
+        " · Decoder: " + entry.provenance, NO_RF));
+      $("source-select").value = sourceId;
+      notice("Archived decoded text only — this does NOT initiate receiver tuning.");
+    } catch (error) {
+      missing(error.message + ". No decoded page was returned.");
+      notice("No archived broadcast page available for that source and subpage.");
+    }
+  };
+  const originalArticle = async (id) => {
+    try {
+      const item = await api("archive/article?id=" + encodeURIComponent(id));
+      prepare(200, 0, item.title);
+      $("teletext-title").textContent = item.title;
+      $("teletext-body").textContent = item.body;
+      $("view-source").textContent = "CACHED INTERNET / " + item.source_name;
+      $("view-stamp").textContent = item.observed_at;
+      add(card("Original publisher and timestamps",
+        "Source: " + item.source_url + " · Published: " + item.published_at +
+        " · Cached: " + item.observed_at + " · Original URL: " + item.url,
+        "CACHED INTERNET FEED • NOT A LIVE PAGE"));
+    } catch (error) {
+      notice("Cached article unavailable: " + error.message);
+    }
+  };
+  const articles = async () => {
+    if (!archiveAvailable) return missing("Owner SQLite archive has not been configured.");
+    try {
+      const response = await api("archive/articles");
+      const items = Array.isArray(response.items) ? response.items : [];
+      $("section-count").textContent = items.length + " stored articles • no refresh";
+      if (!items.length) return missing("No cached RSS/Atom/JSON Feed articles exist.");
+      items.forEach((item) => {
+        const node = card(item.title, item.excerpt,
+          "CACHED INTERNET / " + item.source_name + " / " + item.observed_at);
+        node.appendChild(action("READ STORED ARTICLE", () => originalArticle(item.id)));
+        add(node);
+      });
+    } catch (error) { missing(error.message); }
+  };
+  const importedPages = async () => {
+    if (!archiveAvailable) return missing("No owner archive configured.");
+    if (!sourcePages.length) return missing("No source-attributed Teletext/Journaline pages imported.");
+    sourcePages.forEach((item) => {
+      const node = card("P" + item.page + " / " + item.subpage + " — " + item.title,
+        "Station: " + item.station + " · Received: " + item.received_at +
+        " · " + item.medium + " · " + item.frequency_hz + " Hz",
+        "IMPORTED, NOT LIVE / " + item.provenance);
+      node.appendChild(action("READ IMPORTED PAGE",
+        () => originalPage(item.page, item.subpage, item.source_id)));
+      add(node);
+    });
+  };
+  const events = async (weatherOnly = false) => {
+    if (!archiveAvailable) return missing("No owner archive configured.");
+    try {
+      const response = await api("archive/events");
+      const rows = (Array.isArray(response.items) ? response.items : [])
+        .filter((e) => !weatherOnly || ["navtex", "hf_weather"].includes(e.medium));
+      $("section-count").textContent = rows.length + " archived events";
+      if (!rows.length) return missing("No attributed receiver events imported.");
+      rows.forEach((event) => {
+        add(card(event.title, event.excerpt,
+          "RECEIVED " + event.received_at + " / " + event.station +
+          " / " + event.frequency_hz + " Hz / " + event.medium +
+          " / " + event.provenance + " • " + NO_RF));
+      });
+    } catch (error) { missing(error.message); }
+  };
+  const capabilities = async () => {
+    add(card("Protocol and receiver dependency catalogue",
+      "A device candidate or installed decoder never proves RF reception.",
+      "REFERENCE CAPABILITIES • NOT A LIVE SCAN"));
+    try {
+      const result = await api("capabilities");
+      const features = Array.isArray(result.capabilities) ? result.capabilities : [];
+      features.forEach((feature) => add(card(
+        feature.title || feature.id || "Unknown protocol",
+        feature.requirements || feature.reason || "Requires verified decoder and hardware.",
+        "CAPABILITY / " + (feature.state || feature.implementation || "unavailable"))));
+      $("section-count").textContent = features.length + " tracked capabilities";
+    } catch (error) { missing(error.message); }
+  };
+  const showGroup = async (page, subpage = 0, sourceId = "") => {
     if (!Number.isInteger(page) || page < 100 || page > 899 ||
         !Number.isInteger(subpage) || subpage < 0 || subpage > 99) {
-      status("Page must be 100–899; subpage 0–99.");
+      notice("Page must be 100–899 and subpage 0–99.");
+      return;
+    }
+    if (sourceId) return originalPage(page, subpage, sourceId);
+    if (subpage !== 0 || !Object.hasOwn(catalogue, String(page))) {
+      notice("No decoded source page selected. Choose an imported source first.");
       return;
     }
     const name = catalogue[String(page)];
-    if (!name || subpage !== 0) {
-      status("Page/subpage not loaded: no verified source page in the Kit bridge.");
-      return;
-    }
-    currentPage = page;
-    updateHeader(page, subpage, name);
-    const body = $("content");
-    body.replaceChildren();
+    prepare(page, subpage, name);
+    $("source-select").value = "";
     if (page === 100) {
-      Object.entries(catalogue).forEach(([key, label]) => {
-        const card = noticeCard(
-          "P" + key + " — " + label,
-          "Open this category. All live RF, news and message controls remain disabled until verified.",
-          "OFFLINE INDEX • NOT RECEIVED BROADCAST");
-        const action = make("button", "action ghost", "VIEW CATEGORY");
-        action.type = "button";
-        action.addEventListener("click", () => showPage(Number(key)));
-        card.appendChild(action);
-        body.appendChild(card);
+      Object.entries(catalogue).forEach(([number, label]) => {
+        const node = card("P" + number + " — " + label,
+          "Browse this category. Live receiver actions remain disabled.",
+          "LOCAL INDEX / NOT RF RECEPTION");
+        node.appendChild(action("OPEN CATEGORY", () => showGroup(Number(number))));
+        add(node);
       });
-      $("section-count").textContent = "10 preserved page groups";
-      return;
+      $("section-count").textContent = "10 original numbered sections";
+    } else if (page === 200) {
+      await articles();
+    } else if (page === 400) {
+      await importedPages();
+      await events(false);
+      await capabilities();
+    } else if (page === 300) {
+      await events(true);
+    } else if (page === 700) {
+      add(card("Local library", "Original Kiwix/Kolibri and PDFs still require their shared Library service. Below are existing imported Text Center pages.", "OFFLINE / NOT A DUPLICATE WIKI"));
+      await importedPages();
+    } else if (page === 860) {
+      await capabilities();
+    } else {
+      const explanations = {
+        500: "Only separately verified Emergency Center issuers can create official alerts. Imported RF events are not official alerts.",
+        600: "Local BBS posting is disabled until per-owner identity, permissions and CSRF are integrated.",
+        800: "Native Gemini and Gopher clients are pending. Directory links do not imply downloaded offline content.",
+        850: "Original Text Center HTML/CSS with a protected Kit GET-only client. Existing archived page/news reads are available only after owner configuration."
+      };
+      add(card("Integration status", explanations[page] || "No eligible archived data.",
+        "SOURCE-AWARE / OTHER FUNCTIONS PENDING"));
     }
-    if (page === 400 || page === 860) {
-      const first = noticeCard("Protocol and receiver capabilities",
-        "This list describes optional dependencies and implementation status. A detected device is not decoded RadioText.",
-        "SOURCE: INSTALLED REFERENCE CATALOGUE • NOT AN RF CAPTURE");
-      body.appendChild(first);
-      try {
-        const response = await fetchJSON("capabilities");
-        capabilities = Array.isArray(response.capabilities) ? response.capabilities : [];
-        capabilities.forEach((feature) => {
-          const label = feature.title || feature.id || "Unknown protocol";
-          const detail = feature.requirements || feature.reason ||
-                         "Real decoder and receiver must be verified.";
-          const meta = feature.state || feature.implementation || "Unavailable";
-          body.appendChild(noticeCard(label, detail, "CAPABILITY • " + meta));
-        });
-        $("section-count").textContent = capabilities.length +
-          " capabilities • operating state not guaranteed";
-      } catch (error) {
-        body.appendChild(noticeCard("Optional reference not connected",
-          error.message, "DEPENDENCY UNAVAILABLE"));
-      }
-      return;
-    }
-    const messages = {
-      200: "News feeds are not linked to the shared News & Politics Center yet. No background refresh.",
-      300: "Weather bulletins require genuine dated Internet or decoded RF sources; no forecast is invented.",
-      500: "Only the independently verified Emergency Center may certify official alerts. Imported RF text is not an official warning.",
-      600: "Authenticated multi-user BBS and posting controls are not connected. This preview never transmits.",
-      700: "Original Kiwix, Kolibri, PDFs and offline libraries must be connected through shared read permissions.",
-      800: "Native bounded Gemini/Gopher clients and permitted text-network directories are not yet integrated.",
-      850: "This view uses the original Text Center markup/CSS and a restricted Kit-controlled GET-only client."
-    };
-    body.appendChild(noticeCard("Integration status",
-      messages[page] || "No decoded page is available for this category.", NO_RF));
-    $("section-count").textContent = "SOURCE-ATTRIBUTED CONTENT PENDING";
   };
   const inspectDevices = async () => {
-    const button = $("receiver-recheck");
-    button.disabled = true;
+    const b = $("receiver-recheck"); b.disabled = true;
     try {
-      const d = await fetchJSON("discovery");
-      const inventory = d.inventory || {};
-      const count = Number(inventory.rtl_usb_count || 0);
-      const dvbCount = Array.isArray(inventory.dvb_frontends)
-        ? inventory.dvb_frontends.length : 0;
-      $("rtl-status").textContent = d.status === "passive_only"
-        ? count + " RTL-SDR candidate(s) • no RF decoded"
-        : "Receiver package unavailable";
+      const result = await api("discovery");
+      const inv = result.inventory || {};
+      $("rtl-status").textContent = result.status === "passive_only"
+        ? Number(inv.rtl_usb_count || 0) + " RTL-SDR candidate(s), not tuned"
+        : "Receiver dependency not connected";
       $("dvb-status").textContent =
-        dvbCount + " DVB frontend candidate(s) • no Teletext PID verified";
+        (Array.isArray(inv.dvb_frontends) ? inv.dvb_frontends.length : 0) +
+        " DVB frontend candidate(s), no PID lock verified";
       $("decoder-status").textContent = "RF text decoder inactive in Kit";
-      $("receiver-check-note").textContent =
-        "Passive inventory only • no tuning • source not verified";
-      status("Passive inventory complete. No SDR tuning or Internet fetch was requested.");
+      $("receiver-check-note").textContent = "Passive inventory only • no RF or Internet request";
+      notice("Device inventory checked without tuning or background fetch.");
     } catch (error) {
-      status("Passive device check unavailable: " + error.message);
-    } finally { button.disabled = false; }
+      notice("Passive receiver inspection unavailable: " + error.message);
+    } finally { b.disabled = false; }
+  };
+  const loadArchive = async () => {
+    try {
+      const state = await api("archive/status");
+      archiveAvailable = state.status === "read_only";
+      const counts = state.counts || {};
+      $("stat-articles").textContent = String(counts.articles || 0);
+      $("stat-pages").textContent = String(counts.pages || 0);
+      $("stat-events").textContent = String(counts.events || 0);
+      $("stat-posts").textContent = "—";
+      const response = await api("archive/pages");
+      sourcePages = Array.isArray(response.items) ? response.items : [];
+      const names = new Map();
+      sourcePages.forEach((item) => {
+        if (!names.has(item.source_id)) names.set(item.source_id, item.station);
+      });
+      const sourceControl = $("source-select");
+      sourceControl.replaceChildren(make("option", "", "Local index / all sources"));
+      sourceControl.firstElementChild.value = "";
+      names.forEach((station, sourceId) => {
+        const option = make("option", "", station + " · " + sourceId);
+        option.value = sourceId;
+        sourceControl.appendChild(option);
+      });
+      sourceControl.disabled = !names.size;
+      sourceControl.title = names.size ? "Select previously imported decoder source" :
+        "No archived receiver pages exist";
+    } catch (_) {
+      archiveAvailable = false;
+      $("source-select").disabled = true;
+      $("stat-articles").textContent = "—";
+      $("stat-pages").textContent = "—";
+      $("stat-events").textContent = "—";
+      $("stat-posts").textContent = "—";
+    }
   };
   const start = async () => {
-    const now = new Date();
-    $("clock").textContent = now.toLocaleTimeString([], {
+    $("clock").textContent = new Date().toLocaleTimeString([], {
       hour: "2-digit", minute: "2-digit"
     });
     $("bookmark-page").disabled = true;
-    $("bookmark-page").title = "Bookmarks require owner-scoped database integration";
+    $("bookmark-page").title = "Saving bookmarks requires owner-scoped writable services";
     $("source-select").disabled = true;
-    $("source-select").title = "Verified receiver pages are not connected";
-    $("stat-articles").textContent = "—";
-    $("stat-pages").textContent = "—";
-    $("stat-events").textContent = "—";
-    $("stat-posts").textContent = "—";
-    $("kit-visual-mode").addEventListener("click", () => {
-      setMode(document.body.classList.contains("kit-classic-teletext")
-        ? "modern" : "classic");
-    });
-    let last = "modern";
-    try { last = localStorage.getItem(modeKey); } catch (_) {}
-    setMode(last);
+    $("kit-visual-mode").addEventListener("click", () => setMode(
+      document.body.classList.contains("kit-classic-teletext") ? "modern" : "classic"));
+    let mode = "modern";
+    try { mode = localStorage.getItem("tihulu:text-center:view-mode"); } catch (_) {}
+    setMode(mode);
     $("page-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      showPage(Number($("page-number").value), Number($("subpage-number").value));
+      showGroup(Number($("page-number").value),
+        Number($("subpage-number").value), $("source-select").value);
     });
-    document.querySelectorAll("[data-page]").forEach((el) => {
-      el.addEventListener("click", () => showPage(Number(el.dataset.page)));
+    document.querySelectorAll("[data-page]").forEach((item) => {
+      item.addEventListener("click", () => showGroup(Number(item.dataset.page)));
     });
     $("receiver-recheck").addEventListener("click", inspectDevices);
     document.addEventListener("keydown", (event) => {
@@ -192,13 +300,16 @@
       }
     });
     try {
-      const response = await fetchJSON("pages");
-      catalogue = response.pages || {};
-      await showPage(100);
-      status("Read-only Kit preview. Full imported pages, feeds, scan and messaging are not connected.");
+      const data = await api("pages");
+      catalogue = data.pages || {};
+      await loadArchive();
+      await showGroup(100);
+      notice(archiveAvailable
+        ? "Viewing existing cached source data. No broadcast receiver opened."
+        : "Read-only Kit preview; source archive not configured. No RF access.");
     } catch (error) {
-      status("Text Center page catalogue unavailable: " + error.message);
-      $("teletext-body").textContent = "Authenticated API unavailable.";
+      notice("Authenticated Text Center API unavailable: " + error.message);
+      $("teletext-body").textContent = "The local API or owner session is unavailable.";
     }
   };
   start();
