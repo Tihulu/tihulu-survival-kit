@@ -80,6 +80,7 @@ class LinuxProcUSBUseAudit:
                 except PermissionError as exc:
                     raise SDRGuardUnavailable(
                         "Cannot examine all receiver processes; use privileged broker") from exc
+            return True
         except (PermissionError, FileNotFoundError, OSError) as exc:
             raise SDRGuardUnavailable("Cannot inspect USB device or process state") from exc
 
@@ -152,7 +153,8 @@ class LinuxFlockSDRGuard:
                     raise ReceiverBusy(receiver_id, "another receiver process") from exc
                 # Race-aware audit while the cooperating process lock is held.
                 # Errors always block, never treat an uncertain USB as free.
-                self.external_use_audit(receiver_id)
+                if self.external_use_audit(receiver_id) is not True:
+                    raise SDRGuardUnavailable("External USB usage audit did not certify idle")
                 return ReceiverReservation(fd)
             except BaseException:
                 os.close(fd)
