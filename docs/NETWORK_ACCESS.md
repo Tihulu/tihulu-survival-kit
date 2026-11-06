@@ -116,3 +116,15 @@ Technical references: [Raspberry Pi local discovery](https://www.raspberrypi.com
 - [Live OCR & Device Permissions](LIVE_OCR_AND_PERMISSIONS.md)
 - [Main README](../README.md)
 - [Turkish translation](tr/NETWORK_ACCESS.md)
+
+## SSH command-line access (planned)
+
+The intended OS login is **`tihulu-kit`** only after a secure personalized image/first-run setup creates it. The SSH password is set privately by the owner and is **not** the hotspot Wi-Fi PSK or Tihulu web admin password. SSH must be explicitly enabled and reachable on that network before these commands will work.
+
+```sh
+ssh tihulu-kit@tihulu.lan        # Pi-owned hotspot, if local DNS works
+ssh tihulu-kit@10.10.10.10       # Pi-owned hotspot fallback ONLY
+ssh tihulu-kit@tihulu.local      # Home LAN, if mDNS/Avahi works
+```
+
+For router/direct PC Ethernet use `ssh tihulu-kit@<actual-pi-ip>` replacing the placeholder with the real address. No shared SSH password is committed to this repository. See [SSH & Terminal Access](SSH_ACCESS.md) for enabling, verification, changing the password or SSH key and host-key trust. SSH is not a prerequisite for using a future phone-ready Core.
