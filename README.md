@@ -211,3 +211,10 @@ The new [Text Center integration guide](docs/TEXT_CENTER_INTEGRATION_WAVE1.md) e
 **Code delivered now:** optional passive source-capability catalogue and device discovery, shared trusted SDR broker + mandatory cross-process reservation contract, owner-authenticated GET-only WSGI API under /text-center/api/, and synthetic tests. It **does not start live FM capture** until real cross-process hardware reservation and device-mapped decoder backend are supplied. No raw standalone port 8787 is exposed. The original responsive Text Center UI is **not yet mounted** in the Pi portal, and genuine DAB/DVB/HF/Meshtastic decoders and multi-owner BBS remain future wave gates.
 
 **Test:** Python 3.11/3.12 GitHub synthetic unit suite passed for this draft; not Raspberry Pi physical signal, mobile browser parity or deployable secure HTTPS proof. No merge to main without review.
+
+
+### Text Center Wave1B — cross-process receiver lock and source-layout preview
+
+The same draft [PR #8](https://github.com/Tihulu/tihulu-survival-kit/pull/8) now contains a Linux \`flock\` cross-process guard with conservative external USB-process audit. Separate Python processes that **cooperate** with this lock cannot claim the same receiver concurrently; independent, uncooperative SDR programs can still race it, so genuine physical receiver protection remains a Pi5 release blocker.
+
+A new Kit-only **read-only Modern/Classic Text Center preview** mounts the *installed independent source HTML/CSS*, with strict same-origin authentication and GET-only API; full original interaction and sound/RF/feed/BBS write services are **not yet integrated**. This preview uses no original standalone \`app.js\` without real owner ACLs or CSRF. [Wave1B guide](docs/TEXT_CENTER_WAVE1_B_SHARED_SDR_AND_PORTAL_PREVIEW.md) records the tested files, source HEAD update and missing work. GitHub Actions checks the mock Python regression suite and new JavaScript syntax on Python 3.11/3.12; **no Pi hardware, mobile rendering or original source distribution is claimed**.
