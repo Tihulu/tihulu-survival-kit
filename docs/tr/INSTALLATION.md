@@ -139,3 +139,9 @@ Detaylı akış: [Canlı OCR ve cihaz izinleri](LIVE_OCR_AND_PERMISSIONS.md).
 - [Canlı kamera/OCR izinleri](LIVE_OCR_AND_PERMISSIONS.md)
 - [Kapsam ve mimari](FEATURES_AND_ARCHITECTURE.md)
 - [README](../../README.tr.md)
+
+## SSH ve kurulumdan sonra AI HAT ayarları (plan)
+
+Gelecekteki **kişiselleştirilmiş imaj hazırlama / güvenli ilk kurulum** sırasında Linux kullanıcısı **`tihulu-kit`** oluşturulabilecek; kullanıcı kendi cihazına ait SSH şifresini **yerel gizli giriş alanında** atayabilecek veya SSH açık anahtarı kullanabilecek. Parola ortak imaja, açık GitHub deposuna veya loglara yazılmayacak. SSH etkinleştirilmesi ayrı kullanıcı onayıyla yapılacak; şifre ve anahtar sonradan değiştirilebilecek.
+
+İlk kurulumdan sonra **AI HAT+ 2** takıldığında başarılı boot esnasında yeniden donanım algılama ve kullanıcıya sürücü/runtime/model güncellemeleri ile CPU/NPU/özel ağ uzak AI modu seçenekleri sunma planlanıyor. Pi OS yeniden kurulmayacak; mevcut kayıtlar silinmeyecek. [SSH Rehberi](SSH_ACCESS.md) ve [AI HAT yükseltmesi](AI_HARDWARE_UPGRADES.md). Bunlar gerçek Pi testleri yapılana kadar tasarım hedefidir.
