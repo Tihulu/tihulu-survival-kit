@@ -39,3 +39,7 @@ Die geplanten Menüs `Guide > Netzwerk & SSH` und `Settings > Security > SSH / R
 Nach erfolgreicher Anmeldung ändert `passwd` das eigene SSH-Passwort interaktiv. Das Web-Administratorkonto und das WLAN-Kennwort bleiben unverändert. Bei `Connection refused` Dienst und Firewall prüfen, bei `Permission denied` den wirklich eingerichteten OS-Benutzer und dessen Anmeldedaten prüfen. Geänderte SSH-Hostschlüssel niemals ungeprüft akzeptieren.
 
 Die normale telefonbasierte Tihulu-Oberfläche benötigt kein SSH. Zum nachträglichen Einbau einer AI HAT siehe [Hardware-Upgrades](AI_HARDWARE_UPGRADES.md).
+
+## Offizielle SSH-Standardeinstellungen
+
+Die [Raspberry-Pi-Dokumentation](https://www.raspberrypi.com/documentation/computers/remote-access.html) bestätigt, dass SSH auf einer normalen Raspberry-Pi-OS-Installation **standardmäßig deaktiviert** ist. Die [Raspberry Pi Imager-Einrichtung](https://www.raspberrypi.com/documentation/computers/getting-started.html) bietet **Remote Access → Enable SSH** und wahlweise individuelle Kennwortauthentifizierung oder öffentliche SSH-Schlüssel. Erst eine echte personalisierte Tihulu-Installation kann den Benutzer `tihulu-kit` anlegen und SSH mit Besitzerberechtigung aktivieren.
