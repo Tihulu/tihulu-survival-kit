@@ -20,3 +20,9 @@
 ## Acceptance before claiming implementation
 
 Actual Pi5 cold-boot before and after power-off HAT attachment and removal; genuine Hailo-10H hardware ID, driver, compatible model load and inference; unchanged NVMe boot/USB SSD mount; user-approved updates and reboot verification; absence of model/driver and no-boot recovery; radio recording protection; cross-device Settings/Guide behavior; no unauthorised background network use. Mock tests are not hardware acceptance.
+
+## Verified current Raspberry Pi package/OS constraints
+
+The official [Raspberry Pi AI software guide](https://www.raspberrypi.com/documentation/computers/ai.html) currently specifies **64-bit Raspberry Pi OS Trixie** for the documented Hailo environment. For the **Hailo-10H AI HAT+ 2**, the documented dependency package is `hailo-h10-all` (plus `dkms`), **not** `hailo-all` used with older Hailo devices; the two packages cannot coexist. Following a separately consented compatible install and reboot, the guide identifies `hailortcli fw-control identify` as a hardware/runtime verification step. Actual compatible model load and inference are **additional** checks.
+
+These are reference requirements for future Tihulu engineering, **not instructions to auto-install**, auto-upgrade Raspberry Pi OS, change EEPROM, change the boot layout, or perform firmware updates at startup. The owner must review changes, especially any OS/driver upgrade and NVMe PCIe boot conflict. See official [AI HAT hardware details](https://www.raspberrypi.com/documentation/accessories/ai-hat-plus.html).
