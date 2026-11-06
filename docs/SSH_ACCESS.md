@@ -56,3 +56,7 @@ The SSH client prompts for the locally provisioned **Linux account password** (n
 5. **No boot after AI HAT upgrade:** this is not an SSH issue; restore a physically validated PCIe/NVMe boot layout with power safely removed. See [Post-install AI HAT upgrades](AI_HARDWARE_UPGRADES.md).
 
 See also [Network Access](NETWORK_ACCESS.md), [First Things to Know](START_HERE.md), [Installation](INSTALLATION.md).
+
+## Official Raspberry Pi OS SSH defaults
+
+The [official Raspberry Pi remote-access guide](https://www.raspberrypi.com/documentation/computers/remote-access.html) documents SSH as **disabled by default** on a standard Raspberry Pi OS installation. The supported [Raspberry Pi Imager setup](https://www.raspberrypi.com/documentation/computers/getting-started.html) includes **Remote Access → Enable SSH** and allows a personally configured password account or public SSH key. Tihulu's future personalized image must explicitly create `tihulu-kit` and configure the authorized login; simply documenting the name cannot enable SSH.
