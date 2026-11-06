@@ -16,3 +16,9 @@
 ## Geplante Guide-Einbindung und Tests
 
 `Guide > Hardware upgrades > AI HAT+ 2`, `Settings > Hardware > Detect changes` und `Update Center > Hardware dependencies`. Wirkliche Pi5-Starts vor/nach Einbau/Ausbau, Hailo-Modelltests, NVMe-Boot, Speicher, Datenschutz, Stromversorgung und Wiederherstellung sind vor einer Freigabe zwingend. Ein Mock-Test beweist keine echte Hardwarekompatibilität.
+
+## Verifizierte System- und Paketvoraussetzungen
+
+Laut [offizieller Raspberry-Pi-KI-Dokumentation](https://www.raspberrypi.com/documentation/computers/ai.html) benötigt die dokumentierte Hailo-Umgebung **Raspberry Pi OS Trixie in 64 Bit**. Für die **Hailo-10H AI HAT+ 2** wird `hailo-h10-all` (zusätzlich `dkms`) verwendet, **nicht** das ältere `hailo-all`; beide Pakete können nicht gleichzeitig installiert werden. Nach einer ausdrücklich genehmigten kompatiblen Installation und einem Neustart prüft `hailortcli fw-control identify` die Laufzeit-Hardwareerkennung. Ein echter Modelllade- und Inferenztest ist weiterhin erforderlich.
+
+Diese Angaben erlauben **keine automatischen OS-/Treiber-/EEPROM-Updates** beim Booten. Vor jeder Änderung müssen die NVMe-/PCIe-Boot- und Datensicherheitsbedingungen geprüft werden. [Offizielle HAT-Hardwarebeschreibung](https://www.raspberrypi.com/documentation/accessories/ai-hat-plus.html).
