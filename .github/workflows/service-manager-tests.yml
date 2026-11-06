@@ -6,6 +6,8 @@ on:
       - "tihulu_runtime/**"
       - "tests/**"
       - "data/radio_text_networks.json"
+      - "prototype/text_center_kit_preview.js"
+      - "prototype/text_center_kit_mode.css"
       - "prototype/task_manager.html"
       - "prototype/local_ai_sources.html"
       - "prototype/ai_mode_profiles.html"
@@ -22,6 +24,8 @@ on:
       - "tihulu_runtime/**"
       - "tests/**"
       - "data/radio_text_networks.json"
+      - "prototype/text_center_kit_preview.js"
+      - "prototype/text_center_kit_mode.css"
       - "prototype/task_manager.html"
       - "prototype/local_ai_sources.html"
       - "prototype/ai_mode_profiles.html"
@@ -67,3 +71,6 @@ jobs:
           PY
       - name: Check LAN remote browser JavaScript syntax
         run: node --check prototype/lan_remote.js
+
+      - name: Check Text Center Kit browser JavaScript syntax
+        run: node --check prototype/text_center_kit_preview.js
